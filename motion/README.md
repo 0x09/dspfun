@@ -14,7 +14,7 @@
 	-D|--damp - Multiplier for the stop band. (0)
 	--spectrogram <type> - 0/none = absolute value spectrum, 1 = shifted spectrum, -1 = invert a shifted spectrum
 	-q|--quant - Quantize the frequency coefficients by multiplying by this qfactor and rounding.
-	-d|--dither - Apply 2D Floyd-Steinberg dithering to the frequency space.
+	-d|--dither - Apply 2D Floyd-Steinberg dithering to the high-precision transform products.
 
 	--keep-rate - If scaling in time, maintain same framerate.
 	--samesize-chroma - Subsampled chroma planes will use the same block size as the Y plane.
