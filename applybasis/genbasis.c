@@ -203,11 +203,11 @@ int main(int argc, char* argv[]) {
 
 	MagickWandGenesis();
 	MagickWand* wand;
-    wand = NewMagickWand();
-    MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",CharPixel,frame);
-    MagickWriteImage(wand,outfile);
-    DestroyMagickWand(wand);
-    MagickWandTerminus();
+	wand = NewMagickWand();
+	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",CharPixel,frame);
+	MagickWriteImage(wand,outfile);
+	DestroyMagickWand(wand);
+	MagickWandTerminus();
 
 	return 0;
 }

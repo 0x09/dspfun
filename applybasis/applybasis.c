@@ -338,11 +338,11 @@ int main(int argc, char* argv[]) {
 					if(df)
 						fwrite(partsums,sizeof(partsums),1,df);
 				}
-    wand = NewMagickWand();
-    MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",CharPixel,frame);
-    MagickWriteImage(wand,outfile);
-    DestroyMagickWand(wand);
-    MagickWandTerminus();
+	wand = NewMagickWand();
+	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",CharPixel,frame);
+	MagickWriteImage(wand,outfile);
+	DestroyMagickWand(wand);
+	MagickWandTerminus();
 
 	if(df)
 		fclose(df);

@@ -60,10 +60,10 @@ int main(int argc, char* argv[]) {
 
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
-    MagickConstituteImage(wand,bs.w,bs.h,"I",FloatPixel,coefs);
-    MagickWriteImage(wand,argv[argc-1]);
-    DestroyMagickWand(wand);
-    MagickWandTerminus();
+	MagickConstituteImage(wand,bs.w,bs.h,"I",FloatPixel,coefs);
+	MagickWriteImage(wand,argv[argc-1]);
+	DestroyMagickWand(wand);
+	MagickWandTerminus();
 
 	fftwf_free(coefs);
 	fftwf_cleanup();
