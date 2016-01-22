@@ -13,11 +13,19 @@ Generate basis function plots in the style of [this one](https://upload.wikimedi
 	size, terms, offset - By default a set with size NxM will generate NxM basis functions, each NxM in size. To output fewer tiles, set `terms` to the desired number of basis functions. `offset` can be used to set where in the space to start generating.
 
 ## Example
-16x16 complex DFT Basis
+16x16 complex DFT basis:
 
-	genbasis -s 16x16  -p2 -n -Pcplx -o dftbasis.png
+	genbasis --function=DFT --size 16x16 --padding 2 --natural --plane=cplx -o dftbasis.png
+	genbasis -s16x16 -p2 -n -Pcplx -o dftbasis.png
 
-![8x8 complex DFT Basis](http://0x09.net/i/g/dftbasis.png)
+![16x16 complex DFT basis](http://0x09.net/i/g/dftbasis.png "16x16 complex DFT basis")
+
+8x8 DCT basis scaled up:
+
+	genbasis --function=DCT2 --size 8x8 --padding 4 --scale 4 -o dctbasis.png
+	genbasis -fDCT -s8x8 -p4 -S4 -o dctbasis.png
+
+![8x8 DCT basis](http://0x09.net/i/g/dctbasis.png "8x8 DCT basis")
 
 # applybasis
 Apply basis functions from various 2D transforms to an image file, progressively sum the result, or invert a generated set of coefficients. Allows for visualization of each stage in a multidimensional transform.
@@ -50,7 +58,7 @@ Progressively-summed 16x16 Lenna DCT/iDCT
 
 Forward on top, inverse on bottom:
 
-![Progressively-summed Lenna DCT](http://0x09.net/i/g/lpart.png)
+![Progressively-summed Lenna DCT](http://0x09.net/i/g/lpart.png "Progressively-summed Lenna DCT")
 
 # draw
 Draw images in frequency space by setting coordinates and coefficient value.
@@ -63,4 +71,4 @@ Drawing with several coefficients
 
 	draw -b 256x256 -f 3x3:0.4 -f 2x5:0.2 -f4x6:0.2 -f 145x132:0.05 draw.png
 
-![Drawing with several coefficients](http://0x09.net/i/g/draw.png)
+![Drawing with several coefficients](http://0x09.net/i/g/draw.png "Drawing with several coefficients")

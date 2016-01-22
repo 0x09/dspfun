@@ -1,6 +1,6 @@
 DSP Funbox - Set of *nix utilities for experimentation and learning about spectral analysis of images.
 
-![dspfun](http://0x09.net/i/g/dspfun.png)
+![dspfun](http://0x09.net/i/g/dspfun.png "8x8 DFT basis")
 
 #Overview
 

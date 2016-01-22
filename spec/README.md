@@ -24,7 +24,7 @@ Generate a traditional Lenna spectrogram:
 
 	spec Lenna.png Lenna.spec.png
 
-![Lenna spectrogram](http://0x09.net/i/g/Lenna.spec.png)
+![Lenna spectrogram](http://0x09.net/i/g/Lenna.spec.png "Lenna spectrogram")
 
 `spec` can be used as a filter, particularly when piping with imagemagick. This allows you to perform e.g. sinc resizes using crop/expand filters:
 
@@ -32,16 +32,22 @@ Generate a traditional Lenna spectrogram:
 	
 Or a smooth low-pass filter using the gradient tool of an image editor:
 	
-	spec -tshift kodim23.png | convert - -depth 8 /tmp/kodim23.png
-	<edit>
-	ispec -tshift /tmp/kodim23.png | display
+	spec -tshift kodim23.png | convert - -depth 8 tempimg.png
+	<edit tempimg.png>
+	ispec -tshift tempimg.png | display
 
-![Gradient lowpass](http://0x09.net/i/g/gradlp.png) ![Cover image](http://0x09.net/i/g/smoothpass.png)
+![Gradient lowpass](http://0x09.net/i/g/gradlp.png "Gradient lowpass") ![Gradient lowpass](http://0x09.net/i/g/smoothpass.png "Gradient lowpass")
 
 Draw into the absolute value frequency spectrum of an image:
 
-	spec -tabs kodim23.png | convert - -depth 8 /tmp/kodim23.png
-	<edit>
-	ispec -tabs /tmp/kodim23.png -m<(spec -tsign kodim23.png) | display
+	spec -tabs kodim23.png | convert - -depth 8 tempimg.png
+	<edit tempimg.png>
+	ispec -tabs -m<(spec -tsign kodim23.png) tempimg.png cover_image.png
 
-![Hidden message](http://0x09.net/i/g/hidden.png) ![Cover image](http://0x09.net/i/g/cover.png)
+And uncover the message later\*:
+
+	spec -tabs cover_image.png hidden_message.png
+
+![Hidden message](http://0x09.net/i/g/hidden.png "Hidden message") ![Cover image](http://0x09.net/i/g/cover.png "Cover image")
+
+\*If it hasn't been destroyed by clipping/quantization of the cover image.
