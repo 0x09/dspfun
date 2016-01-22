@@ -87,7 +87,7 @@ typedef union { long long a[2]; struct { long long w, h; }; } offsets;
 
 static void usage() {
 	puts("Usage: genbasis -o outfile -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT [-I|--inverse] [-n|--natural] [-P|--plane=(real),imag,mag,phase,cplx]\n"
-	     "             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale WxH]\n");
+	     "             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale s]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
@@ -106,13 +106,14 @@ int main(int argc, char* argv[]) {
 		{"inverse",no_argument,NULL,'I'},
 		{"plane",required_argument,NULL,'P'},
 		{"terms",required_argument,NULL,'t'},
-		{"sum",required_argument,NULL,'s'},
 		{"offset",required_argument,NULL,'O'},
 		{"padding",required_argument,NULL,'p'},
 		{"scale",required_argument,NULL,'S'},
+		{"size",required_argument,NULL,'s'},
+		{"natural",no_argument,NULL,'n'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"o:f:InP:t:s:O:p:S:s:",gopts,&optind)) != -1)
+	while((opt = getopt_long(argc,argv,"o:f:InP:t:O:p:S:s:",gopts,&optind)) != -1)
 		switch(opt) {
 			case 'o': outfile = optarg; break;
 			case 'f': {
