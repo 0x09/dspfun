@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
 		{"basis",required_argument,NULL,2},
 		{0}
 	};
+
 	while((c = getopt_long(argc,argv,"s:v:p:c",opts,&optind)) != -1) {
 		switch(c) {
 			case  0 : break;
@@ -56,10 +57,11 @@ int main(int argc, char* argv[]) {
 					basis = NATIVE;
 				else if(!strcmp(optarg,"unitary"))
 					basis = UNITARY;
-			}
+			}; break;
 			default: usage(argv[0]);
 		}
 	}
+
 	if(argc-optind < 2)
 		usage(argv[0]);
 
