@@ -3,12 +3,6 @@
  * Copyright 2012-2016 0x09.net.
  */
 
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-#include <libavutil/mathematics.h>
-#include <libavutil/pixdesc.h>
-#include <libavutil/opt.h>
 #include <fftw3.h>
 #include <getopt.h>
 #include <stdbool.h>
