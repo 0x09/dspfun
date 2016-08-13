@@ -142,17 +142,17 @@ static void usage() {
 	puts("Usage: applybasis -i infile -o outfile [-d out.coeff]\n"
 	     "            -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT  [-I|--inverse]\n"
 	     "            [-P|--plane=(real),imag,mag,phase]  [-R|--rescale=(linear),log,gain,level[-...]]  [-N|--range=shift,(shift2),abs,invert,hue]\n"
-	     "            [-t|--terms WxHxD]  [-s|--sum terms]  [-O|--offset XxYxZ]  [-p|--padding p]  [-S|--scale scale]");
+	     "            [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
 	int opt;
 	int optind = 0;
 	char* infile = NULL,* outfile = NULL,* outcoeffs = NULL;
-	coords terms = {};
+	coords terms = {}, partsum = {};
 	offsets offset = {};
 	int inverse = false, orthogonal = false;
-	unsigned int scale = 1, padding = 1, partsum = 1;
+	unsigned int scale = 1, padding = 1;
 	long double (*realize)(complex long double) = real;
 	void (*rescale[2])(long double[3],long double) = {linear};
 	void (*range)(long double[3]) = shift2;
@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
 				else if(!strcmp(optarg,"hue"))    range = hue;
 			} break;
 			case 't': sscanf(optarg,"%llux%llu",&terms.w,&terms.h); break;
-			case 's': partsum = strtoul(optarg,NULL,10); break;
+			case 's': sscanf(optarg,"%llux%llu",&partsum.w,&partsum.h); break;
 			case 'O': sscanf(optarg,"%lldx%lld",&offset.w,&offset.h); break;
 			case 'p': padding = strtoul(optarg,NULL,10); break;
 			case 'S': scale = strtoul(optarg,NULL,10); break;
@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
 		pixels = malloc(sizeof(*pixels)*insize.w*insize.h*3);
 		fread(pixels,sizeof(*pixels),insize.w*insize.h*3,f);
 		fclose(f);
-		inrange = (insize.w/partsum)*(insize.h/partsum);
+		inrange = (insize.w/partsum.w)*(insize.h/partsum.h);
 	}
 	else {
 		wand = NewMagickWand();
@@ -284,8 +284,8 @@ int main(int argc, char* argv[]) {
 		k = &i;
 		n = &bi;
 	}
-	N->w /= partsum;
-	N->h /= partsum;
+	N->w /= partsum.w;
+	N->h /= partsum.h;
 
 
 	FILE* df = NULL;
@@ -309,24 +309,24 @@ int main(int argc, char* argv[]) {
 			for(n->h = 0; n->h < N->h; n->h++)
 				for(n->w = 0; n->w < N->w; n->w++) {
 					complex long double partsums[3] = {};
-					for(s.h = 0; s.h < partsum; s.h++)
-						for(s.w = 0; s.w < partsum; s.w++) {
+					for(s.h = 0; s.h < partsum.h; s.h++)
+						for(s.w = 0; s.w < partsum.w; s.w++) {
 							complex long double ccoeff = 1;
 							for(int j = 0; j < 2; j++) {
 								bi.a[j]+=offset.a[j];
-								ccoeff *= function(k->a[j],n->a[j]*partsum+s.a[j],insize.a[j],orthogonal);
+								ccoeff *= function(k->a[j],n->a[j]*partsum.a[j]+s.a[j],insize.a[j],orthogonal);
 								bi.a[j]-=offset.a[j];
 							}
 							for(int j = 0; j < 3; j++)
-								partsums[j] += ccoeff * pixels[((n->h*partsum+s.h)*insize.w+n->w*partsum+s.w)*3+j];
+								partsums[j] += ccoeff * pixels[((n->h*partsum.h+s.h)*insize.w+n->w*partsum.w+s.w)*3+j];
 						}
 					long double coeff[3], coeff2[3];
 					for(int j = 0; j < 3; j++)
 						coeff[j] = coeff2[j] = realize(partsums[j]);
-					rescale[0](coeff,partsum*partsum*inrange);
+					rescale[0](coeff,partsum.w*partsum.h*inrange);
 					if(rescale[1]) {
-						rescale[1](coeff2,partsum*partsum*inrange);
-						long double NN = sqrtl(insize.w*insize.h)-1, nn = sqrtl(partsum*partsum*inrange)-1;
+						rescale[1](coeff2,partsum.w*partsum.h*inrange);
+						long double NN = sqrtl(insize.w*insize.h)-1, nn = sqrtl(partsum.w*partsum.h*inrange)-1;
 						for(int j = 0; j < 3; j++)
 							coeff[j] = ((NN-nn)*coeff[j]+nn*coeff2[j])/NN;
 					}
