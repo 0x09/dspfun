@@ -183,26 +183,20 @@ int main(int argc, char* argv[]) {
 			case 'f': {
 				if(!strcasecmp(optarg,"idft")) function = idft;
 				else if(!strcasecmp(optarg,"wht")) function = wht;
-				else if(!strncasecmp(optarg,"dct",3)) {
-					function = dct2;
-					if(strlen(optarg) > 3)
-						switch(optarg[3]) {
-							case '1': function = dct1; break;
-							case '3': function = dct3; break;
-							case '4': function = dct4; break;
-							default: break;
-						}
-				}
-				else if(!strncasecmp(optarg,"dst",3)) {
-					function = dst2;
-					if(strlen(optarg) > 3)
-						switch(optarg[3]) {
-							case '1': function = dst1; break;
-							case '3': function = dst3; break;
-							case '4': function = dst4; break;
-							default: break;
-						}
-				}
+				else if(!strncasecmp(optarg,"dct",3))
+					switch(optarg[3]) {
+						case '1': function = dct1; break;
+						case '3': function = dct3; break;
+						case '4': function = dct4; break;
+						default:  function = dct2;
+					}
+				else if(!strncasecmp(optarg,"dst",3))
+					switch(optarg[3]) {
+						case '1': function = dst1; break;
+						case '3': function = dst3; break;
+						case '4': function = dst4; break;
+						default:  function = dst2;
+					}
 			} break;
 			case 'I': inverse = true; break;
 			case 'P': {
