@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
 	// Setup input
 	ffapi_init(loglevel);
 
-	coords source;
+	coords source = {0};
 	AVRational r_frame_rate;
 	if(!colorspace && spec > 0)
 		colorspace = "rgb24";
