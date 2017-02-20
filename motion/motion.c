@@ -17,6 +17,10 @@ long double sinc(long double x) {
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
+static void seek_progress(size_t seek) {
+	fprintf(stderr,"\rseek: %zu",seek);
+}
+
 struct coords {	unsigned long long w, h, d; };
 typedef struct coords coords[4];
 typedef struct range { coords begin, end; } range;
@@ -238,11 +242,8 @@ int main(int argc, char* argv[]) {
 
 	// Seeking
 	if(offset) {
-		AVFrame* frame = ffapi_alloc_frame(in);
-		for(unsigned long long seek = 0; seek < offset && !ffapi_read_frame(in,frame); seek++)
-			fprintf(stderr,"\rseek: %llu",seek);
+		ffapi_seek_frame(in, offset, seek_progress);
 		fprintf(stderr,"\n");
-		ffapi_free_frame(frame);
 	}
 	// Main loop
 	coords minbuf;

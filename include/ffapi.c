@@ -46,13 +46,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 			if(!strcmp(in->fmt->iformat->name,"image2") || !strcmp(in->fmt->iformat->name,"png_pipe"))
 				*frames = 1;
 			else if(calc_frames) {
-				int64_t start = avio_tell(in->fmt->pb);
-				AVFrame* frame = ffapi_alloc_frame(in);
-				while(!ffapi_read_frame(in,frame))
-					;
-				ffapi_free_frame(frame);
-				*frames = avc->frame_number;
-				//avio_seek(in->fmt->pb,start,SEEK_SET);
+				*frames = ffapi_seek_frame(in,SIZE_MAX,NULL);
 				ffapi_close(in);
 				return ffapi_open_input(file,options,format,pix_fmt,components,widths,heights,NULL,rate,false);
 			}
@@ -161,6 +155,21 @@ AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 			return NULL;
 	}
 	return frame;
+}
+
+size_t ffapi_seek_frame(FFContext* ctx, size_t offset, void (*progress)(size_t)) {
+	AVFrame* frame = av_frame_alloc();
+	size_t seek;
+	FFContext ctx_copy = (FFContext){ .fmt = ctx->fmt, .st = ctx->st };
+
+	// just unswitch this manually
+	if(progress)
+		for(seek = 0; seek < offset && !ffapi_read_frame(&ctx_copy, frame); seek++)
+			progress(seek);
+	else for(seek = 0; seek < offset && !ffapi_read_frame(&ctx_copy, frame); seek++);
+
+	av_frame_free(&frame);
+	return seek;
 }
 
 void ffapi_clear_frame(AVFrame* frame) {
