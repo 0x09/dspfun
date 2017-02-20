@@ -135,6 +135,10 @@ int main(int argc, char* argv[]) {
 		colorspace = "rgb24";
 	unsigned long w[4], h[4], components;
 	FFContext* in = ffapi_open_input(infile,iformat,decopts,colorspace,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!shell && (!outfile || !maxframes));
+	if(!in) {
+		fprintf(stderr, "Error opening \"%s\"\n", infile);
+		return 1;
+	}
 	source->w = *w; //compute subsampling separately
 	source->h = *h;
 	AVPixFmtDescriptor pixdesc = *(in->pixdesc);

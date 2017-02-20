@@ -23,18 +23,21 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 
 	AVInputFormat* ifmt = NULL;
 	if(format) ifmt = av_find_input_format(format);
-	avformat_open_input(&in->fmt,file,ifmt,&opts);
+	if(avformat_open_input(&in->fmt,file,ifmt,&opts))
+		return NULL;
 	AVCodec* dec;
 	avformat_find_stream_info(in->fmt,NULL);
 	int stream = av_find_best_stream(in->fmt,AVMEDIA_TYPE_VIDEO,-1,-1,&dec,0);
-	//if(stream < 0) goto error;
+	if(stream < 0) {
+		avformat_close_input(in->fmt);
+		return NULL;
+	}
 	in->st = in->fmt->streams[stream];
 	AVCodecContext* avc = in->st->codec;
 	avc->refcounted_frames = 1;
 	avcodec_open2(avc,dec,&opts);
 
 	av_dict_free(&opts);
-	//av_dump_format(in->fmt,0,in->fmt->filename,1); //bus error
 
 	if(rate)
 		*rate = in->st->r_frame_rate;
