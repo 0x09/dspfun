@@ -29,7 +29,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	avformat_find_stream_info(in->fmt,NULL);
 	int stream = av_find_best_stream(in->fmt,AVMEDIA_TYPE_VIDEO,-1,-1,&dec,0);
 	if(stream < 0) {
-		avformat_close_input(in->fmt);
+		avformat_close_input(&in->fmt);
 		return NULL;
 	}
 	in->st = in->fmt->streams[stream];
