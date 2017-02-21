@@ -1,13 +1,19 @@
 CC ?= cc
-CFLAGS := -std=c11 -Ofast $(CFLAGS)
-LIBS := -I../include $(shell pkg-config --libs fftw3f) -lavcodec -lavformat -lswscale -lavutil -lm
+CFLAGS := -std=c11 -Ofast -I../include $(CFLAGS)
+LIBS := -lavcodec -lavformat -lswscale -lavutil -lm
 
-all: motion
+all: motion rotate
 
-motion: motion.c ../include/ffapi.c
+ffapi.o: ../include/ffapi.c
+	$(CC) $(CFLAGS) -c -o $@ $+
+
+motion: motion.c ffapi.o
+	$(CC) $(CFLAGS) $(shell pkg-config --libs fftw3f) $(LIBS) -o $@ $+
+
+rotate: rotate.c ffapi.o
 	$(CC) $(CFLAGS) $(LIBS) -o $@ $+
 
 clean:
-	rm -f motion
+	rm -f motion rotate ffapi.o
 
 .PHONY: all clean
