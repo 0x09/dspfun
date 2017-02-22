@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
 					twiddles[0][t1*(cwidth-1)+t2-1] = cos((t1*(width-1)*scale_den/(scale_num*width-scale_den)+vx+0.5L) * t2 * M_PIl / width);
 			for(size_t t1 = 0; t1 < vh; t1++)
 				for(int t2 = 1; t2 < cheight; t2++)
-					twiddles[1][t1*(cheight-1)+t2-1] = cos((t1*(height-1)*scale_den/(scale_num*width-scale_den)+vy+0.5L) * t2 * M_PIl / height);
+					twiddles[1][t1*(cheight-1)+t2-1] = cos((t1*(height-1)*scale_den/(scale_num*height-scale_den)+vy+0.5L) * t2 * M_PIl / height);
 		}; break;
 		case NATIVE: {
 			for(size_t t1 = 0; t1 < vw; t1++)
