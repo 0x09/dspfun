@@ -2,7 +2,7 @@ DSP Funbox - Set of *nix utilities for experimentation and learning about spectr
 
 ![dspfun](http://0x09.net/i/g/dspfun.png "8x8 DFT basis")
 
-#Overview
+# Overview
 
 * [spec](spec) - Generate DCT spectrums for viewing or invertible spectrums for editing in a regular image editor.
 * [motion](motion) - 3-dimensional frequency-space editor for video.
