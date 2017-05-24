@@ -11,8 +11,7 @@
 #include <getopt.h>
 #include <strings.h>
 
-#include <wand/MagickWand.h>
-
+#include "magickwand.h"
 #include "longmath.h"
 
 #ifndef I

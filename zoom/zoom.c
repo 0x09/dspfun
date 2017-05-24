@@ -8,11 +8,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include <wand/MagickWand.h>
 #include <getopt.h>
 
 #include <fftw3.h>
 
+#include "magickwand.h"
 #include "longmath.h"
 
 enum basis {

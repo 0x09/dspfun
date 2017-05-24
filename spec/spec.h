@@ -7,7 +7,6 @@
 #define SPEC_H
 
 #include <fftw3.h>
-#include <wand/MagickWand.h>
 #include <math.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -16,6 +15,7 @@
 
 #include "precision.h"
 #include "longmath.h"
+#include "magickwand.h"
 
 #define absf(f,x) mi(copysign)(mi(f)(mc(fabs)(x)),x)
 

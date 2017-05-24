@@ -11,8 +11,9 @@
 #include <unistd.h>
 #include <getopt.h>
 
-#include <wand/MagickWand.h>
 #include <fftw3.h>
+
+#include "magickwand.h"
 
 #define a(n,N) (n?sqrt(2.f/N):sqrt(1.f/N))
 struct size { int w,h; };
