@@ -10,6 +10,7 @@
 
 #include "ffapi.h"
 #include <unistd.h>
+#include <getopt.h>
 
 int main(int argc, char* argv[]) {
 	AVRational fps = {0};
