@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
 		{"scale",required_argument,NULL,'S'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"i:o:d:f:IP:R:N:t:s:O:p:S:",gopts,&optind)) != -1)
+	while((opt = getopt_long(argc,argv,"i:o:d:f:IP:R:N:t:s:O:p:S:",gopts,NULL)) != -1)
 		switch(opt) {
 			case 0: break;
 			case 'i': infile = optarg; break;

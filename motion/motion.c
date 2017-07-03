@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
 		{"loglevel",required_argument,NULL,10},
 		{0}
 	};
-	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:r",gopts,&optind)) != -1)
+	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:r",gopts,NULL)) != -1)
 		switch(opt) {
 			case 'i': infile = optarg; break;
 			case 'o': outfile = optarg; break;

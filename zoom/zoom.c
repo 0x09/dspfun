@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"s:v:p:c",opts,&optind)) != -1) {
+	while((c = getopt_long(argc,argv,"s:v:p:c",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
 			case 's': sscanf(optarg,"%Lf/%llu",&scale_num,&scale_den); break;

@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 		{"natural",no_argument,NULL,'n'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"o:f:InP:t:O:p:S:s:",gopts,&optind)) != -1)
+	while((opt = getopt_long(argc,argv,"o:f:InP:t:O:p:S:s:",gopts,NULL)) != -1)
 		switch(opt) {
 			case 'o': outfile = optarg; break;
 			case 'f': {
