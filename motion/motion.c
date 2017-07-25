@@ -65,7 +65,7 @@ static void usage() {
 }
 int main(int argc, char* argv[]) {
 	int opt;
-	int optind = 0;
+	int longoptind = 0;
 	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL;
 	coords block = {0}, scaled = {0};
 	unsigned long long int offset = 0, maxframes = 0;
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
 		{"loglevel",required_argument,NULL,10},
 		{0}
 	};
-	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:r",gopts,NULL)) != -1)
+	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:r",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'i': infile = optarg; break;
 			case 'o': outfile = optarg; break;
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
 			case  8 : iformat = optarg; break;
 			case  9 : decopts = optarg; break;
 			case 10 : loglevel = strtol(optarg,NULL,10); break;
-			case  0 : if(gopts[optind].flag != NULL) break;
+			case  0 : if(gopts[longoptind].flag != NULL) break;
 			default : usage();
 		}
 	if(!infile) usage();
