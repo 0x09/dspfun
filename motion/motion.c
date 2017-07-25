@@ -232,7 +232,6 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr," outsize: ");print_coords(newres);
 	fprintf(stderr,"\n");
 
-
 	// Setup output
 	FFContext* out = ffapi_open_output(outfile,encopts,format,encoder,AV_CODEC_ID_FFV1,NULL,ffapi_pix_fmt_desc_get_id(&pixdesc),newres->w,newres->h,r_frame_rate);
 	if(!out) {
@@ -242,7 +241,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	fprintf(stderr,"%s --> %s --> %s\n",av_get_pix_fmt_name(in->st->codec->pix_fmt),pixdesc.name,av_get_pix_fmt_name(out->st->codec->pix_fmt));
+	fprintf(stderr,"%s --> %s --> %s\n",av_get_pix_fmt_name(in->codec->pix_fmt),pixdesc.name,av_get_pix_fmt_name(out->codec->pix_fmt));
 
 	// Seeking
 	if(offset) {
@@ -423,7 +422,6 @@ int main(int argc, char* argv[]) {
 							for(int x = 0; x < scaled[i].w; x++)
 								ffapi_setpel_direct(writeframe,bx*scaled[i].w+x,by*scaled[i].h+y,comp,pixels[i][by*nblocks[i].w+bx][(z*minbuf[i].h+y)*minbuf[i].w+x]);
 			}
-//			writeframe->pts = (bz*scaled->d+z) * avco->time_base.num;
 			ffapi_write_frame(out,writeframe);
 			fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,(bz+1)*block->d,pads,bz*scaled->d+z+1);
 		}

@@ -25,15 +25,18 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	if(format) ifmt = av_find_input_format(format);
 	if(avformat_open_input(&in->fmt,file,ifmt,&opts))
 		return NULL;
-	AVCodec* dec;
 	avformat_find_stream_info(in->fmt,NULL);
+	AVCodec* dec;
 	int stream = av_find_best_stream(in->fmt,AVMEDIA_TYPE_VIDEO,-1,-1,&dec,0);
 	if(stream < 0) {
 		avformat_close_input(&in->fmt);
 		return NULL;
 	}
 	in->st = in->fmt->streams[stream];
-	AVCodecContext* avc = in->st->codec;
+	AVCodecParameters* params = in->st->codecpar;
+
+	AVCodecContext* avc = in->codec = avcodec_alloc_context3(dec);
+	avcodec_parameters_to_context(avc, params);
 	avc->refcounted_frames = 1;
 	avcodec_open2(avc,dec,&opts);
 
@@ -100,7 +103,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		goto error;
 
 	out->st = avformat_new_stream(out->fmt,enc);
-	AVCodecContext* avc = out->st->codec;
+	AVCodecContext* avc = out->codec = avcodec_alloc_context3(enc);
 	out->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(in_pix_fmt);
 
 	if(pix_fmt) {
@@ -120,6 +123,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	avc->width  = width;
 	avc->height = height;
 	avc->time_base = out->st->time_base = av_inv_q(out->st->r_frame_rate = out->st->avg_frame_rate = rate);
+	avcodec_parameters_from_context(out->st->codecpar,avc);
 
 	AVDictionary* opts = NULL;
 	av_dict_parse_string(&opts,options,"=",":",0);
@@ -141,8 +145,10 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		av_frame_get_buffer(out->swsframe,1);
 	}
 
+
 	 return out;
 error:
+	avcodec_close(out->codec);
 	avformat_free_context(out->fmt);
 	free(out);
 	return NULL;
@@ -151,8 +157,8 @@ error:
 AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 	AVFrame* frame = av_frame_alloc();
 	if(ctx->fmt->oformat || ctx->sws) {
-		frame->width  = ctx->st->codec->width;
-		frame->height = ctx->st->codec->height;
+		frame->width  = ctx->st->codecpar->width;
+		frame->height = ctx->st->codecpar->height;
 		frame->format = av_pix_fmt_desc_get_id(ctx->pixdesc);
 		if(av_frame_get_buffer(frame,1))
 			return NULL;
@@ -163,7 +169,7 @@ AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 size_t ffapi_seek_frame(FFContext* ctx, size_t offset, void (*progress)(size_t)) {
 	AVFrame* frame = av_frame_alloc();
 	size_t seek;
-	FFContext ctx_copy = (FFContext){ .fmt = ctx->fmt, .st = ctx->st };
+	FFContext ctx_copy = (FFContext){ .fmt = ctx->fmt, .codec = ctx->codec, .st = ctx->st };
 
 	// just unswitch this manually
 	if(progress)
@@ -187,74 +193,62 @@ void ffapi_free_frame(AVFrame* frame) {
 
 int ffapi_read_frame(FFContext* in, AVFrame* frame) {
 	AVFrame* readframe = in->sws ? in->swsframe : frame;
-	AVPacket packet = {0};
-	int err, got_frame;
-	do {
+	int err;
+	while((err = avcodec_receive_frame(in->codec, readframe)) == AVERROR(EAGAIN)) {
+		AVPacket packet = {0};
 		while(!(err = av_read_frame(in->fmt,&packet)) && packet.stream_index != in->st->index)
 			av_packet_unref(&packet);
 		if(err) {
 			packet.data = NULL;
 			packet.size = 0;
 		}
-		AVPacket pcpy = packet;
-		do {
-			int ret;
-			if((ret = avcodec_decode_video2(in->st->codec,readframe,&got_frame,&pcpy)) < 0) {
-				av_packet_unref(&packet);
-				return ret;
-			}
-			pcpy.data += ret;
-			pcpy.size -= ret;
-		} while(!got_frame && pcpy.size > 0);
-		assert(pcpy.size == 0);
+		avcodec_send_packet(in->codec, &packet);
 		av_packet_unref(&packet);
-	} while(!(err || got_frame));
-	if(got_frame) {
+	}
+	if(!err) {
 		if(in->sws)
-			sws_scale(in->sws,(const uint8_t* const*)in->swsframe->data,in->swsframe->linesize,0,in->st->codec->height,frame->data,frame->linesize);
+			sws_scale(in->sws,(const uint8_t* const*)in->swsframe->data,in->swsframe->linesize,0,in->st->codecpar->height,frame->data,frame->linesize);
 		frame->pts = av_frame_get_best_effort_timestamp(readframe);
 	}
-	return err * !got_frame;
+	return err;
 }
 
-int ffapi_write_frame(FFContext* out, AVFrame* frame) {
-	AVFrame* writeframe = out->swsframe;
-	if(out->sws) sws_scale(out->sws,(const uint8_t* const*)frame->data,frame->linesize,0,out->st->codec->height,out->swsframe->data,out->swsframe->linesize);
-	else writeframe = frame;
-	AVCodecContext* codec = out->st->codec;
-	writeframe->pts = frame->pts ? frame->pts : codec->frame_number; //for now timebase == 1/rate
+static int flush_frame(FFContext* out, AVFrame* frame) {
+	AVCodecContext* codec = out->codec;
 	AVPacket packet = {0};
 	av_init_packet(&packet);
-	int got_packet;
-	int result = avcodec_encode_video2(codec,&packet,writeframe,&got_packet);
-	if(got_packet) {
+	int err = 0;
+	while(!err && !(err = avcodec_receive_packet(codec,&packet))) {
 		if(packet.pts != AV_NOPTS_VALUE)
 			packet.pts = av_rescale_q(packet.pts,codec->time_base,out->st->time_base);
-		else packet.pts = av_frame_get_best_effort_timestamp(writeframe);
-		if(packet.dts != AV_NOPTS_VALUE)
-			packet.dts = av_rescale_q(packet.dts,codec->time_base,out->st->time_base);
-		packet.stream_index = out->st->index;
-		result = av_write_frame(out->fmt,&packet);
-		av_packet_unref(&packet);
-	}
-	return result;
-}
-
-static int write_end(FFContext* out) {
-	AVCodecContext* codec = out->st->codec;
-	AVPacket packet = {0};
-	av_init_packet(&packet);
-	int got_packet;
-	int err;
-	while(!(err = avcodec_encode_video2(codec,&packet,NULL,&got_packet)) && got_packet) {
-		if(packet.pts != AV_NOPTS_VALUE)
-			packet.pts = av_rescale_q(packet.pts,codec->time_base,out->st->time_base);
+		else if(frame) packet.pts = av_frame_get_best_effort_timestamp(frame);
 		if(packet.dts != AV_NOPTS_VALUE)
 			packet.dts = av_rescale_q(packet.dts,codec->time_base,out->st->time_base);
 		packet.stream_index = out->st->index;
 		err = av_write_frame(out->fmt,&packet);
 		av_packet_unref(&packet);
 	}
+	if(err == AVERROR(EOF))
+		err = 0;
+	return err;
+}
+
+int ffapi_write_frame(FFContext* out, AVFrame* frame) {
+	AVFrame* writeframe = out->swsframe;
+	if(out->sws) sws_scale(out->sws,(const uint8_t* const*)frame->data,frame->linesize,0,out->st->codecpar->height,out->swsframe->data,out->swsframe->linesize);
+	else writeframe = frame;
+	AVCodecContext* codec = out->codec;
+	writeframe->pts = codec->frame_number; //for now timebase == 1/rate
+	avcodec_send_frame(codec,writeframe);
+	return flush_frame(out,writeframe);
+}
+
+static int write_end(FFContext* out) {
+	AVCodecContext* codec = out->codec;
+	AVPacket packet = {0};
+	av_init_packet(&packet);
+	avcodec_send_frame(codec,NULL);
+	int err = flush_frame(out,NULL);
 	while(!err)
 		err = av_write_frame(out->fmt,NULL);
 	return FFMIN(err,0);
@@ -266,7 +260,8 @@ int ffapi_close(FFContext* ctx) {
 		ret = write_end(ctx);
 		av_write_trailer(ctx->fmt);
 	}
-	avcodec_close(ctx->st->codec);
+	avcodec_close(ctx->codec);
+	avcodec_free_context(&ctx->codec);
 	if(ctx->sws) {
 		ffapi_free_frame(ctx->swsframe);
 		sws_freeContext(ctx->sws);

@@ -15,6 +15,7 @@
 
 typedef struct FFContext {
 	AVFormatContext* fmt;
+	AVCodecContext* codec;
 	AVStream* st;
 	AVPixFmtDescriptor* pixdesc;
 	struct SwsContext* sws;
