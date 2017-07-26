@@ -52,7 +52,7 @@ rotate - rotate video by right angles on a 3-dimensional axis.
 
 	ffapi args: -o/O   input/output dictionary options
 	            -f/F   input/output format
-	            -c/C   input/output colorspace
+	            -c/C   intermediate/output colorspace
 	            -e     encoder
 	            -l     loglevel
 
@@ -64,3 +64,19 @@ Rotate a short video such that the time axis is now facing the viewer, with fram
 Rotate the output of the previous example back to normal, perhaps after applying some filter to it to interesting effect
 
 	rotate zyx timeline.avi original.avi
+
+# Transcode
+transcode - barebones transcoder / FFmpeg API wrapper test client. Simply decodes and re-encodes frames in the given format at a constant framerate. All functionality is shared with the above tools.
+
+## Usage
+
+	usage: transcode <ffapi args> -r framerate -s start:frames input output
+
+## Examples
+Just convert an mp4 to y4m
+
+	transcode input.mp4 output.y4m
+
+Convert an avi to mp4, specifying encoding options
+
+	transcode -e libx264 -C yuv444p -O 'crf=16:preset=veryslow' input.avi output.mp4

@@ -167,6 +167,9 @@ AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 }
 
 size_t ffapi_seek_frame(FFContext* ctx, size_t offset, void (*progress)(size_t)) {
+	if(!offset)
+		return 0;
+
 	AVFrame* frame = av_frame_alloc();
 	size_t seek;
 	FFContext ctx_copy = (FFContext){ .fmt = ctx->fmt, .codec = ctx->codec, .st = ctx->st };

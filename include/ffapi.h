@@ -66,7 +66,7 @@ static inline unsigned char ffapi_getpel_direct(AVFrame* frame, size_t x, size_t
 		ffapi_setpel(FFContext,AVFrame,x,y,ffapi__i,(val)[ffapi__i])
 
 #define ffapi_getpixel(FFContext,AVFrame,x,y,val)\
-	for(uint_fast8_t ffapi__i = 0; ffapi__i < out->pixdesc->nb_components; ffapi__i++)\
+	for(uint_fast8_t ffapi__i = 0; ffapi__i < FFContext->pixdesc->nb_components; ffapi__i++)\
 		(val)[ffapi__i] = ffapi_getpel(FFContext,AVFrame,x,y,ffapi__i)
 
 //av_pix_fmt_desc_get_id does not work for descriptors copied to the stack
