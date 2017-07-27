@@ -22,14 +22,14 @@ enum basis {
 };
 
 void usage(const char* self) {
-	printf("usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native -c --showsamples=1(point),2(grid) input output\n",self);
+	printf("usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native -c --showsamples=1(point),2(grid) -g input output\n",self);
 	exit(0);
 }
 
 int main(int argc, char* argv[]) {
 	long double vx = 0, vy = 0;
 	size_t vw = 0, vh = 0;
-	bool vflag = false, centered = false;
+	bool vflag = false, centered = false, gamma = false;
 	int showsamples = 0;
 	long double scale_num = 1;
 	unsigned long long scale_den = 1;
@@ -41,13 +41,14 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"s:v:p:c",opts,NULL)) != -1) {
+	while((c = getopt_long(argc,argv,"s:v:p:cg",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
 			case 's': sscanf(optarg,"%Lf/%llu",&scale_num,&scale_den); break;
 			case 'v': sscanf(optarg,"%zux%zu",&vw,&vh); break;
 			case 'p': sscanf(optarg,"%Lfx%Lf",&vx,&vy); break;
 			case 'c': centered = true; break;
+			case 'g': gamma = true; break;
 			case 1: showsamples = strtol(optarg,NULL,10); break;
 			case 2: {
 				if(!strcmp(optarg,"centered"))
@@ -71,12 +72,16 @@ int main(int argc, char* argv[]) {
 		MagickWandTerminus();
 		return 1;
 	}
+	if(gamma)
+		MagickTransformImageColorspace(wand,RGBColorspace);
+
 	size_t width = MagickGetImageWidth(wand), height = MagickGetImageHeight(wand);
 	if(!vw) vw = width*scale_num/scale_den;
 	if(!vh) vh = height*scale_num/scale_den;
 
 	double* coeffs = malloc(sizeof(double)*width*height*3);
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",DoublePixel,coeffs);
+	DestroyMagickWand(wand);
 
 	if(centered) {
 		vx = vx*scale_num/scale_den - vw/2.L;
@@ -85,7 +90,7 @@ int main(int argc, char* argv[]) {
 	long double scale = scale_num / scale_den;
 	size_t nwidth = round(width * scale_num / scale_den), nheight = round(height * scale_num / scale_den);
 	size_t cwidth = nwidth < width ? nwidth : width, cheight = nheight < height ? nheight : height;
-	unsigned char* icoeffs = malloc(vw*vh*3);
+	double* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
 	double* tmp = malloc(sizeof(double)*cheight);
 	double* twiddles[2] = {malloc(sizeof(double)*vw*(cwidth-1)),malloc(sizeof(double)*vh*(cheight-1))};
 
@@ -132,8 +137,7 @@ int main(int argc, char* argv[]) {
 				for(int v = 1; v < cheight; v++)
 					s += tmp[v] * twiddles[1][j*(cheight-1)+v-1];
 				s /= width*height;
-				s *= 255;
-				icoeffs[(j*vw+i)*3+z] = s>255?255:s<0?0:round(s);
+				icoeffs[(j*vw+i)*3+z] = s;
 			}
 		}
 	}
@@ -141,18 +145,21 @@ int main(int argc, char* argv[]) {
 	if(showsamples==1)
 		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
 			for(size_t x = scale-(size_t)vx%(int)scale; x < vw; x+=scale)
-				memcpy(icoeffs+(y*vh+x)*3,((unsigned char[]){0,255,0}),3);
+				memcpy(icoeffs+(y*vh+x)*3,((double[]){0,1,0}),3*sizeof(*icoeffs));
 	else if(showsamples==2) {
 		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
 			for(size_t x = 0; x < vw; x++)
-				memcpy(icoeffs+(y*vh+x)*3,((unsigned char[]){0,255,0}),3);
+				memcpy(icoeffs+(y*vh+x)*3,((double[]){0,1,0}),3*sizeof(*icoeffs));
 		for(size_t y = 0; y < vh; y++)
 			for(size_t x = scale-(size_t)vx%(int)scale; x < vw; x+=scale)
-				memcpy(icoeffs+(y*vh+x)*3,((unsigned char[]){0,255,0}),3);
+				memcpy(icoeffs+(y*vh+x)*3,((double[]){0,1,0}),3*sizeof(*icoeffs));
 	}
 
-	MagickSetImageExtent(wand,vw,vh);
-	MagickImportImagePixels(wand,0,0,vw,vh,"RGB",CharPixel,icoeffs);
+	wand = NewMagickWand();
+	MagickConstituteImage(wand,vw,vh,"RGB",DoublePixel,icoeffs);
+	MagickSetImageColorspace(wand,RGBColorspace);
+	if(!gamma)
+		MagickSetImageColorspace(wand,sRGBColorspace);
 	MagickWriteImage(wand,outfile);
 
 	free(coeffs);
