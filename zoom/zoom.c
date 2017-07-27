@@ -22,14 +22,14 @@ enum basis {
 };
 
 void usage(const char* self) {
-	printf("usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native -c --showsamples=1(point),2(grid) -g input output\n",self);
+	printf("usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=1(point),2(grid) -cgP input output\n",self);
 	exit(0);
 }
 
 int main(int argc, char* argv[]) {
 	long double vx = 0, vy = 0;
 	size_t vw = 0, vh = 0;
-	bool vflag = false, centered = false, gamma = false;
+	bool vflag = false, centered = false, input_coords = false, gamma = false;
 	int showsamples = 0;
 	long double scale_num = 1;
 	unsigned long long scale_den = 1;
@@ -41,13 +41,14 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"s:v:p:cg",opts,NULL)) != -1) {
+	while((c = getopt_long(argc,argv,"s:v:p:cga",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
 			case 's': sscanf(optarg,"%Lf/%llu",&scale_num,&scale_den); break;
 			case 'v': sscanf(optarg,"%zux%zu",&vw,&vh); break;
 			case 'p': sscanf(optarg,"%Lfx%Lf",&vx,&vy); break;
 			case 'c': centered = true; break;
+			case 'P': input_coords = true; break;
 			case 'g': gamma = true; break;
 			case 1: showsamples = strtol(optarg,NULL,10); break;
 			case 2: {
@@ -83,6 +84,10 @@ int main(int argc, char* argv[]) {
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",DoublePixel,coeffs);
 	DestroyMagickWand(wand);
 
+	if(input_coords) {
+		vx *= scale_num/scale_den;
+		vy *= scale_num/scale_den;
+	}
 	if(centered) {
 		vx = vx*scale_num/scale_den - vw/2.L;
 		vy = vy*scale_num/scale_den - vh/2.L;
