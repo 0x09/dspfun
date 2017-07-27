@@ -93,18 +93,18 @@ int main(int argc, char* argv[]) {
 		case INTERPOLATED: {
 			for(size_t t1 = 0; t1 < vw; t1++)
 				for(size_t t2 = 1; t2 < cwidth; t2++)
-					twiddles[0][t1*(cwidth-1)+t2-1] = cos((t1*scale_den/scale_num+vx+0.5L) * t2 * M_PIl / width);
+					twiddles[0][t1*(cwidth-1)+t2-1] = cos(((t1+vx)*scale_den/scale_num+0.5L) * t2 * M_PIl / width);
 			for(size_t t1 = 0; t1 < vh; t1++)
 				for(int t2 = 1; t2 < cheight; t2++)
-					twiddles[1][t1*(cheight-1)+t2-1] = cos((t1*scale_den/scale_num+vy+0.5L) * t2 * M_PIl / height);
+					twiddles[1][t1*(cheight-1)+t2-1] = cos(((t1+vy)*scale_den/scale_num+0.5L) * t2 * M_PIl / height);
 		}; break;
 		case CENTERED: {
 			for(size_t t1 = 0; t1 < vw; t1++)
 				for(size_t t2 = 1; t2 < cwidth; t2++)
-					twiddles[0][t1*(cwidth-1)+t2-1] = cos((t1*(width-1)*scale_den/(scale_num*width-scale_den)+vx+0.5L) * t2 * M_PIl / width);
+					twiddles[0][t1*(cwidth-1)+t2-1] = cos(((t1+vx)*(width-1)*scale_den/(scale_num*width-scale_den)+0.5L) * t2 * M_PIl / width);
 			for(size_t t1 = 0; t1 < vh; t1++)
 				for(int t2 = 1; t2 < cheight; t2++)
-					twiddles[1][t1*(cheight-1)+t2-1] = cos((t1*(height-1)*scale_den/(scale_num*height-scale_den)+vy+0.5L) * t2 * M_PIl / height);
+					twiddles[1][t1*(cheight-1)+t2-1] = cos(((t1+vy)*(height-1)*scale_den/(scale_num*height-scale_den)+vy+0.5L) * t2 * M_PIl / height);
 		}; break;
 		case NATIVE: {
 			for(size_t t1 = 0; t1 < vw; t1++)
