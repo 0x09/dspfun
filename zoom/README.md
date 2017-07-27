@@ -9,6 +9,10 @@ This tool is not suitable for processing large images wholesale but is geared to
 	-p XxY - Floating point position in *scaled* image to start the viewport.
 	-v WxH - Size of view into *scaled* image / output size.
 	--showsamples - Draw a grid on integer samples as if looking at a graphing calculator.
+	--basis - Set the boundaries of the interpolated basis functions
+	          interpolated: even around the scaled half sample (default)
+	          native: even around the unscaled half sample
+	          centered: first and last samples of input correspond to first and last samples output
 
 # Example
 Interpolate [Kodak parrot's](http://r0k.us/graphics/kodak/kodak/kodim23.png) eye 20x
