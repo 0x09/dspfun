@@ -18,12 +18,11 @@
 enum basis {
 	INTERPOLATED = 0,
 	CENTERED,
-	NATIVE,
-	UNITARY
+	NATIVE
 };
 
 void usage(const char* self) {
-	printf("usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native,unitary -c --showsamples=1(point),2(grid) input output\n",self);
+	printf("usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native -c --showsamples=1(point),2(grid) input output\n",self);
 	exit(0);
 }
 
@@ -55,8 +54,6 @@ int main(int argc, char* argv[]) {
 					basis = CENTERED;
 				else if(!strcmp(optarg,"native"))
 					basis = NATIVE;
-				else if(!strcmp(optarg,"unitary"))
-					basis = UNITARY;
 			}; break;
 			default: usage(argv[0]);
 		}
@@ -117,15 +114,6 @@ int main(int argc, char* argv[]) {
 				for(int t2 = 1; t2 < cheight; t2++)
 					twiddles[1][t1*(cheight-1)+t2-1] = cos((t1+vy+0.5L) * t2 * M_PIl*scale_den / (scale_num*height));
 		}; break;
-		case UNITARY: {
-			for(size_t t1 = 0; t1 < vw; t1++)
-				for(size_t t2 = 1; t2 < cwidth; t2++)
-					twiddles[0][t1*(cwidth-1)+t2-1] = cos(((t2-1)*t1*scale_den/(scale_num*width)+vx+0.5L) * (t2-1) * M_PIl / t2);
-			for(size_t t1 = 0; t1 < vh; t1++)
-				for(int t2 = 1; t2 < cheight; t2++)
-					twiddles[1][t1*(cheight-1)+t2-1] = cos(((t2-1)*t1*scale_den/(scale_num*height)+vy+0.5L) * (t2-1) * M_PIl / t2); 
-		}; break;
-
 	}
 
 	fftw_plan p = fftw_plan_many_r2r(2,(int[]){height,width},3,coeffs,NULL,3,1,coeffs,NULL,3,1,(fftw_r2r_kind[]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
