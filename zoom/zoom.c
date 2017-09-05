@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"s:v:p:cga",opts,NULL)) != -1) {
+	while((c = getopt_long(argc,argv,"s:v:p:cgaP",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
 			case 's': sscanf(optarg,"%Lf/%llu",&scale_num,&scale_den); break;
@@ -84,14 +84,15 @@ int main(int argc, char* argv[]) {
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",DoublePixel,coeffs);
 	DestroyMagickWand(wand);
 
-	if(input_coords) {
+	if(input_coords || centered) {
 		vx *= scale_num/scale_den;
 		vy *= scale_num/scale_den;
+		if(centered) {
+			vx -= vw/2.L;
+			vy -= vh/2.L;
+		}
 	}
-	if(centered) {
-		vx = vx*scale_num/scale_den - vw/2.L;
-		vy = vy*scale_num/scale_den - vh/2.L;
-	}
+
 	long double scale = scale_num / scale_den;
 	size_t nwidth = round(width * scale_num / scale_den), nheight = round(height * scale_num / scale_den);
 	size_t cwidth = nwidth < width ? nwidth : width, cheight = nheight < height ? nheight : height;
