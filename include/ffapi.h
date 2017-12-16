@@ -50,14 +50,17 @@ static inline unsigned char ffapi_getpel_direct(AVFrame* frame, size_t x, size_t
 	return FFA_PEL(frame,comp,x,y);
 }
 
-#define ffapi_setpel_direct(AVFrame,x,y,comp,val) (ffapi_setpel_direct)(AVFrame,x,y,comp,\
+static inline void ffapi_setpell_direct(AVFrame* frame, size_t x, size_t y, AVComponentDescriptor comp, long val) {
+	ffapi_setpel_direct(frame,x,y,comp,val<0?0:val>255?255:val);
+}
+
+#define ffapi_setpel_direct(AVFrame,x,y,comp,val) \
 	_Generic((val),\
-		long double:(val)<0?0:(val)>255?255:lrintl(val),\
-		     double:(val)<0?0:(val)>255?255:lrint (val),\
-		      float:(val)<0?0:(val)>255?255:lrintf(val),\
-		    default:val\
-	)\
-)
+		long double:(ffapi_setpell_direct)(AVFrame,x,y,comp,lrintl(val)),\
+		     double:(ffapi_setpell_direct)(AVFrame,x,y,comp,lrint (val)),\
+		      float:(ffapi_setpell_direct)(AVFrame,x,y,comp,lrintf(val)),\
+		    default: (ffapi_setpel_direct)(AVFrame,x,y,comp,       val)\
+	)
 
 #define ffapi_setpel(FFContext,AVFrame,x,y,c,val) ffapi_setpel_direct(AVFrame,x,y,FFContext->pixdesc->comp[c],val)
 #define ffapi_getpel(FFContext,AVFrame,x,y,c) ffapi_getpel_direct(AVFrame,x,y,FFContext->pixdesc->comp[c])
