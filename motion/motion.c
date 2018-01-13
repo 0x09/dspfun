@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr,"\n");
 
 	// Setup output
-	FFContext* out = ffapi_open_output(outfile,encopts,format,encoder,AV_CODEC_ID_FFV1,NULL,ffapi_pix_fmt_desc_get_id(&pixdesc),newres->w,newres->h,r_frame_rate);
+	FFContext* out = ffapi_open_output(outfile,encopts,format,encoder,AV_CODEC_ID_FFV1,ffapi_pix_fmt_desc_get_id(&pixdesc),newres->w,newres->h,r_frame_rate);
 	if(!out) {
 		fprintf(stderr,"Output setup failed for '%s' / '%s'\n",outfile,format);
 		ffapi_close(in);

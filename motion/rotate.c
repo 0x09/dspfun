@@ -17,15 +17,15 @@ int main(int argc, char* argv[]) {
 	bool samedur = false;
 	size_t frames = 0, offset = 0;
 	const char* iopt = NULL,* ifmt = NULL,* icsp = NULL;
-	const char* oopt = NULL,* ofmt = NULL,* ocsp = NULL,* enc = NULL;
+	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = 0;
 	int c;
-	while((c = getopt(argc,argv,":o:O:f:F:c:C:e:l:r:s:")) > 0)
+	while((c = getopt(argc,argv,":o:O:f:F:c:e:l:r:s:")) > 0)
 		switch(c) {
 			case 'o': iopt = optarg; break; case 'O': oopt = optarg; break;
 			case 'f': ifmt = optarg; break; case 'F': ofmt = optarg; break;
-			case 'c': icsp = optarg; break; case 'C': ocsp = optarg; break;
-			case 'e': enc  = optarg; break; case 'l': loglevel = strtol(optarg,NULL,10); break;
+			case 'c': icsp = optarg; break; case 'e': enc  = optarg; break;
+			case 'l': loglevel = strtol(optarg,NULL,10); break;
 			case 's': sscanf(optarg,"%zu:%zu",&offset,&frames); break;
 			case 'r': {
 				if(!strcmp(optarg,"same"))
@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 "[-]xyz: new dimensional arrangement, with -/+ to indicate direction\n"
 "ffapi args: -o/O   input/output dictionary options\n"
 "            -f/F   input/output format\n"
-"            -c/C   input/output colorspace\n"
+"            -c     intermediate colorspace\n"
 "            -e     encoder\n"
 "            -l     loglevel\n"
 );
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
 		else fps = r;
 	}
 
-	FFContext* out = ffapi_open_output(argv[2],oopt,ofmt,enc,AV_CODEC_ID_FFV1,ocsp,av_pix_fmt_desc_get_id(in->pixdesc),len[map[0]],len[map[1]],fps);
+	FFContext* out = ffapi_open_output(argv[2],oopt,ofmt,enc,AV_CODEC_ID_FFV1,av_pix_fmt_desc_get_id(in->pixdesc),len[map[0]],len[map[1]],fps);
 	if(!out) { puts("out error"); return 1; }
 
 	AVFrame* iframe = ffapi_alloc_frame(in);

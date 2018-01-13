@@ -29,7 +29,7 @@ FFContext* ffapi_open_input (const char* file, const char* options,
                              AVRational* rate, bool calc_frames);
 FFContext* ffapi_open_output(const char* file, const char* options,
                              const char* format, const char* encoder, enum AVCodecID preferred_encoder,
-                             const char* pix_fmt, enum AVPixelFormat in_pix_fmt,
+                             enum AVPixelFormat in_pix_fmt,
                              unsigned long width, unsigned long height, AVRational rate);
 AVFrame*  ffapi_alloc_frame(FFContext*);
 void      ffapi_free_frame (AVFrame*);

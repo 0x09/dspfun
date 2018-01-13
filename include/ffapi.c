@@ -86,7 +86,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 }
 
 FFContext* ffapi_open_output(const char* file, const char* options,
-                         const char* format, const char* encoder, enum AVCodecID preferred_encoder, const char* pix_fmt, enum AVPixelFormat in_pix_fmt,
+                         const char* format, const char* encoder, enum AVCodecID preferred_encoder, enum AVPixelFormat in_pix_fmt,
                          unsigned long width, unsigned long height, AVRational rate) {
 	 FFContext* out = calloc(1,sizeof(*out));
 	 if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
@@ -106,20 +106,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	AVCodecContext* avc = out->codec = avcodec_alloc_context3(enc);
 	out->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(in_pix_fmt);
 
-	if(pix_fmt) {
-		avc->pix_fmt = av_get_pix_fmt(pix_fmt);
-		if(enc->pix_fmts) {
-			const enum AVPixelFormat* i;
-			for(i = enc->pix_fmts; *i != avc->pix_fmt && *i != AV_PIX_FMT_NONE; i++)
-				;
-			if(*i == AV_PIX_FMT_NONE)
-				goto error;
-		}
-	}
-	else if(enc->pix_fmts)
-		avc->pix_fmt = avcodec_find_best_pix_fmt_of_list(enc->pix_fmts,in_pix_fmt,0,NULL);
-	else avc->pix_fmt = in_pix_fmt;
-
+	avc->pix_fmt = enc->pix_fmts ? avcodec_find_best_pix_fmt_of_list(enc->pix_fmts,in_pix_fmt,0,NULL) : in_pix_fmt;
 	avc->width  = width;
 	avc->height = height;
 	avc->time_base = out->st->time_base = av_inv_q(out->st->r_frame_rate = out->st->avg_frame_rate = rate);
