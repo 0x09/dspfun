@@ -60,7 +60,7 @@ static void usage() {
 	fprintf(stderr,"Usage: motion -i infile [-o outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
 	               "[-B|--boost float] [-D|--damp float]  [--spectrogram type] [-q|--quant quant] [-d|--dither]\n"
-	               "[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]\n");
+	               "[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
 		{"loglevel",required_argument,NULL,10},
 		{0}
 	};
-	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:r",gopts,&longoptind)) != -1)
+	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:rP:",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'i': infile = optarg; break;
 			case 'o': outfile = optarg; break;
@@ -131,10 +131,16 @@ int main(int argc, char* argv[]) {
 
 	coords source = {0};
 	AVRational r_frame_rate;
-	if(!colorspace && spec > 0)
-		colorspace = "rgb24";
+	FFColorProperties color_props;
+	ffapi_parse_color_props(&color_props, colorspace);
+	if(spec > 0) {
+		if(!color_props.pix_fmt)
+			color_props.pix_fmt = AV_PIX_FMT_RGB24;
+		if(!color_props.color_range)
+			color_props.color_range = AVCOL_RANGE_JPEG;
+	}
 	unsigned long w[4], h[4], components;
-	FFContext* in = ffapi_open_input(infile,iformat,decopts,colorspace,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!shell && (!outfile || !maxframes));
+	FFContext* in = ffapi_open_input(infile,iformat,decopts,&color_props,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!shell && (!outfile || !maxframes));
 	if(!in) {
 		fprintf(stderr, "Error opening \"%s\"\n", infile);
 		return 1;
@@ -218,7 +224,15 @@ int main(int argc, char* argv[]) {
 		av_reduce(&scale.num,&scale.den,scaled->d,block->d,INT_MAX);
 	r_frame_rate = av_mul_q(r_frame_rate,scale);
 	if(shell) {
-		printf("w=%llu h=%llu fps_num=%d fps_den=%d csp=%s",newres->w,newres->h,r_frame_rate.num,r_frame_rate.den,pixdesc.name);
+		printf(
+			"w=%llu h=%llu fps_num=%d fps_den=%d pixel_format=%s color_range=%s color_primaries=%s color_trc=%s colorspace=%s chroma_sample_location=%s",
+			newres->w,newres->h,r_frame_rate.num,r_frame_rate.den,pixdesc.name,
+			av_color_range_name(color_props.color_range),
+			av_color_primaries_name(color_props.color_primaries),
+			av_color_transfer_name(color_props.color_trc),
+			av_color_space_name(color_props.color_space),
+			av_chroma_location_name(color_props.chroma_location)
+		);
 		ffapi_close(in);
 		return 0;
 	}
@@ -233,7 +247,7 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr,"\n");
 
 	// Setup output
-	FFContext* out = ffapi_open_output(outfile,encopts,format,encoder,AV_CODEC_ID_FFV1,ffapi_pix_fmt_desc_get_id(&pixdesc),newres->w,newres->h,r_frame_rate);
+	FFContext* out = ffapi_open_output(outfile,encopts,format,encoder,AV_CODEC_ID_FFV1,&color_props,newres->w,newres->h,r_frame_rate);
 	if(!out) {
 		fprintf(stderr,"Output setup failed for '%s' / '%s'\n",outfile,format);
 		ffapi_close(in);
@@ -241,7 +255,12 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	fprintf(stderr,"%s --> %s --> %s\n",av_get_pix_fmt_name(in->codec->pix_fmt),pixdesc.name,av_get_pix_fmt_name(out->codec->pix_fmt));
+	fprintf(stderr,"pixel_format %s --> %s --> %s\n",av_get_pix_fmt_name(in->codec->pix_fmt),pixdesc.name,av_get_pix_fmt_name(out->codec->pix_fmt));
+	fprintf(stderr,"color_range %s --> %s --> %s\n",av_color_range_name(in->codec->color_range),av_color_range_name(color_props.color_range),av_color_range_name(out->codec->color_range));
+	fprintf(stderr,"color_primaries %s --> %s --> %s\n",av_color_primaries_name(in->codec->color_primaries),av_color_primaries_name(color_props.color_primaries),av_color_primaries_name(out->codec->color_primaries));
+	fprintf(stderr,"color_trc %s --> %s --> %s\n",av_color_transfer_name(in->codec->color_trc),av_color_transfer_name(color_props.color_trc),av_color_transfer_name(out->codec->color_trc));
+	fprintf(stderr,"colorspace %s --> %s --> %s\n",av_color_space_name(in->codec->colorspace),av_color_space_name(color_props.color_space),av_color_space_name(out->codec->colorspace));
+	fprintf(stderr,"chroma_sample_location %s --> %s --> %s\n",av_chroma_location_name(in->codec->chroma_sample_location),av_chroma_location_name(color_props.chroma_location),av_chroma_location_name(out->codec->chroma_sample_location));
 
 	// Seeking
 	if(offset) {

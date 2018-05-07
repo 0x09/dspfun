@@ -10,7 +10,7 @@
 int main(int argc, char* argv[]) {
 	AVRational fps = {0};
 	size_t frames = 0, offset = 0;
-	const char* iopt = NULL,* ifmt = NULL,* icsp = NULL;
+	const char* iopt = NULL,* ifmt = NULL,* cprops = NULL;
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = 0;
 	int c;
@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 		switch(c) {
 			case 'o': iopt = optarg; break; case 'O': oopt = optarg; break;
 			case 'f': ifmt = optarg; break; case 'F': ofmt = optarg; break;
-			case 'c': icsp = optarg; break; case 'e': enc  = optarg; break;
+			case 'c': cprops = optarg; break; case 'e': enc  = optarg; break;
 			case 'l': loglevel = strtol(optarg, NULL, 10); break;
 			case 'r': av_parse_video_rate(&fps, optarg); break;
 			case 's': sscanf(optarg, "%zu:%zu", &offset, &frames); break;
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
 	argv += optind;
 	argc -= optind;
 	if(!argc) {
-		fprintf(stderr, "usage: transcode -fF <in/out format> -oO <in/out options> -c <intermediate colorspace> -e <encoder> -l <loglevel> -r <rate> -s <start>:<frames> input output\n");
+		fprintf(stderr, "usage: transcode -fF <in/out format> -oO <in/out options> -c <intermediate colorspace options> -e <encoder> -l <loglevel> -r <rate> -s <start>:<frames> input output\n");
 		return 0;
 	}
 
@@ -34,11 +34,12 @@ int main(int argc, char* argv[]) {
 
 	unsigned long components = 0;
 	unsigned long widths[4], heights[4], nframes;
-
-	FFContext* in = ffapi_open_input(argv[0], iopt, ifmt, icsp, &components, &widths, &heights, &nframes, (fps.den == 0 ? &fps : NULL), frames == 0);
+	FFColorProperties color_props;
+	ffapi_parse_color_props(&color_props, cprops);
+	FFContext* in = ffapi_open_input(argv[0], iopt, ifmt, &color_props, &components, &widths, &heights, &nframes, (fps.den == 0 ? &fps : NULL), frames == 0);
 	if(!in) { fprintf(stderr, "Error opening input context\n"); return 1; }
 
-	FFContext* out = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, av_pix_fmt_desc_get_id(in->pixdesc), *widths, *heights, fps);
+	FFContext* out = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, *widths, *heights, fps);
 	if(!out) { fprintf(stderr, "Error opening output context\n"); return 1; }
 
 	AVFrame* iframe = ffapi_alloc_frame(in);

@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 	AVRational fps = {0};
 	bool samedur = false;
 	size_t frames = 0, offset = 0;
-	const char* iopt = NULL,* ifmt = NULL,* icsp = NULL;
+	const char* iopt = NULL,* ifmt = NULL,* cprops = NULL;
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = 0;
 	int c;
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 		switch(c) {
 			case 'o': iopt = optarg; break; case 'O': oopt = optarg; break;
 			case 'f': ifmt = optarg; break; case 'F': ofmt = optarg; break;
-			case 'c': icsp = optarg; break; case 'e': enc  = optarg; break;
+			case 'c': cprops = optarg; break; case 'e': enc  = optarg; break;
 			case 'l': loglevel = strtol(optarg,NULL,10); break;
 			case 's': sscanf(optarg,"%zu:%zu",&offset,&frames); break;
 			case 'r': {
@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 "[-]xyz: new dimensional arrangement, with -/+ to indicate direction\n"
 "ffapi args: -o/O   input/output dictionary options\n"
 "            -f/F   input/output format\n"
-"            -c     intermediate colorspace\n"
+"            -c     intermediate colorspace options\n"
 "            -e     encoder\n"
 "            -l     loglevel\n"
 );
@@ -64,7 +64,9 @@ int main(int argc, char* argv[]) {
 	AVRational r;
 	unsigned long components = 0;
 	unsigned long widths[4], heights[4], nframes;
-	FFContext* in = ffapi_open_input(argv[1],iopt,ifmt,icsp,&components,&widths,&heights,&nframes,&r,frames == 0);
+	FFColorProperties color_props;
+	ffapi_parse_color_props(&color_props, cprops);
+	FFContext* in = ffapi_open_input(argv[1],iopt,ifmt,&color_props,&components,&widths,&heights,&nframes,&r,frames == 0);
 	ffapi_seek_frame(in,offset,NULL);
 	unsigned long len[] = {*widths, *heights, nframes - offset};
 
@@ -74,7 +76,7 @@ int main(int argc, char* argv[]) {
 		len[2] = frames;
 
 	if((in->pixdesc->flags & AV_PIX_FMT_FLAG_PLANAR) || in->pixdesc->log2_chroma_w || in->pixdesc->log2_chroma_h) {
-		fprintf(stderr,"Unsupported planar or subsampled pixel format (%s), use -c rgb24/gray8/etc\n",in->pixdesc->name);
+		fprintf(stderr,"Unsupported planar or subsampled pixel format (%s), use -c pixel_format=rgb24/gray8/etc\n",in->pixdesc->name);
 		return 1;
 	}
 
@@ -84,7 +86,7 @@ int main(int argc, char* argv[]) {
 		else fps = r;
 	}
 
-	FFContext* out = ffapi_open_output(argv[2],oopt,ofmt,enc,AV_CODEC_ID_FFV1,av_pix_fmt_desc_get_id(in->pixdesc),len[map[0]],len[map[1]],fps);
+	FFContext* out = ffapi_open_output(argv[2],oopt,ofmt,enc,AV_CODEC_ID_FFV1,&color_props,len[map[0]],len[map[1]],fps);
 	if(!out) { puts("out error"); return 1; }
 
 	AVFrame* iframe = ffapi_alloc_frame(in);

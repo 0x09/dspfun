@@ -8,7 +8,7 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 	motion -i infile [-o outfile]
 	[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]
 	[-B|--boost float] [-D|--damp float]  [--spectrogram type] [-q|--quant quant] [-d|--dither]
-	[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]
+	[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]
 
 	-b|--blocksize - 3D size of blocks to operate on. (full input dimensions)
 	-s|--size - 3D size of output blocks, if scaling. (blocksize)
@@ -52,7 +52,7 @@ rotate - rotate video by right angles on a 3-dimensional axis.
 
 	ffapi args: -o/O   input/output dictionary options
 	            -f/F   input/output format
-	            -c/C   intermediate/output colorspace
+	            -c     intermediate colorspace options
 	            -e     encoder
 	            -l     loglevel
 
@@ -79,4 +79,4 @@ Just convert an mp4 to y4m
 
 Convert an avi to mp4, specifying encoding options
 
-	transcode -e libx264 -C yuv444p -O 'crf=16:preset=veryslow' input.avi output.mp4
+	transcode -e libx264 -O pixel_format=yuv444p:crf=16:preset=veryslow input.avi output.mp4

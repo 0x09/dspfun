@@ -13,6 +13,15 @@
 #include <assert.h>
 #include <stdbool.h>
 
+typedef struct FFColorProperties {
+	enum AVColorRange color_range;
+	enum AVColorPrimaries color_primaries;
+	enum AVColorTransferCharacteristic color_trc;
+	enum AVColorSpace color_space;
+	enum AVChromaLocation chroma_location;
+	enum AVPixelFormat pix_fmt;
+} FFColorProperties;
+
 typedef struct FFContext {
 	AVFormatContext* fmt;
 	AVCodecContext* codec;
@@ -23,13 +32,14 @@ typedef struct FFContext {
 } FFContext;
 
 void       ffapi_init(int loglevel);
+void       ffapi_parse_color_props(FFColorProperties* c, const char* props);
 FFContext* ffapi_open_input (const char* file, const char* options,
-                             const char* format, const char* pix_fmt,
+                             const char* format, FFColorProperties* color_props,
                              unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], unsigned long* frames,
                              AVRational* rate, bool calc_frames);
 FFContext* ffapi_open_output(const char* file, const char* options,
                              const char* format, const char* encoder, enum AVCodecID preferred_encoder,
-                             enum AVPixelFormat in_pix_fmt,
+                             const FFColorProperties* in_color_props,
                              unsigned long width, unsigned long height, AVRational rate);
 AVFrame*  ffapi_alloc_frame(FFContext*);
 void      ffapi_free_frame (AVFrame*);

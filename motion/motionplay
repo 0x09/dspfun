@@ -1,4 +1,4 @@
 #!/bin/bash
 motion=$(dirname "$0")/motion
 eval $($motion --shell "$@")
-$motion --format rawvideo -o /dev/stdout "$@" | ffplay -loglevel quiet -f rawvideo -pixel_format $csp -video_size "$w"x"$h" -framerate $fps_num/$fps_den -
+$motion --format rawvideo -o /dev/stdout "$@" | ffplay -loglevel quiet -f rawvideo -pixel_format $pixel_format -color_range $color_range -color_primaries $color_primaries -color_trc $color_trc -colorspace $colorspace -chroma_sample_location $chroma_sample_location -video_size "$w"x"$h" -framerate $fps_num/$fps_den -

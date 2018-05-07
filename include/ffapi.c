@@ -6,6 +6,16 @@
 #include "ffapi.h"
 
 #include <libavutil/parseutils.h>
+#include <libavutil/opt.h>
+
+const static FFColorProperties ffapi_default_color_properties = {
+	.pix_fmt = AV_PIX_FMT_NONE,
+	.color_range = AVCOL_RANGE_UNSPECIFIED,
+	.color_primaries = AVCOL_PRI_UNSPECIFIED,
+	.color_trc = AVCOL_TRC_UNSPECIFIED,
+	.color_space = AVCOL_SPC_UNSPECIFIED,
+	.chroma_location = AVCHROMA_LOC_UNSPECIFIED
+};
 
 void ffapi_init(int loglevel) {
 	av_log_set_level(loglevel * 8);
@@ -13,8 +23,30 @@ void ffapi_init(int loglevel) {
 	avcodec_register_all();
 }
 
+void ffapi_parse_color_props(FFColorProperties* c, const char* props) {
+	*c = ffapi_default_color_properties;
+	if(!props || !*props)
+		return;
+	AVDictionary* d = NULL;
+	av_dict_parse_string(&d, props, "=", ":", 0);
+	AVDictionaryEntry* e;
+	if((e = av_dict_get(d,"pixel_format",NULL,0)))
+		c->pix_fmt = av_get_pix_fmt(e->value);
+	if((e = av_dict_get(d,"color_range",NULL,0)))
+		c->color_range = av_color_range_from_name(e->value);
+	if((e = av_dict_get(d,"color_primaries",NULL,0)))
+		c->color_primaries = av_color_primaries_from_name(e->value);
+	if((e = av_dict_get(d,"color_trc",NULL,0)))
+		c->color_trc = av_color_transfer_from_name(e->value);
+	if((e = av_dict_get(d,"colorspace",NULL,0)))
+		c->color_space = av_color_space_from_name(e->value);
+	if((e = av_dict_get(d,"chroma_sample_location",NULL,0)))
+		c->chroma_location = av_chroma_location_from_name(e->value);
+	av_dict_free(&d);
+}
+
 FFContext* ffapi_open_input(const char* file, const char* options,
-                         const char* format, const char* pix_fmt,
+                         const char* format, FFColorProperties* color_props,
                          unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], unsigned long* frames, AVRational* rate, bool calc_frames) {
 	FFContext* in = calloc(1,sizeof(*in));
 
@@ -46,6 +78,10 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		*rate = in->st->r_frame_rate;
 
 	in->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(avc->pix_fmt);
+	if(!in->pixdesc) {
+		ffapi_close(in);
+		return NULL;
+	}
 	if(frames) {
 		*frames = in->st->nb_frames;
 		if(!*frames) {
@@ -54,18 +90,66 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 			else if(calc_frames) {
 				*frames = ffapi_seek_frame(in,SIZE_MAX,NULL);
 				ffapi_close(in);
-				return ffapi_open_input(file,options,format,pix_fmt,components,widths,heights,NULL,rate,false);
+				return ffapi_open_input(file,options,format,color_props,components,widths,heights,NULL,rate,false);
 			}
 		}
 	}
 
-	if(pix_fmt) {
-		enum AVPixelFormat out_pix_fmt = av_get_pix_fmt(pix_fmt);
-		if(out_pix_fmt != AV_PIX_FMT_NONE && out_pix_fmt != avc->pix_fmt) {
-			in->sws = sws_getCachedContext(NULL,avc->width,avc->height,avc->pix_fmt,avc->width,avc->height,out_pix_fmt,SWS_BICUBIC,NULL,NULL,NULL);
-			in->swsframe = av_frame_alloc();
-			in->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(out_pix_fmt);
+	FFColorProperties color_props_copy = ffapi_default_color_properties;
+	if(!color_props)
+		color_props = &color_props_copy;
+	if(color_props->color_range == AVCOL_RANGE_UNSPECIFIED)
+		color_props->color_range = avc->color_range;
+	if(color_props->color_primaries == AVCOL_PRI_UNSPECIFIED)
+		color_props->color_primaries = avc->color_primaries;
+	if(color_props->color_trc == AVCOL_TRC_UNSPECIFIED)
+		color_props->color_trc = avc->color_trc;
+	if(color_props->color_space == AVCOL_SPC_UNSPECIFIED)
+		color_props->color_space = avc->colorspace;
+	if(color_props->chroma_location == AVCHROMA_LOC_UNSPECIFIED)
+		color_props->chroma_location = avc->chroma_sample_location;
+	if(color_props->pix_fmt == AV_PIX_FMT_NONE)
+		color_props->pix_fmt = avc->pix_fmt;
+
+	if(
+		color_props->pix_fmt != avc->pix_fmt ||
+		color_props->color_range != avc->color_range ||
+		color_props->color_primaries != avc->color_primaries ||
+		color_props->color_trc != avc->color_trc ||
+		color_props->color_space != avc->colorspace ||
+		color_props->chroma_location != avc->chroma_sample_location
+	) {
+		in->sws = sws_alloc_context();
+		av_opt_set_int(in->sws, "srcw", avc->width, 0);
+		av_opt_set_int(in->sws, "srch", avc->height, 0);
+		av_opt_set_int(in->sws, "src_format", avc->pix_fmt, 0);
+		av_opt_set_int(in->sws, "dstw", avc->width, 0);
+		av_opt_set_int(in->sws, "dsth", avc->height, 0);
+		av_opt_set_int(in->sws, "dst_format", color_props->pix_fmt, 0);
+		av_opt_set_int(in->sws, "sws_flags", SWS_BICUBIC, 0);
+		int xpos, ypos;
+		if(!avcodec_enum_to_chroma_pos(&xpos, &ypos, avc->chroma_sample_location)) {
+			av_opt_set_int(in->sws,"src_h_chr_pos",xpos,0);
+			av_opt_set_int(in->sws,"src_v_chr_pos",ypos,0);
 		}
+		if(!avcodec_enum_to_chroma_pos(&xpos, &ypos, color_props->chroma_location)) {
+			av_opt_set_int(in->sws,"dst_h_chr_pos",xpos,0);
+			av_opt_set_int(in->sws,"dst_v_chr_pos",ypos,0);
+		}
+		if(sws_init_context(in->sws,NULL,NULL)) {
+			ffapi_close(in);
+			return NULL;
+		}
+
+		int brightness, contrast, saturation;
+		sws_getColorspaceDetails(in->sws, &(int*){0}, &(int){0}, &(int*){0}, &(int){0}, &brightness, &contrast, &saturation);
+		sws_setColorspaceDetails(in->sws,
+			sws_getCoefficients(avc->colorspace), avc->color_range == AVCOL_RANGE_JPEG,
+			sws_getCoefficients(color_props->color_space), color_props->color_range == AVCOL_RANGE_JPEG,
+			brightness, contrast, saturation);
+
+		in->swsframe = av_frame_alloc();
+		in->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(color_props->pix_fmt);
 	}
 
 	if(components)
@@ -86,10 +170,12 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 }
 
 FFContext* ffapi_open_output(const char* file, const char* options,
-                         const char* format, const char* encoder, enum AVCodecID preferred_encoder, enum AVPixelFormat in_pix_fmt,
+                         const char* format, const char* encoder, enum AVCodecID preferred_encoder,
+                         const FFColorProperties* in_color_props,
                          unsigned long width, unsigned long height, AVRational rate) {
-	 FFContext* out = calloc(1,sizeof(*out));
-	 if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
+	AVDictionary* opts = NULL;
+	FFContext* out = calloc(1,sizeof(*out));
+	if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
 		goto error;
 
 	AVCodec* enc = NULL;
@@ -104,18 +190,23 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 
 	out->st = avformat_new_stream(out->fmt,enc);
 	AVCodecContext* avc = out->codec = avcodec_alloc_context3(enc);
-	out->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(in_pix_fmt);
+	out->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(in_color_props->pix_fmt);
 
-	avc->pix_fmt = enc->pix_fmts ? avcodec_find_best_pix_fmt_of_list(enc->pix_fmts,in_pix_fmt,0,NULL) : in_pix_fmt;
+	avc->pix_fmt = enc->pix_fmts ? avcodec_find_best_pix_fmt_of_list(enc->pix_fmts,in_color_props->pix_fmt,0,NULL) : in_color_props->pix_fmt;
 	avc->width  = width;
 	avc->height = height;
 	avc->time_base = out->st->time_base = av_inv_q(out->st->r_frame_rate = out->st->avg_frame_rate = rate);
+	avc->color_range = in_color_props->color_range;
+	avc->color_primaries = in_color_props->color_primaries;
+	avc->color_trc = in_color_props->color_trc;
+	avc->colorspace = in_color_props->color_space;
+	avc->chroma_sample_location = in_color_props->chroma_location;
 	avcodec_parameters_from_context(out->st->codecpar,avc);
 
-	AVDictionary* opts = NULL;
 	av_dict_parse_string(&opts,options,"=",":",0);
 	if(avcodec_open2(avc,enc,&opts))
 		goto error;
+	avcodec_parameters_from_context(out->st->codecpar,avc);
 	if(avio_open2(&out->fmt->pb,out->fmt->filename,AVIO_FLAG_WRITE,NULL,&opts))
 		goto error;
 	if(avformat_write_header(out->fmt,&opts))
@@ -123,8 +214,44 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	av_dict_free(&opts);
 	av_dump_format(out->fmt,0,out->fmt->filename,1);
 
-	if(avc->pix_fmt != in_pix_fmt) {
-		out->sws = sws_getCachedContext(NULL,width,height,in_pix_fmt,avc->width,avc->height,avc->pix_fmt,SWS_BICUBIC,NULL,NULL,NULL);
+	if(
+		in_color_props->pix_fmt != avc->pix_fmt ||
+		in_color_props->color_range != avc->color_range ||
+		in_color_props->color_primaries != avc->color_primaries ||
+		in_color_props->color_trc != avc->color_trc ||
+		in_color_props->color_space != avc->colorspace ||
+		in_color_props->chroma_location != avc->chroma_sample_location
+	) {
+		out->sws = sws_alloc_context();
+		av_opt_set_int(out->sws, "srcw", width, 0);
+		av_opt_set_int(out->sws, "srch", height, 0);
+		av_opt_set_int(out->sws, "src_format", in_color_props->pix_fmt, 0);
+		av_opt_set_int(out->sws, "dstw", avc->width, 0);
+		av_opt_set_int(out->sws, "dsth", avc->height, 0);
+		av_opt_set_int(out->sws, "dst_format", avc->pix_fmt, 0);
+		av_opt_set_int(out->sws, "sws_flags", SWS_BICUBIC, 0);
+		int xpos, ypos;
+		if(!avcodec_enum_to_chroma_pos(&xpos, &ypos, in_color_props->chroma_location)) {
+			av_opt_set_int(out->sws,"src_h_chr_pos",xpos,0);
+			av_opt_set_int(out->sws,"src_v_chr_pos",ypos,0);
+		}
+		if(!avcodec_enum_to_chroma_pos(&xpos, &ypos, avc->chroma_sample_location)) {
+			av_opt_set_int(out->sws,"dst_h_chr_pos",xpos,0);
+			av_opt_set_int(out->sws,"dst_v_chr_pos",ypos,0);
+		}
+
+		if(sws_init_context(out->sws,NULL,NULL)) {
+			sws_freeContext(out->sws);
+			goto error;
+		}
+
+		int brightness, contrast, saturation;
+		sws_getColorspaceDetails(out->sws, &(int*){0}, &(int){0}, &(int*){0}, &(int){0}, &brightness, &contrast, &saturation);
+		sws_setColorspaceDetails(out->sws,
+			sws_getCoefficients(in_color_props->color_space), in_color_props->color_range == AVCOL_RANGE_JPEG,
+			sws_getCoefficients(avc->colorspace), avc->color_range == AVCOL_RANGE_JPEG,
+			brightness, contrast, saturation);
+
 		out->swsframe = av_frame_alloc();
 		out->swsframe->width  = avc->width;
 		out->swsframe->height = avc->height;
@@ -135,6 +262,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 
 	 return out;
 error:
+	av_dict_free(&opts);
 	avcodec_close(out->codec);
 	avformat_free_context(out->fmt);
 	free(out);
