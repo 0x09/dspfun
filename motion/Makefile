@@ -1,5 +1,5 @@
 CC ?= cc
-CFLAGS := -std=c11 -Ofast -I../include $(CFLAGS)
+CFLAGS := -std=c11 -Ofast -Wno-initializer-overrides -I../include $(CFLAGS)
 LIBS := -lavcodec -lavformat -lswscale -lavutil -lm
 
 all: motion rotate transcode

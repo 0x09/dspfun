@@ -8,14 +8,84 @@
 #include <libavutil/parseutils.h>
 #include <libavutil/opt.h>
 
-const static FFColorProperties ffapi_default_color_properties = {
-	.pix_fmt = AV_PIX_FMT_NONE,
-	.color_range = AVCOL_RANGE_UNSPECIFIED,
-	.color_primaries = AVCOL_PRI_UNSPECIFIED,
-	.color_trc = AVCOL_TRC_UNSPECIFIED,
-	.color_space = AVCOL_SPC_UNSPECIFIED,
+#define UNSPECIFIED_COLOR_PROPERTIES \
+	.pix_fmt = AV_PIX_FMT_NONE,\
+	.color_range = AVCOL_RANGE_UNSPECIFIED,\
+	.color_primaries = AVCOL_PRI_UNSPECIFIED,\
+	.color_trc = AVCOL_TRC_UNSPECIFIED,\
+	.color_space = AVCOL_SPC_UNSPECIFIED,\
 	.chroma_location = AVCHROMA_LOC_UNSPECIFIED
+
+const static FFColorProperties ffapi_default_color_properties = {
+	UNSPECIFIED_COLOR_PROPERTIES
 };
+
+struct FFColorDefaults {
+	const char* format;
+	FFColorProperties props;
+};
+
+// ffmpeg doesn't provide structured info about what color properties are assumed by different formats/codecs,
+// so we provide some defaults based on the actual decoder behavior when the container doesn't store this info
+// anything set in the options string still takes precedence
+const static struct FFColorDefaults ffapi_format_color_defaults[] = {
+	{
+		.format = "yuv4mpegpipe",
+		.props = {
+			UNSPECIFIED_COLOR_PROPERTIES,
+			.color_range = AVCOL_RANGE_MPEG,
+			.color_primaries = AVCOL_PRI_SMPTE170M,
+			.color_trc = AVCOL_TRC_SMPTE170M,
+			.color_space = AVCOL_SPC_SMPTE170M,
+		}
+	},{
+		.format = "avi",
+		.props = {
+			UNSPECIFIED_COLOR_PROPERTIES,
+			.color_range = AVCOL_RANGE_MPEG,
+		}
+	},{
+		// default to sRGB
+		.format = "image2",
+		.props = {
+			UNSPECIFIED_COLOR_PROPERTIES,
+			.color_range = AVCOL_RANGE_JPEG,
+			.color_primaries = AVCOL_PRI_BT709,
+			.color_trc = AVCOL_TRC_IEC61966_2_1,
+			.color_space = AVCOL_SPC_RGB,
+		}
+	},{0}
+};
+
+static void fill_color_defaults(AVOutputFormat* fmt, AVCodecContext* avc) {
+	const struct FFColorDefaults* defaults;
+	for(defaults = ffapi_format_color_defaults; defaults->format && strcmp(defaults->format,fmt->name); defaults++)
+		;
+	if(defaults->format) {
+		// != isn't a typo, we want to set this only if the input color property is known
+		if(defaults->props.color_range != AVCOL_RANGE_UNSPECIFIED && avc->color_range != AVCOL_RANGE_UNSPECIFIED)
+			avc->color_range = defaults->props.color_range;
+		if(defaults->props.color_space != AVCOL_SPC_UNSPECIFIED && avc->colorspace != AVCOL_SPC_UNSPECIFIED)
+			avc->colorspace = defaults->props.color_space;
+		if(defaults->props.color_primaries != AVCOL_PRI_UNSPECIFIED && avc->color_primaries != AVCOL_PRI_UNSPECIFIED)
+			avc->color_primaries = defaults->props.color_primaries;
+		if(defaults->props.color_trc != AVCOL_TRC_UNSPECIFIED && avc->color_trc != AVCOL_TRC_UNSPECIFIED)
+			avc->color_trc = defaults->props.color_trc;
+		if(defaults->props.chroma_location != AVCHROMA_LOC_UNSPECIFIED && avc->chroma_sample_location != AVCHROMA_LOC_UNSPECIFIED)
+			avc->chroma_sample_location = defaults->props.chroma_location;
+	}
+	// y4m input format infers different chroma locations based on the colorspace header, but stock C420 is taken as center
+	if(!strcmp(fmt->name,"yuv4mpegpipe")) {
+		if(avc->pix_fmt == AV_PIX_FMT_YUV420P &&
+			avc->chroma_sample_location != AVCHROMA_LOC_UNSPECIFIED &&
+			avc->chroma_sample_location != AVCHROMA_LOC_TOPLEFT && //C420paldv
+			avc->chroma_sample_location != AVCHROMA_LOC_LEFT) // C420mpeg2
+			avc->chroma_sample_location = AVCHROMA_LOC_CENTER;
+	}
+	// if the input colorspace is RGB but the output pixel format isn't, default to BT601
+	if(avc->colorspace == AVCOL_SPC_RGB && !(av_pix_fmt_desc_get(avc->pix_fmt)->flags & AV_PIX_FMT_FLAG_RGB))
+		avc->colorspace = AVCOL_SPC_SMPTE170M;
+}
 
 void ffapi_init(int loglevel) {
 	av_log_set_level(loglevel * 8);
@@ -201,6 +271,8 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	avc->color_trc = in_color_props->color_trc;
 	avc->colorspace = in_color_props->color_space;
 	avc->chroma_sample_location = in_color_props->chroma_location;
+	fill_color_defaults(out->fmt->oformat, avc);
+
 	avcodec_parameters_from_context(out->st->codecpar,avc);
 
 	av_dict_parse_string(&opts,options,"=",":",0);
