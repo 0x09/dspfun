@@ -14,16 +14,22 @@
 #define Xc(type,value) 1+
 #define X(type,generator,value) CAT(X,generator)(type,value)
 
-#define enum_table(type) type##_##table
-#define keyed_enum_gen(type)\
+#define enum_gen(type)\
 	enum type {\
 		Xe(type,none)\
 		XENUM(type,e)\
-	};\
+	};
+
+#define enum_table(type) type##_##table
+#define enum_table_gen(type)\
 	const static char* enum_table(type)[XENUM(type,c)+2] = {\
 		Xt(type,)\
 		XENUM(type,t)\
 	};
+
+#define keyed_enum_gen(type)\
+	enum_gen(type)\
+	enum_table_gen(type)
 
 #include <string.h>
 static int enum_table_val(const char* table[], const char* key) {
