@@ -15,7 +15,7 @@
 #define X(type,generator,value) CAT(X,generator)(type,value)
 
 #define enum_table(type) type##_##table
-#define enum_gen(type)\
+#define keyed_enum_gen(type)\
 	enum type {\
 		Xe(type,none)\
 		XENUM(type,e)\

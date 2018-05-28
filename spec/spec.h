@@ -26,34 +26,34 @@
 	X(T,G,shift)\
 	X(T,G,flat)\
 	X(T,G,sign)
-enum_gen(spectype)
+keyed_enum_gen(spectype)
 #undef XENUM
 
 #define XENUM(T,G)\
 	X(T,G,abs)\
 	X(T,G,shift)\
 	X(T,G,saturate)
-enum_gen(signtype)
+keyed_enum_gen(signtype)
 #undef XENUM
 
 #define XENUM(T,G)\
 	X(T,G,one)\
 	X(T,G,dc)\
 	X(T,G,dcs)
-enum_gen(rangetype)
+keyed_enum_gen(rangetype)
 #undef XENUM
 
 #define XENUM(T,G)\
 	X(T,G,linear)\
 	X(T,G,log)
-enum_gen(scaletype)
+keyed_enum_gen(scaletype)
 #undef XENUM
 
 #define XENUM(T,G)\
 	X(T,G,native)\
 	X(T,G,lenna)\
 	X(T,G,custom)
-enum_gen(gaintype)
+keyed_enum_gen(gaintype)
 #undef XENUM
 
 struct specparams {
