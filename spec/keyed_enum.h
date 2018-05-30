@@ -17,9 +17,9 @@
 		type(enum_gen_enum_elem,type)\
 	};
 
-#define enum_keys(type) type##_##keys
+#define enum_keys(type) (type##_##keys+1)
 #define enum_gen_keys(type)\
-	const static char* enum_keys(type) = type(enum_gen_key_elem,type)+1;
+	const static char type##_##keys[] = type(enum_gen_key_elem,type);
 
 #define enum_table(type) type##_##table
 #define enum_gen_table(type)\
