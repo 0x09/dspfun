@@ -1,10 +1,12 @@
 /*
- * spec - Generate invertible frequency spectrums for viewing and editing.
- * Copyright 2014-2016 0x09.net.
+ * keyed_enum - Define enums with static string lookup
+ * Copyright 2014-2018 0x09.net.
  */
 
 #ifndef KEYED_ENUM_H
 #define KEYED_ENUM_H
+
+#include <string.h>
 
 #define enum_gen_enum_elem(type,value) type##_##value,
 #define enum_gen_key_elem(type,value) "|" #value
@@ -17,11 +19,11 @@
 		type(enum_gen_enum_elem,type)\
 	};
 
-#define enum_keys(type) (type##_##keys+1)
+#define enum_keys(type) (enum##_##type##_##keys+1)
 #define enum_gen_keys(type)\
-	const static char type##_##keys[] = type(enum_gen_key_elem,type);
+	const static char enum##_##type##_##keys[] = type(enum_gen_key_elem,type);
 
-#define enum_table(type) type##_##table
+#define enum_table(type) enum##_##type##_##table
 #define enum_gen_table(type)\
 	const static char* enum_table(type)[type(enum_gen_count_elem,type)+2] = {\
 		enum_gen_table_elem(type,)\
@@ -33,8 +35,7 @@
 	enum_gen_keys(type)\
 	enum_gen_table(type)
 
-#include <string.h>
-static int enum_table_val(const char* table[], const char* key) {
+static inline int enum_table_val(const char* table[], const char* key) {
 	for(const char** i = table+1; *i; i++)
 		if(!strcmp(key,*i))
 			return i-table;
