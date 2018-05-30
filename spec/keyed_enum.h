@@ -6,32 +6,32 @@
 #ifndef KEYED_ENUM_H
 #define KEYED_ENUM_H
 
-#define Xe(type,value) type##_##value,
-#define Xk(type,value) "|" #value
-#define Xt(type,value) #value,
-#define Xc(type,value) 1+
+#define enum_gen_enum_elem(type,value) type##_##value,
+#define enum_gen_key_elem(type,value) "|" #value
+#define enum_gen_table_elem(type,value) #value,
+#define enum_gen_count_elem(type,value) 1+
 
-#define enum_gen(type)\
+#define enum_gen_enum(type)\
 	enum type {\
-		Xe(type,none)\
-		type(Xe,type)\
+		enum_gen_enum_elem(type,none)\
+		type(enum_gen_enum_elem,type)\
 	};
 
 #define enum_keys(type) type##_##keys
-#define enum_keys_gen(type)\
-	const static char* enum_keys(type) = type(Xk,type)+1;
+#define enum_gen_keys(type)\
+	const static char* enum_keys(type) = type(enum_gen_key_elem,type)+1;
 
 #define enum_table(type) type##_##table
-#define enum_table_gen(type)\
-	const static char* enum_table(type)[type(Xc,type)+2] = {\
-		Xt(type,)\
-		type(Xt,type)\
+#define enum_gen_table(type)\
+	const static char* enum_table(type)[type(enum_gen_count_elem,type)+2] = {\
+		enum_gen_table_elem(type,)\
+		type(enum_gen_table_elem,type)\
 	};
 
-#define keyed_enum_gen(type)\
-	enum_gen(type)\
-	enum_keys_gen(type)\
-	enum_table_gen(type)
+#define enum_gen(type)\
+	enum_gen_enum(type)\
+	enum_gen_keys(type)\
+	enum_gen_table(type)
 
 #include <string.h>
 static int enum_table_val(const char* table[], const char* key) {

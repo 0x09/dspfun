@@ -46,11 +46,11 @@
 	X(T,lenna)\
 	X(T,custom)
 
-keyed_enum_gen(spectype)
-keyed_enum_gen(signtype)
-keyed_enum_gen(rangetype)
-keyed_enum_gen(scaletype)
-keyed_enum_gen(gaintype)
+enum_gen(spectype)
+enum_gen(signtype)
+enum_gen(rangetype)
+enum_gen(scaletype)
+enum_gen(gaintype)
 
 struct specparams {
 	enum scaletype scaletype;
