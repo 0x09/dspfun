@@ -20,6 +20,7 @@
 #define absf(f,x) mi(copysign)(mi(f)(mc(fabs)(x)),x)
 
 #include "keyed_enum.h"
+#include "assoc.h"
 
 #define spectype(X,T)\
 	X(T,abs)\
@@ -67,24 +68,14 @@ struct specopts {
 	intermediate gain, clip, quant;
 };
 
-struct assoc {
-	const char* const key;
-	const void* const value;
-};
-struct assoc specparams_table[] = {
-	{"abs",  &(struct specparams){scaletype_log,   signtype_abs,     gaintype_native,rangetype_dc }},
-	{"shift",&(struct specparams){scaletype_log,   signtype_shift,   gaintype_native,rangetype_one}},
-	{"flat", &(struct specparams){scaletype_linear,signtype_shift,   gaintype_custom,rangetype_one}},
-	{"sign", &(struct specparams){scaletype_linear,signtype_saturate,gaintype_custom,rangetype_one}},
-	{NULL,&(struct specparams){}}
-};
-const static void* assoc_get(struct assoc table[],const char* key) {
-	for(; table->key; table++)
-		if(!strcmp(key,table->key))
-			break;
-	return table->value;
-}
-#define assoc_val(type,table,key) *(type*)assoc_get(table,key)
+#define specparams(X)\
+	X("abs",  (&(struct specparams){scaletype_log,   signtype_abs,     gaintype_native,rangetype_dc }))\
+	X("shift",(&(struct specparams){scaletype_log,   signtype_shift,   gaintype_native,rangetype_one}))\
+	X("flat", (&(struct specparams){scaletype_linear,signtype_shift,   gaintype_custom,rangetype_one}))\
+	X("sign", (&(struct specparams){scaletype_linear,signtype_saturate,gaintype_custom,rangetype_one}))\
+	X(NULL,   (&(struct specparams){0}))
+
+assoc_gen(specparams)
 
 static inline struct specopts spec_args(int argc, char* argv[], const char* ignore) {
 	struct specopts opts={.csp="RGB", .gain = 1 };
@@ -96,7 +87,7 @@ static inline struct specopts spec_args(int argc, char* argv[], const char* igno
 		switch(c) {
 			case 'g': opts.gamma = true; break;
 			case 'c': opts.csp = optarg; break;
-			case 't': opts.params = assoc_val(struct specparams,specparams_table,optarg); break;
+			case 't': opts.params = *(struct specparams*)assoc_val(specparams,optarg); break;
 			case 'R': opts.params.rangetype = enum_val(rangetype,optarg); break;
 			case 'T': opts.params.scaletype = enum_val(scaletype,optarg); break;
 			case 'S': opts.params.signtype = enum_val(signtype,optarg); break;
