@@ -14,18 +14,18 @@
 #define enum_gen(type)\
 	enum type {\
 		Xe(type,none)\
-		XENUM(Xe,type)\
+		type(Xe,type)\
 	};
 
 #define enum_keys(type) type##_##keys
 #define enum_keys_gen(type)\
-	const static char* enum_keys(type) = XENUM(Xk,type)+1;
+	const static char* enum_keys(type) = type(Xk,type)+1;
 
 #define enum_table(type) type##_##table
 #define enum_table_gen(type)\
-	const static char* enum_table(type)[XENUM(Xc,type)+2] = {\
+	const static char* enum_table(type)[type(Xc,type)+2] = {\
 		Xt(type,)\
-		XENUM(Xt,type)\
+		type(Xt,type)\
 	};
 
 #define keyed_enum_gen(type)\

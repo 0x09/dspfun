@@ -21,40 +21,36 @@
 
 #include "keyed_enum.h"
 
-#define XENUM(X,T)\
+#define spectype(X,T)\
 	X(T,abs)\
 	X(T,shift)\
 	X(T,flat)\
 	X(T,sign)
-keyed_enum_gen(spectype)
-#undef XENUM
 
-#define XENUM(X,T)\
+#define signtype(X,T)\
 	X(T,abs)\
 	X(T,shift)\
 	X(T,saturate)
-keyed_enum_gen(signtype)
-#undef XENUM
 
-#define XENUM(X,T)\
+#define rangetype(X,T)\
 	X(T,one)\
 	X(T,dc)\
 	X(T,dcs)
-keyed_enum_gen(rangetype)
-#undef XENUM
 
-#define XENUM(X,T)\
+#define scaletype(X,T)\
 	X(T,linear)\
 	X(T,log)
-keyed_enum_gen(scaletype)
-#undef XENUM
 
-#define XENUM(X,T)\
+#define gaintype(X,T)\
 	X(T,native)\
 	X(T,lenna)\
 	X(T,custom)
+
+keyed_enum_gen(spectype)
+keyed_enum_gen(signtype)
+keyed_enum_gen(rangetype)
+keyed_enum_gen(scaletype)
 keyed_enum_gen(gaintype)
-#undef XENUM
 
 struct specparams {
 	enum scaletype scaletype;
