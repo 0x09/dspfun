@@ -6,30 +6,26 @@
 #ifndef KEYED_ENUM_H
 #define KEYED_ENUM_H
 
-#define CAT_(x,y) x##y
-#define CAT(x,y) CAT_(x,y)
-
 #define Xe(type,value) type##_##value,
 #define Xk(type,value) "|" #value
 #define Xt(type,value) #value,
 #define Xc(type,value) 1+
-#define X(type,generator,value) CAT(X,generator)(type,value)
 
 #define enum_gen(type)\
 	enum type {\
 		Xe(type,none)\
-		XENUM(type,e)\
+		XENUM(Xe,type)\
 	};
 
 #define enum_keys(type) type##_##keys
 #define enum_keys_gen(type)\
-	const static char* enum_keys(type) = XENUM(type,k)+1;
+	const static char* enum_keys(type) = XENUM(Xk,type)+1;
 
 #define enum_table(type) type##_##table
 #define enum_table_gen(type)\
-	const static char* enum_table(type)[XENUM(type,c)+2] = {\
+	const static char* enum_table(type)[XENUM(Xc,type)+2] = {\
 		Xt(type,)\
-		XENUM(type,t)\
+		XENUM(Xt,type)\
 	};
 
 #define keyed_enum_gen(type)\

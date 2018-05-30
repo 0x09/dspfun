@@ -21,38 +21,38 @@
 
 #include "keyed_enum.h"
 
-#define XENUM(T,G)\
-	X(T,G,abs)\
-	X(T,G,shift)\
-	X(T,G,flat)\
-	X(T,G,sign)
+#define XENUM(X,T)\
+	X(T,abs)\
+	X(T,shift)\
+	X(T,flat)\
+	X(T,sign)
 keyed_enum_gen(spectype)
 #undef XENUM
 
-#define XENUM(T,G)\
-	X(T,G,abs)\
-	X(T,G,shift)\
-	X(T,G,saturate)
+#define XENUM(X,T)\
+	X(T,abs)\
+	X(T,shift)\
+	X(T,saturate)
 keyed_enum_gen(signtype)
 #undef XENUM
 
-#define XENUM(T,G)\
-	X(T,G,one)\
-	X(T,G,dc)\
-	X(T,G,dcs)
+#define XENUM(X,T)\
+	X(T,one)\
+	X(T,dc)\
+	X(T,dcs)
 keyed_enum_gen(rangetype)
 #undef XENUM
 
-#define XENUM(T,G)\
-	X(T,G,linear)\
-	X(T,G,log)
+#define XENUM(X,T)\
+	X(T,linear)\
+	X(T,log)
 keyed_enum_gen(scaletype)
 #undef XENUM
 
-#define XENUM(T,G)\
-	X(T,G,native)\
-	X(T,G,lenna)\
-	X(T,G,custom)
+#define XENUM(X,T)\
+	X(T,native)\
+	X(T,lenna)\
+	X(T,custom)
 keyed_enum_gen(gaintype)
 #undef XENUM
 
