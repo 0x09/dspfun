@@ -29,7 +29,7 @@
 #define INTERMEDIATE_PRECISION (COEFF_PRECISION << 1)
 #endif
 
-#if COEFF_PRECISION == D
+#if COEFF_PRECISION == F
 	#define COEFF_TYPE float
 	#define COEFF_NAME FLT
 	#define COEFF_SUFFIX f
