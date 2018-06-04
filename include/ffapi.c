@@ -138,14 +138,13 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	AVInputFormat* ifmt = NULL;
 	if(format) ifmt = av_find_input_format(format);
 	if(avformat_open_input(&in->fmt,file,ifmt,&opts))
-		return NULL;
+		goto error;
+
 	avformat_find_stream_info(in->fmt,NULL);
 	AVCodec* dec;
 	int stream = av_find_best_stream(in->fmt,AVMEDIA_TYPE_VIDEO,-1,-1,&dec,0);
-	if(stream < 0) {
-		avformat_close_input(&in->fmt);
-		return NULL;
-	}
+	if(stream < 0)
+		goto error;
 	in->st = in->fmt->streams[stream];
 	AVCodecParameters* params = in->st->codecpar;
 
@@ -155,6 +154,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	avcodec_open2(avc,dec,&opts);
 
 	av_dict_free(&opts);
+	opts = NULL;
 
 	if(rate)
 		*rate = in->st->r_frame_rate;
@@ -249,6 +249,12 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 			(*heights)[i]= -(-(int)(*heights)[i] >> in->pixdesc->log2_chroma_h);
 	}
 	return in;
+
+error:
+	avformat_close_input(&in->fmt);
+	av_dict_free(&opts);
+	free(in);
+	return NULL;
 }
 
 FFContext* ffapi_open_output(const char* file, const char* options,
@@ -305,6 +311,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	if(avformat_write_header(out->fmt,&opts))
 		goto error;
 	av_dict_free(&opts);
+	opts = NULL;
 	av_dump_format(out->fmt,0,out->fmt->filename,1);
 
 	if(
@@ -364,7 +371,7 @@ error:
 
 AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 	AVFrame* frame = av_frame_alloc();
-	if(ctx->fmt->oformat || ctx->sws) {
+	if(frame && ctx->fmt->oformat || ctx->sws) {
 		frame->width  = ctx->st->codecpar->width;
 		frame->height = ctx->st->codecpar->height;
 		frame->format = av_pix_fmt_desc_get_id(ctx->pixdesc);
