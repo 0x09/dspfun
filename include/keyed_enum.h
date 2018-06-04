@@ -30,6 +30,23 @@
 		type(enum_gen_table_elem,type)\
 	};
 
+#define enum_gen_accessor_defs(type)\
+	enum type type##_##val(const char*);\
+	const char** type##_##keys(void);
+
+#define enum_gen_accessors(type)\
+	enum type type##_##val(const char* key) { return enum_val(type,key); };\
+	const char** type##_##keys() { return enum_table(type)+1; };
+
+#define enum_public_gen(type)\
+	enum_gen_enum(type)\
+	enum_gen_accessor_defs(type)
+
+#define enum_private_gen(type)\
+	enum_gen_keys(type)\
+	enum_gen_table(type)\
+	enum_gen_accessors(type)
+
 #define enum_gen(type)\
 	enum_gen_enum(type)\
 	enum_gen_keys(type)\
