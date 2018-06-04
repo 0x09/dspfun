@@ -8,6 +8,8 @@
 #include <libavutil/parseutils.h>
 #include <libavutil/opt.h>
 
+#include <sys/stat.h>
+
 #define UNSPECIFIED_COLOR_PROPERTIES \
 	.pix_fmt = AV_PIX_FMT_NONE,\
 	.color_range = AVCOL_RANGE_UNSPECIFIED,\
@@ -127,6 +129,11 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 
 	if(!strcmp(file,"-"))
 		file = "/dev/stdin";
+	if(!format) {
+		struct stat st;
+		if(!stat(file,&st) && S_ISFIFO(st.st_mode))
+			format = "yuv4mpegpipe";
+	}
 
 	AVInputFormat* ifmt = NULL;
 	if(format) ifmt = av_find_input_format(format);
@@ -253,6 +260,11 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 
 	if(!strcmp(file,"-"))
 		file = "/dev/stdout";
+	if(!format) {
+		struct stat st;
+		if(!stat(file,&st) && S_ISFIFO(st.st_mode))
+			format = "yuv4mpegpipe";
+	}
 
 	if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
 		goto error;
