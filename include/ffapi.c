@@ -76,7 +76,9 @@ static void fill_color_defaults(AVOutputFormat* fmt, AVCodecContext* avc) {
 	}
 	// y4m input format infers different chroma locations based on the colorspace header, but stock C420 is taken as center
 	if(!strcmp(fmt->name,"yuv4mpegpipe")) {
-		if(avc->pix_fmt == AV_PIX_FMT_YUV420P &&
+		if(av_pix_fmt_desc_get(avc->pix_fmt)->flags & AV_PIX_FMT_FLAG_RGB)
+			avc->pix_fmt = AV_PIX_FMT_YUV444P;
+		else if(avc->pix_fmt == AV_PIX_FMT_YUV420P &&
 			avc->chroma_sample_location != AVCHROMA_LOC_UNSPECIFIED &&
 			avc->chroma_sample_location != AVCHROMA_LOC_TOPLEFT && //C420paldv
 			avc->chroma_sample_location != AVCHROMA_LOC_LEFT) // C420mpeg2
