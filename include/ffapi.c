@@ -125,6 +125,9 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	AVDictionary* opts = NULL;
 	av_dict_parse_string(&opts,options,"=",":",0);
 
+	if(!strcmp(file,"-"))
+		file = "/dev/stdin";
+
 	AVInputFormat* ifmt = NULL;
 	if(format) ifmt = av_find_input_format(format);
 	if(avformat_open_input(&in->fmt,file,ifmt,&opts))
@@ -247,6 +250,10 @@ FFContext* ffapi_open_output(const char* file, const char* options,
                          unsigned long width, unsigned long height, AVRational rate) {
 	AVDictionary* opts = NULL;
 	FFContext* out = calloc(1,sizeof(*out));
+
+	if(!strcmp(file,"-"))
+		file = "/dev/stdout";
+
 	if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
 		goto error;
 
