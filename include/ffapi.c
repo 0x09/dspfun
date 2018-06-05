@@ -91,10 +91,6 @@ static void fill_color_defaults(AVOutputFormat* fmt, AVCodecContext* avc) {
 		avc->colorspace = AVCOL_SPC_SMPTE170M;
 }
 
-void ffapi_init(int loglevel) {
-	av_log_set_level(loglevel * 8);
-}
-
 void ffapi_parse_color_props(FFColorProperties* c, const char* props) {
 	*c = ffapi_default_color_properties;
 	if(!props || !*props)

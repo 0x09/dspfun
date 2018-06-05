@@ -31,7 +31,6 @@ typedef struct FFContext {
 	AVFrame* swsframe;
 } FFContext;
 
-void       ffapi_init(int loglevel);
 void       ffapi_parse_color_props(FFColorProperties* c, const char* props);
 FFContext* ffapi_open_input (const char* file, const char* options,
                              const char* format, FFColorProperties* color_props,

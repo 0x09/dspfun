@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 		map[i] = argv[0][i]-'x';
 	}
 
-	ffapi_init(loglevel);
+	av_log_set_level(loglevel);
 	AVRational r;
 	unsigned long components = 0;
 	unsigned long widths[4], heights[4], nframes;

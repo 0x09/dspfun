@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-	ffapi_init(loglevel);
+	av_log_set_level(loglevel);
 
 	unsigned long components = 0;
 	unsigned long widths[4], heights[4], nframes;

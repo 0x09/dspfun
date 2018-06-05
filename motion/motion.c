@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
 	if(!infile) usage();
 
 	// Setup input
-	ffapi_init(loglevel);
+	av_log_set_level(loglevel);
 
 	coords source = {0};
 	AVRational r_frame_rate;
