@@ -130,7 +130,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	if(!strcmp(file,"-"))
 		file = "pipe:";
 	struct stat st;
-	if(!format && (!strncmp(file,"pipe:",5) || !stat(file,&st) && S_ISFIFO(st.st_mode)))
+	if(!format && (!strncmp(file,"pipe:",5) || (!stat(file,&st) && S_ISFIFO(st.st_mode))))
 		format = "yuv4mpegpipe";
 
 	AVInputFormat* ifmt = NULL;
@@ -265,7 +265,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	if(!strcmp(file,"-"))
 		file = "pipe:";
 	struct stat st;
-	if(!format && (!strncmp(file,"pipe:",5) || !stat(file,&st) && S_ISFIFO(st.st_mode)))
+	if(!format && (!strncmp(file,"pipe:",5) || (!stat(file,&st) && S_ISFIFO(st.st_mode))))
 		format = "yuv4mpegpipe";
 
 	if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
@@ -367,7 +367,7 @@ error:
 
 AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 	AVFrame* frame = av_frame_alloc();
-	if(frame && ctx->fmt->oformat || ctx->sws) {
+	if(frame && (ctx->fmt->oformat || ctx->sws)) {
 		frame->width  = ctx->st->codecpar->width;
 		frame->height = ctx->st->codecpar->height;
 		frame->format = av_pix_fmt_desc_get_id(ctx->pixdesc);
