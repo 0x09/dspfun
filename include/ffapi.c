@@ -93,8 +93,6 @@ static void fill_color_defaults(AVOutputFormat* fmt, AVCodecContext* avc) {
 
 void ffapi_init(int loglevel) {
 	av_log_set_level(loglevel * 8);
-	av_register_all();
-	avcodec_register_all();
 }
 
 void ffapi_parse_color_props(FFColorProperties* c, const char* props) {
@@ -148,7 +146,6 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 
 	AVCodecContext* avc = in->codec = avcodec_alloc_context3(dec);
 	avcodec_parameters_to_context(avc, params);
-	avc->refcounted_frames = 1;
 	avcodec_open2(avc,dec,&opts);
 
 	av_dict_free(&opts);
@@ -277,7 +274,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	if(!enc || avformat_query_codec(out->fmt->oformat,enc->id,FF_COMPLIANCE_NORMAL) != 1)
 		enc = avcodec_find_encoder(preferred_encoder);
 	if(!enc || avformat_query_codec(out->fmt->oformat,enc->id,FF_COMPLIANCE_NORMAL) != 1)
-		enc = avcodec_find_encoder(av_guess_codec(out->fmt->oformat,NULL,out->fmt->filename,NULL,AVMEDIA_TYPE_VIDEO));
+		enc = avcodec_find_encoder(av_guess_codec(out->fmt->oformat,NULL,out->fmt->url,NULL,AVMEDIA_TYPE_VIDEO));
 	if(!enc)
 		goto error;
 
@@ -302,13 +299,14 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	if(avcodec_open2(avc,enc,&opts))
 		goto error;
 	avcodec_parameters_from_context(out->st->codecpar,avc);
-	if(avio_open2(&out->fmt->pb,out->fmt->filename,AVIO_FLAG_WRITE,NULL,&opts))
+
+	if(avio_open2(&out->fmt->pb,out->fmt->url,AVIO_FLAG_WRITE,NULL,&opts))
 		goto error;
 	if(avformat_write_header(out->fmt,&opts))
 		goto error;
 	av_dict_free(&opts);
 	opts = NULL;
-	av_dump_format(out->fmt,0,out->fmt->filename,1);
+	av_dump_format(out->fmt,0,out->fmt->url,1);
 
 	if(
 		in_color_props->pix_fmt != avc->pix_fmt ||
@@ -422,7 +420,7 @@ int ffapi_read_frame(FFContext* in, AVFrame* frame) {
 	if(!err) {
 		if(in->sws)
 			sws_scale(in->sws,(const uint8_t* const*)in->swsframe->data,in->swsframe->linesize,0,in->st->codecpar->height,frame->data,frame->linesize);
-		frame->pts = av_frame_get_best_effort_timestamp(readframe);
+		frame->pts = readframe->best_effort_timestamp;
 	}
 	return err;
 }
@@ -435,7 +433,7 @@ static int flush_frame(FFContext* out, AVFrame* frame) {
 	while(!err && !(err = avcodec_receive_packet(codec,&packet))) {
 		if(packet.pts != AV_NOPTS_VALUE)
 			packet.pts = av_rescale_q(packet.pts,codec->time_base,out->st->time_base);
-		else if(frame) packet.pts = av_frame_get_best_effort_timestamp(frame);
+		else if(frame) packet.pts = frame->best_effort_timestamp;
 		if(packet.dts != AV_NOPTS_VALUE)
 			packet.dts = av_rescale_q(packet.dts,codec->time_base,out->st->time_base);
 		packet.stream_index = out->st->index;
