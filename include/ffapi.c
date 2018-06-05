@@ -7,6 +7,7 @@
 
 #include <libavutil/parseutils.h>
 #include <libavutil/opt.h>
+#include <libavutil/avstring.h>
 
 #include <sys/stat.h>
 
@@ -248,6 +249,12 @@ error:
 	return NULL;
 }
 
+static void ffapi_io_close_pipe(AVFormatContext *s, AVIOContext* pb) {
+    avio_close(pb);
+	if(s->opaque)
+		pclose((FILE*)s->opaque);
+}
+
 FFContext* ffapi_open_output(const char* file, const char* options,
                          const char* format, const char* encoder, enum AVCodecID preferred_encoder,
                          const FFColorProperties* in_color_props,
@@ -258,8 +265,12 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	if(!strcmp(file,"-"))
 		file = "pipe:";
 	struct stat st;
-	if(!format && (!strncmp(file,"pipe:",5) || (!stat(file,&st) && S_ISFIFO(st.st_mode))))
-		format = "yuv4mpegpipe";
+	if(!format) {
+		if(!strcmp(file,"ffplay:"))
+			format = "rawvideo";
+		else if(!strncmp(file,"pipe:",5) || (!stat(file,&st) && S_ISFIFO(st.st_mode)))
+			format = "yuv4mpegpipe";
+	}
 
 	if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
 		goto error;
@@ -295,6 +306,30 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	if(avcodec_open2(avc,enc,&opts))
 		goto error;
 	avcodec_parameters_from_context(out->st->codecpar,avc);
+
+	if(!strcmp(file,"ffplay:")) {
+		char* cmd;
+		asprintf(&cmd,
+			"ffplay -loglevel quiet -f %s -vcodec %s -video_size %dx%d -framerate %d/%d -pixel_format %s -color_range %s -color_primaries %s -color_trc %s -colorspace %s -chroma_sample_location %s -",
+			out->fmt->oformat->name, enc->name, avc->width, avc->height, rate.num, rate.den, out->pixdesc->name,
+			av_color_range_name(avc->color_range),
+			av_color_primaries_name(avc->color_primaries),
+			av_color_transfer_name(avc->color_trc),
+			av_color_space_name(avc->colorspace),
+			av_chroma_location_name(avc->chroma_sample_location)
+		);
+
+		av_log(NULL,AV_LOG_INFO,"ffapi: Invoking %s\n",cmd);
+		if(!(out->fmt->opaque = popen(cmd,"w"))) {
+			free(cmd);
+			goto error;
+		}
+		free(cmd);
+		out->fmt->io_close = ffapi_io_close_pipe;
+		int fd = fileno((FILE*)out->fmt->opaque);
+		av_free(out->fmt->url);
+		out->fmt->url = av_asprintf("pipe:%d",fd);
+	}
 
 	if(avio_open2(&out->fmt->pb,out->fmt->url,AVIO_FLAG_WRITE,NULL,&opts))
 		goto error;
@@ -477,7 +512,7 @@ int ffapi_close(FFContext* ctx) {
 
 	if(ctx->fmt->oformat) {
 		if(!((ctx->fmt->oformat->flags & AVFMT_NOFILE) || (ctx->fmt->flags & AVFMT_FLAG_CUSTOM_IO)))
-			avio_close(ctx->fmt->pb);
+			ctx->fmt->io_close(ctx->fmt,ctx->fmt->pb);
 		avformat_free_context(ctx->fmt);
 	}
 	else avformat_close_input(&ctx->fmt);
