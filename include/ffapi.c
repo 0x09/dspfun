@@ -315,7 +315,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 			av_color_range_name(avc->color_range),
 			av_color_primaries_name(avc->color_primaries),
 			av_color_transfer_name(avc->color_trc),
-			av_color_space_name(avc->colorspace),
+			(avc->colorspace == AVCOL_SPC_RGB ? "rgb" : av_color_space_name(avc->colorspace)),
 			av_chroma_location_name(avc->chroma_sample_location)
 		);
 
