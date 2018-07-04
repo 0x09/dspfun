@@ -1,4 +1,4 @@
-PROJS = spec motion applybasis zoom
+PROJS = spec motion applybasis zoom scan
 
 .PHONY: projs $(PROJS) clean
 
