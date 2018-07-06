@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
 		{"spectrogram",no_argument,NULL,'s'},
 		{"intermediates",no_argument,NULL,'i'},
 		{"max-intermediates",no_argument,NULL,'M'},
-		{"step",no_argument,NULL,'S'},
+		{"step",required_argument,NULL,'S'},
 		{"invert",no_argument,NULL,'I'},
 		{"frames",required_argument,NULL,'n'},
 		{"offset",required_argument,NULL,'O'},
@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((opt = getopt_long(argc,argv,"hHm:o:vsiMSIn:O:gp:f:t:",gopts,&longoptind)) != -1)
+	while((opt = getopt_long(argc,argv,"hHm:o:vsiMS:In:O:gp:f:t:",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'h':
 			case 'H': help(opt == 'H'); break;
