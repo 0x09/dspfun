@@ -8,6 +8,7 @@ DSP Funbox - Set of *nix utilities for experimentation and learning about spectr
 * [motion](motion) - 3-dimensional frequency-space editor for video.
 * [applybasis](applybasis) - Tools for working with basis functions of a variety of 2D transforms.
 * [zoom](zoom) - Interpolate images against a cosine basis.
+* [scan](scan) - Progressively reconstruct images using various frequency space scans.
 
 See subprojects for respective READMEs.
 

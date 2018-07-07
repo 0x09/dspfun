@@ -28,9 +28,7 @@ Beware that the default block size will be the dimensions of the input. For all 
 
 Refer to the FFmpeg documentation for colorspace, format, encoder, and enc/decopts.
 
-Includes a script `motionplay` to pipe `motion` output and view it in `ffplay`.
-	
-	Usage: motionplay -i infile <non-output motion args>
+Unless a format is specified, pipe output (`-o -`) defaults to yuv4mpeg, which can be piped directly to mplayer/mpv or other tools. To view raw output without potential colorspace or other color property conversions, `motion` and all related tools include a built in output for streaming frames directly to FFmpeg's `ffplay` util, invoked by setting `ffplay:` as the output argument.
 
 ## Examples
 
@@ -40,7 +38,7 @@ Perform a 3-dimensional analog to JPEG-style compression:
 
 Watch a 2D spectrum of a video
 
-	motionplay -b0x0x1 --spectrogram -i ...
+	motion -b0x0x1 --spectrogram -i ... -o ffplay:
 
 # Rotate
 rotate - rotate video by right angles on a 3-dimensional axis.
