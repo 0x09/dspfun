@@ -134,9 +134,9 @@ int main(int argc, char* argv[]) {
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, colorspace);
 	if(spec > 0) {
-		if(!color_props.pix_fmt)
+		if(color_props.pix_fmt == AV_PIX_FMT_NONE)
 			color_props.pix_fmt = AV_PIX_FMT_RGB24;
-		if(!color_props.color_range)
+		if(color_props.color_range == AVCOL_RANGE_UNSPECIFIED)
 			color_props.color_range = AVCOL_RANGE_JPEG;
 	}
 	unsigned long w[4], h[4], components;
