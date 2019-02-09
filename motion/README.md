@@ -19,6 +19,8 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 	-q|--quant - Quantize the frequency coefficients by multiplying by this qfactor and rounding.
 	-d|--dither - Apply 2D Floyd-Steinberg dithering to the high-precision transform products.
 	--preserve-dc=<type> - Preserve the DC coefficient when applying a band pass filter with -p. type: dc (default), grey.
+	--eval expression - Apply a formula to coefficients using FFmpeg's expression evaluator.
+	                    Provides coefficient "c" in a non-uniform range 0-1, indexes as "x", "y", "z", and "i" (color component), and dimensions "width", "height", "depth", and "components".
 
 	--keep-rate - If scaling in time, maintain same framerate.
 	--samesize-chroma - Subsampled chroma planes will use the same block size as the Y plane.
@@ -40,6 +42,11 @@ Perform a 3-dimensional analog to JPEG-style compression:
 Watch a 2D spectrum of a video
 
 	motion -b0x0x1 --spectrogram -i ... -o ffplay:
+
+Perform a linear 3D smoothing filter using FFmpeg's expression evaluator
+
+	motion -b0x0x1 --eval 'c * ((width-x)/width) * ((height-y)/height) * ((depth-z)/depth)' -i ... -o ...
+
 
 # Rotate
 rotate - rotate video by right angles on a 3-dimensional axis.

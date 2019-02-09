@@ -6,6 +6,7 @@
 #include <fftw3.h>
 #include <getopt.h>
 #include <stdbool.h>
+#include <libavutil/eval.h>
 
 #include "ffapi.h"
 
@@ -59,14 +60,14 @@ for(int i1 = 0; i1 < components; i1++)\
 static void usage() {
 	fprintf(stderr,"Usage: motion -i infile [-o outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
-	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type]\n"
+	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
 	               "[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
 	int opt;
 	int longoptind = 0;
-	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL;
+	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL,* exprstr = NULL;
 	coords block = {0}, scaled = {0};
 	unsigned long long int offset = 0, maxframes = 0;
 	int samerate = false, samesize = false, spec = 0, dithering = false;
@@ -98,6 +99,7 @@ int main(int argc, char* argv[]) {
 		{"shell",no_argument,&shell,1},
 		{"loglevel",required_argument,NULL,10},
 		{"preserve-dc",optional_argument,NULL,11},
+		{"eval",required_argument,NULL,12},
 		{0}
 	};
 	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:rP:",gopts,&longoptind)) != -1)
@@ -123,6 +125,7 @@ int main(int argc, char* argv[]) {
 			case  9 : decopts = optarg; break;
 			case 10 : loglevel = strtol(optarg,NULL,10); break;
 			case 11 : preserve_dc = optarg && !strcmp(optarg,"grey") ? 2 : 1; break;
+			case 12 : exprstr = optarg; break;
 			case  0 : if(gopts[longoptind].flag != NULL) break;
 			default : usage();
 		}
@@ -264,6 +267,11 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr,"colorspace %s --> %s --> %s\n",av_color_space_name(in->codec->colorspace),av_color_space_name(color_props.color_space),av_color_space_name(out->codec->colorspace));
 	fprintf(stderr,"chroma_sample_location %s --> %s --> %s\n",av_chroma_location_name(in->codec->chroma_sample_location),av_chroma_location_name(color_props.chroma_location),av_chroma_location_name(out->codec->chroma_sample_location));
 
+	AVExpr* expr = NULL;
+	const char* names[] = {"c","x","y","z","i","width","height","depth","components","bx","by","bz","bwidth","bheight","bdepth",NULL};
+	if(exprstr && av_expr_parse(&expr,exprstr,names,NULL,NULL,NULL,NULL,0,NULL) < 0)
+		return 1;
+
 	// Seeking
 	if(offset) {
 		ffapi_seek_frame(in, offset, seek_progress);
@@ -371,6 +379,19 @@ int main(int argc, char* argv[]) {
 						}
 				if(spec >= 0) fftwf_execute(planforward[i]);
 				float dc = coeffs[0];
+
+				if(expr)
+					for(int z = 0; z < active[i].d; z++)
+						for(int y = 0; y < active[i].h; y++)
+							for(int x = 0; x < active[i].w; x++) {
+								double vals[] = {
+									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]*normalization[i]*normalization[i],
+									x, y, z, i, block[i].w, block[i].h, block[i].d, components,
+									b%nblocks[i].w, b/nblocks[i].h, bz, nblocks[i].w, nblocks[i].h, nblocks->d,
+									0
+								};
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = av_expr_eval(expr,vals,NULL)/(normalization[i]*normalization[i]);
+							}
 
 				if(damp[i] != 1) {
 					if(bandpass.begin[i].d) // front
