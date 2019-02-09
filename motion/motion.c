@@ -59,7 +59,7 @@ for(int i1 = 0; i1 < components; i1++)\
 static void usage() {
 	fprintf(stderr,"Usage: motion -i infile [-o outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
-	               "[-B|--boost float] [-D|--damp float]  [--spectrogram type] [-q|--quant quant] [-d|--dither]\n"
+	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type]\n"
 	               "[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]\n");
 	exit(0);
 }
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 	float boost[4] = {1,1,1,1};
 	float damp[4] = {0,0,0,0};
 	float quant = 0;
-	int shell = 0;
+	int shell = 0, preserve_dc = 0;
 	int loglevel = AV_LOG_ERROR/8;
 	const struct option gopts[] = {
 		{"size",required_argument,NULL,'s'},
@@ -97,6 +97,7 @@ int main(int argc, char* argv[]) {
 		{"decopts",required_argument,NULL,9},
 		{"shell",no_argument,&shell,1},
 		{"loglevel",required_argument,NULL,10},
+		{"preserve-dc",optional_argument,NULL,11},
 		{0}
 	};
 	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:rP:",gopts,&longoptind)) != -1)
@@ -121,6 +122,7 @@ int main(int argc, char* argv[]) {
 			case  8 : iformat = optarg; break;
 			case  9 : decopts = optarg; break;
 			case 10 : loglevel = strtol(optarg,NULL,10); break;
+			case 11 : preserve_dc = optarg && !strcmp(optarg,"grey") ? 2 : 1; break;
 			case  0 : if(gopts[longoptind].flag != NULL) break;
 			default : usage();
 		}
@@ -408,6 +410,15 @@ int main(int argc, char* argv[]) {
 							for(long long x = bandpass.begin[i].w; x < bandpass.end[i].w; x++)
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= boost[i];
 
+				if(preserve_dc) {
+					bool dcstop = bandpass.begin[i].d || bandpass.begin[i].h || bandpass.begin[i].w;
+					if(dcstop || boost[i] != 1) {
+						if(preserve_dc < 2)
+							coeffs[0] = dc;
+						else
+							coeffs[0] += (1-(dcstop ? damp[i] : boost[i])) * 127.5/(normalization[i]*normalization[i]*scalefactor[i]);
+					}
+				}
 
 				if(quant)
 					for(int z = 0; z < active[i].d; z++)
