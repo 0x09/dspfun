@@ -8,6 +8,7 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 	motion -i infile [-o outfile]
 	[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]
 	[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type]
+	[--fftw-planning-method method]
 	[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]
 
 	-b|--blocksize - 3D size of blocks to operate on. (full input dimensions)
@@ -21,6 +22,7 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 	--preserve-dc=<type> - Preserve the DC coefficient when applying a band pass filter with -p. type: dc (default), grey.
 	--eval expression - Apply a formula to coefficients using FFmpeg's expression evaluator.
 	                    Provides coefficient "c" in a non-uniform range 0-1, indexes as "x", "y", "z", and "i" (color component), and dimensions "width", "height", "depth", and "components".
+	--fftw-planning-method - How thoroughly to plan the transform: estimate (default), measure, patient, exhaustive. Higher values trade startup time for transform time.
 
 	--keep-rate - If scaling in time, maintain same framerate.
 	--samesize-chroma - Subsampled chroma planes will use the same block size as the Y plane.
