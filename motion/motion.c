@@ -268,12 +268,16 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr,"\n");
 	}
 	// Main loop
-	coords minbuf;
+	coords minbuf, active;
 	size_t mincomponent = 0;
 	for(int i = 0; i < components; i++) {
-		minbuf[i].w = block[i].w > scaled[i].w ? block[i].w : scaled[i].w;
-		minbuf[i].h = block[i].h > scaled[i].h ? block[i].h : scaled[i].h;
-		minbuf[i].d = block[i].d > scaled[i].d ? block[i].d : scaled[i].d;
+		minbuf[i].w = MAX(block[i].w,scaled[i].w);
+		minbuf[i].h = MAX(block[i].h,scaled[i].h);
+		minbuf[i].d = MAX(block[i].d,scaled[i].d);
+		active[i].w = MIN(block[i].w,scaled[i].w);
+		active[i].h = MIN(block[i].h,scaled[i].h);
+		active[i].d = MIN(block[i].d,scaled[i].d);
+
 		if(minbuf[i].w*minbuf[i].h*minbuf[i].d > mincomponent) mincomponent = minbuf[i].w*minbuf[i].h*minbuf[i].d;
 	}
 	float* coeffs = fftwf_malloc(sizeof(float)*mincomponent);
@@ -369,33 +373,33 @@ int main(int argc, char* argv[]) {
 				if(damp[i] != 1) {
 					if(bandpass.begin[i].d) // front
 						for(long long z = 0; z < bandpass.begin[i].d; z++)
-							for(long long y = 0; y < scaled[i].h; y++)
-								for(long long x = 0; x < scaled[i].w; x++)
+							for(long long y = 0; y < active[i].h; y++)
+								for(long long x = 0; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
-					if(bandpass.end[i].d < scaled[i].d) // back
-						for(long long z = bandpass.end[i].d; z < scaled[i].d; z++)
-							for(long long y = 0; y < scaled[i].h; y++)
-								for(long long x = 0; x < scaled[i].w; x++)
+					if(bandpass.end[i].d < active[i].d) // back
+						for(long long z = bandpass.end[i].d; z < active[i].d; z++)
+							for(long long y = 0; y < active[i].h; y++)
+								for(long long x = 0; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.begin[i].h) // top
 						for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 							for(long long y = 0; y < bandpass.begin[i].h; y++)
-								for(long long x = 0; x < scaled[i].w; x++)
+								for(long long x = 0; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
-					if(bandpass.end[i].h < scaled[i].h) // bottom
+					if(bandpass.end[i].h < active[i].h) // bottom
 						for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
-							for(long long y = bandpass.end[i].h; y < scaled[i].h; y++)
-								for(long long x = 0; x < scaled[i].w; x++)
+							for(long long y = bandpass.end[i].h; y < active[i].h; y++)
+								for(long long x = 0; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.begin[i].w) // left
 						for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 							for(long long y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
 								for(long long x = 0; x < bandpass.begin[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
-					if(bandpass.end[i].w < scaled[i].w) //right
+					if(bandpass.end[i].w < active[i].w) //right
 						for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 							for(long long y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
-								for(long long x = bandpass.end[i].w; x < scaled[i].w; x++)
+								for(long long x = bandpass.end[i].w; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 				}
 				if(boost[i] != 1)
@@ -406,9 +410,9 @@ int main(int argc, char* argv[]) {
 
 
 				if(quant)
-					for(int z = 0; z < block[i].d; z++)
-						for(int y = 0; y < block[i].h; y++)
-							for(int x = 0; x < block[i].w; x++) {
+					for(int z = 0; z < active[i].d; z++)
+						for(int y = 0; y < active[i].h; y++)
+							for(int x = 0; x < active[i].w; x++) {
 								float q = quantizer[i] * (z?1:M_SQRT2) * (y?1:M_SQRT2) * (x?1:M_SQRT2);
 								coeffs_coded += !!(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = roundf(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] / q)*q);
 							}
