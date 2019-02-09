@@ -433,7 +433,7 @@ int main(int argc, char* argv[]) {
 
 				if(preserve_dc) {
 					bool dcstop = bandpass.begin[i].d || bandpass.begin[i].h || bandpass.begin[i].w;
-					if(dcstop || boost[i] != 1) {
+					if(expr || dcstop || boost[i] != 1) {
 						if(preserve_dc < 2)
 							coeffs[0] = dc;
 						else
