@@ -74,14 +74,14 @@ static void usage() {
 	fprintf(stderr,"Usage: motion -i infile [-o outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
 	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
-	               "[--fftw-planning-method method]\n"
+	               "[--fftw-planning-method method] [--fftw-wisdom-file file]\n"
 	               "[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
 	int opt;
 	int longoptind = 0;
-	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL,* exprstr = NULL;
+	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL,* exprstr = NULL,* fftw_wisdom_file = NULL;
 	coords block = {0}, scaled = {0};
 	unsigned long long int offset = 0, maxframes = 0;
 	int samerate = false, samesize = false, spec = 0, dithering = false;
@@ -115,6 +115,7 @@ int main(int argc, char* argv[]) {
 		{"preserve-dc",optional_argument,NULL,11},
 		{"eval",required_argument,NULL,12},
 		{"fftw-planning-method",required_argument,NULL,13},
+		{"fftw-wisdom-file",required_argument,NULL,14},
 		{0}
 	};
 	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:rP:",gopts,&longoptind)) != -1)
@@ -146,6 +147,7 @@ int main(int argc, char* argv[]) {
 					fprintf(stderr, "invalid FFTW flag, use one of: estimate, measure, patient, exhaustive");
 					exit(1);
 				}; break;
+			case 14 : fftw_wisdom_file = optarg; break;
 			case  0 : if(gopts[longoptind].flag != NULL) break;
 			default : usage();
 		}
@@ -318,6 +320,9 @@ int main(int argc, char* argv[]) {
 			pixels[i][b] = malloc(minbuf[i].w*minbuf[i].h*minbuf[i].d);
 	}
 
+	if(fftw_wisdom_file)
+		fftwf_import_wisdom_from_filename(fftw_wisdom_file);
+
 	int unique_plans = 0;
 	fftwf_plan plans[components*2];
 	fftwf_plan planforward[components];
@@ -352,6 +357,9 @@ int main(int argc, char* argv[]) {
 						(const fftw_r2r_kind[3]){FFTW_REDFT01,FFTW_REDFT01,FFTW_REDFT01},fftw_flags);
 		}
 	}
+
+	if(fftw_wisdom_file)
+		fftwf_export_wisdom_to_filename(fftw_wisdom_file);
 
 	long double scalefactor[components];
 	long double normalization[components];
