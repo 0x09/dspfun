@@ -45,7 +45,7 @@
 	#define COEFF_TYPE double
 	#define COEFF_NAME DBL
 	#define COEFF_SUFFIX
-	#define COEFF_SPECIFIER "f"
+	#define COEFF_SPECIFIER "lf"
 	#define TypePixel DoublePixel
 #endif
 
@@ -58,7 +58,7 @@
 	#define INTERMEDIATE_TYPE double
 	#define INTERMEDIATE_NAME DBL
 	#define INTERMEDIATE_SUFFIX
-	#define INTERMEDIATE_SPECIFIER "f"
+	#define INTERMEDIATE_SPECIFIER "lf"
 #else // L
 	#define INTERMEDIATE_TYPE long double
 	#define INTERMEDIATE_NAME LDBL
