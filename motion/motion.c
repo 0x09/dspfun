@@ -413,12 +413,12 @@ int main(int argc, char* argv[]) {
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++) {
 								double vals[] = {
-									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]*normalization[i]*normalization[i],
+									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]*normalization[i]*normalization[i]/255,
 									x, y, z, i, block[i].w, block[i].h, block[i].d, components,
 									b%nblocks[i].w, b/nblocks[i].h, bz, nblocks[i].w, nblocks[i].h, nblocks->d,
 									0
 								};
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = av_expr_eval(expr,vals,NULL)/(normalization[i]*normalization[i]);
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = av_expr_eval(expr,vals,NULL)/(normalization[i]*normalization[i])*255;
 							}
 
 				if(damp[i] != 1) {
