@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 	size_t frames = 0, offset = 0;
 	const char* iopt = NULL,* ifmt = NULL,* cprops = NULL;
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
-	int loglevel = 0;
+	int loglevel = AV_LOG_ERROR;
 	int c;
 	while((c = getopt(argc,argv,":o:O:f:F:c:e:l:r:s:")) > 0)
 		switch(c) {

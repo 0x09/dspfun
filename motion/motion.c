@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 	float damp[4] = {0,0,0,0};
 	float quant = 0;
 	int shell = 0, preserve_dc = 0, fftw_flags = FFTW_ESTIMATE;
-	int loglevel = AV_LOG_ERROR/8;
+	int loglevel = AV_LOG_ERROR;
 	const struct option gopts[] = {
 		{"size",required_argument,NULL,'s'},
 		{"blocksize",required_argument,NULL,'b'},
