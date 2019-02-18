@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
 			color_props.color_range = AVCOL_RANGE_JPEG;
 	}
 	unsigned long w[4], h[4], components;
-	FFContext* in = ffapi_open_input(infile,iformat,decopts,&color_props,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!shell && (!outfile || !maxframes));
+	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!shell && (!outfile || !maxframes));
 	if(!in) {
 		fprintf(stderr, "Error opening \"%s\"\n", infile);
 		return 1;
@@ -278,7 +278,6 @@ int main(int argc, char* argv[]) {
 	if(!out) {
 		fprintf(stderr,"Output setup failed for '%s' / '%s'\n",outfile,format);
 		ffapi_close(in);
-		ffapi_close(out);
 		return 1;
 	}
 

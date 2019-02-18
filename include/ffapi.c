@@ -114,11 +114,34 @@ void ffapi_parse_color_props(FFColorProperties* c, const char* props) {
 	av_dict_free(&d);
 }
 
+#define validate_color_prop(c,ret,prop,strprop,getter) do {\
+	if(!getter(c->prop)) {\
+		av_log(NULL,AV_LOG_ERROR,"ffapi: Invalid " strprop "\n");\
+		ret = false;\
+	}\
+} while(0)
+
+bool ffapi_validate_color_props(const FFColorProperties* c) {
+	bool ret = true;
+	validate_color_prop(c,ret,pix_fmt,"pixel_format",av_pix_fmt_desc_get);
+	validate_color_prop(c,ret,color_range,"color_range",av_color_range_name);
+	validate_color_prop(c,ret,color_primaries,"color_primaries",av_color_primaries_name);
+	validate_color_prop(c,ret,color_trc,"color_trc",av_color_transfer_name);
+	validate_color_prop(c,ret,color_space,"colorspace",av_color_space_name);
+	validate_color_prop(c,ret,chroma_location,"chroma_sample_location",av_chroma_location_name);
+	return ret;
+}
+
 FFContext* ffapi_open_input(const char* file, const char* options,
                          const char* format, FFColorProperties* color_props,
                          unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], unsigned long* frames, AVRational* rate, bool calc_frames) {
+
+	if(!ffapi_validate_color_props(color_props))
+		return NULL;
+
 	FFContext* in = calloc(1,sizeof(*in));
 
+	AVCodecContext* avc = NULL;
 	AVDictionary* opts = NULL;
 	av_dict_parse_string(&opts,options,"=",":",0);
 
@@ -141,9 +164,10 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	in->st = in->fmt->streams[stream];
 	AVCodecParameters* params = in->st->codecpar;
 
-	AVCodecContext* avc = in->codec = avcodec_alloc_context3(dec);
+	avc = in->codec = avcodec_alloc_context3(dec);
 	avcodec_parameters_to_context(avc, params);
-	avcodec_open2(avc,dec,&opts);
+	if(avcodec_open2(avc,dec,&opts) < 0)
+		goto error;
 
 	av_dict_free(&opts);
 	opts = NULL;
@@ -243,6 +267,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	return in;
 
 error:
+	avcodec_free_context(&avc);
 	avformat_close_input(&in->fmt);
 	av_dict_free(&opts);
 	free(in);
@@ -259,6 +284,10 @@ FFContext* ffapi_open_output(const char* file, const char* options,
                          const char* format, const char* encoder, enum AVCodecID preferred_encoder,
                          const FFColorProperties* in_color_props,
                          unsigned long width, unsigned long height, AVRational rate) {
+
+	if(!ffapi_validate_color_props(in_color_props))
+		return NULL;
+
 	AVDictionary* opts = NULL;
 	FFContext* out = calloc(1,sizeof(*out));
 
@@ -311,7 +340,8 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		char* cmd;
 		asprintf(&cmd,
 			"ffplay -loglevel quiet -f %s -vcodec %s -video_size %dx%d -framerate %d/%d -pixel_format %s -color_range %s -color_primaries %s -color_trc %s -colorspace %s -chroma_sample_location %s -",
-			out->fmt->oformat->name, enc->name, avc->width, avc->height, rate.num, rate.den, out->pixdesc->name,
+			out->fmt->oformat->name, enc->name, avc->width, avc->height, rate.num, rate.den,
+			av_pix_fmt_desc_get(avc->pix_fmt)->name,
 			av_color_range_name(avc->color_range),
 			av_color_primaries_name(avc->color_primaries),
 			av_color_transfer_name(avc->color_trc),
