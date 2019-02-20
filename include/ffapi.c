@@ -123,7 +123,8 @@ void ffapi_parse_color_props(FFColorProperties* c, const char* props) {
 
 bool ffapi_validate_color_props(const FFColorProperties* c) {
 	bool ret = true;
-	validate_color_prop(c,ret,pix_fmt,"pixel_format",av_pix_fmt_desc_get);
+	if(c->pix_fmt != AV_PIX_FMT_NONE)
+		validate_color_prop(c,ret,pix_fmt,"pixel_format",av_pix_fmt_desc_get);
 	validate_color_prop(c,ret,color_range,"color_range",av_color_range_name);
 	validate_color_prop(c,ret,color_primaries,"color_primaries",av_color_primaries_name);
 	validate_color_prop(c,ret,color_trc,"color_trc",av_color_transfer_name);
