@@ -5,7 +5,7 @@ LIBS := -I../include $(shell pkg-config --cflags --libs MagickWand fftw3) -lm
 all: zoom
 
 zoom: zoom.c
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 clean:
 	rm -f zoom

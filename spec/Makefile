@@ -7,10 +7,10 @@ DEPS = spec.h ../include/precision.h ../include/keyed_enum.h ../include/assoc.h
 all: spec ispec
 
 spec: spec.c $(DEPS)
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 ispec: ispec.c $(DEPS)
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 clean:
 	rm -f spec ispec

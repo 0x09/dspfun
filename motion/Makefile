@@ -8,13 +8,13 @@ ffapi.o: ../include/ffapi.c
 	$(CC) $(CFLAGS) -c -o $@ $+
 
 motion: motion.c ffapi.o
-	$(CC) $(CFLAGS) $(shell pkg-config --libs fftw3f) $(LIBS) -o $@ $+
+	$(CC) $(CFLAGS) -o $@ $+ $(shell pkg-config --libs fftw3f) $(LIBS)
 
 rotate: rotate.c ffapi.o
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $+
+	$(CC) $(CFLAGS) -o $@ $+ $(LIBS)
 
 transcode: transcode.c ffapi.o
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $+
+	$(CC) $(CFLAGS) -o $@ $+ $(LIBS)
 
 clean:
 	rm -f motion rotate transcode ffapi.o

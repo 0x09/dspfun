@@ -5,13 +5,13 @@ LIBS := -I../include $(shell pkg-config --cflags --libs MagickWand) -lm
 all: applybasis genbasis draw
 
 applybasis: applybasis.c
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 genbasis: genbasis.c
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 draw: draw.c
-	$(CC) $(CFLAGS) $(LIBS) $(shell pkg-config --libs fftw3f) -o $@ $<
+	$(CC) $(CFLAGS) $(shell pkg-config --libs fftw3f) -o $@ $< $(LIBS)
 
 clean:
 	rm -f draw genbasis applybasis
