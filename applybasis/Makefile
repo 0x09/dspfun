@@ -11,7 +11,7 @@ genbasis: genbasis.c
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 draw: draw.c
-	$(CC) $(CFLAGS) $(shell pkg-config --libs fftw3f) -o $@ $< $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $< $(shell pkg-config --libs fftw3f) $(LIBS)
 
 clean:
 	rm -f draw genbasis applybasis
