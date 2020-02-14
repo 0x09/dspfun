@@ -14,6 +14,6 @@ scan: scan.c ffapi.o speclib.o scan_context.o scan_methods.o scan_precomputed.o
 	$(CC) $(CFLAGS) -o $@ $+ $(LIBS)
 
 clean:
-	rm -f scan scan_context.o scan_methods.o precomputed_scan.o speclib.o ffapi.o
+	rm -f scan scan_context.o scan_methods.o scan_precomputed.o speclib.o ffapi.o
 
 .PHONY: all clean
