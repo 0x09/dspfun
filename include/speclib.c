@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 enum_gen_keys(signtype)
 enum_gen_table(signtype)
