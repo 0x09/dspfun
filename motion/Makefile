@@ -1,8 +1,12 @@
+PREFIX ?= /usr/local
+
 CC ?= cc
 CFLAGS := -D_GNU_SOURCE -std=c11 -Ofast -Wno-initializer-overrides -I../include $(CFLAGS)
 LIBS := -lavcodec -lavformat -lswscale -lavutil -lm
 
-all: motion rotate transcode
+TOOLS = motion rotate transcode
+
+all: $(TOOLS)
 
 ffapi.o: ../include/ffapi.c
 	$(CC) $(CFLAGS) -c -o $@ $+
@@ -17,6 +21,12 @@ transcode: transcode.c ffapi.o
 	$(CC) $(CFLAGS) -o $@ $+ $(LIBS)
 
 clean:
-	rm -f motion rotate transcode ffapi.o
+	rm -f $(TOOLS) ffapi.o
 
-.PHONY: all clean
+install: all
+	install $(TOOLS) $(PREFIX)/bin/
+
+uninstall:
+	rm -f -- $(addprefix $(PREFIX)/bin/, $(TOOLS))
+
+.PHONY: all clean install uninstall
