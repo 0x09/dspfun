@@ -29,7 +29,7 @@ void usage(const char* self) {
 int main(int argc, char* argv[]) {
 	long double vx = 0, vy = 0;
 	size_t vw = 0, vh = 0;
-	bool vflag = false, centered = false, input_coords = false, gamma = false;
+	bool centered = false, input_coords = false, gamma = false;
 	int showsamples = 0;
 	long double scale_num = 1;
 	unsigned long long scale_den = 1;

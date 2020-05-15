@@ -146,7 +146,6 @@ static void usage() {
 }
 int main(int argc, char* argv[]) {
 	int opt;
-	int optind = 0;
 	char* infile = NULL,* outfile = NULL,* outcoeffs = NULL;
 	coords terms = {}, partsum = {};
 	offsets offset = {};

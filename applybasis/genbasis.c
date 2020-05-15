@@ -91,7 +91,6 @@ static void usage() {
 }
 int main(int argc, char* argv[]) {
 	int opt;
-	int optind = 0;
 	char* outfile = NULL;
 	coords terms = {0}, size = {0};
 	offsets offset = {0};
@@ -155,7 +154,7 @@ int main(int argc, char* argv[]) {
 		if(!terms.a[i])
 			terms.a[i] = size.a[i];
 
-	coords bi, i, s;
+	coords bi, i;
 	coords* k = &bi,* n = &i;
 	coords* K = &terms,* N = &size;
 	if(inverse) {

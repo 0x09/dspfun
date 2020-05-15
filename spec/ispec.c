@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 		switch(opt) { case 'p': preserve_dc = true; break; case 'm': signmap=optarg; break; }
 
 	size_t l, w, h, d;
-	size_t i, x, y, z;
+	size_t i, y, z;
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
 	MagickReadImage(wand,opts.input);
