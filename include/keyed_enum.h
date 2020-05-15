@@ -35,8 +35,8 @@
 	const char** type##_##keys(void);
 
 #define enum_gen_accessors(type)\
-	enum type type##_##val(const char* key) { return enum_val(type,key); };\
-	const char** type##_##keys() { return enum_table(type)+1; };
+	enum type type##_##val(const char* key) { return enum_val(type,key); }\
+	const char** type##_##keys() { return enum_table(type)+1; }
 
 #define enum_public_gen(type)\
 	enum_gen_enum(type)\

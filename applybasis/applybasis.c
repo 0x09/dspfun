@@ -281,7 +281,7 @@ int main(int argc, char* argv[]) {
 
 
 	FILE* df = NULL;
-	coords dumpsize = {N->w*K->w,N->h*K->h};
+	coords dumpsize = {{N->w*K->w,N->h*K->h}};
 	if(outcoeffs) {
 		df = fopen(outcoeffs,"w");
 		fwrite(&dumpsize,sizeof(dumpsize),1,df);
