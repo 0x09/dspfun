@@ -46,8 +46,6 @@ static size_t interval_ibox(void* opaque, size_t width, size_t height, size_t i)
 static size_t interval_precomputed(void* opaque, size_t width, size_t height, size_t i) { return ((struct scan_precomputed*)opaque)->intervals[i]; }
 
 // Max number of coordinates returned by this scan for all indexes
-static size_t max_interval_mirror(void* opaque, size_t width, size_t height) { return (width < height ? width : height)*2-1; }
-
 static size_t max_interval_precomputed(void* opaque, size_t width, size_t height) {
 	struct scan_precomputed* p = opaque;
 	size_t max = 0;
