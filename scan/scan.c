@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
 	AVRational fps = {20,1};
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = 0;
-	const char* method = "diag",* scan_options = NULL,* serialized_scan;
+	const char* method = "diag",* scan_options = NULL,* serialized_scan = NULL;
 	size_t nframes = 0, offset = 0;
 	bool spec = false, invert = false, intermediates = false, linear = false, max_intermediates = false, visualize = false, fill_offset = true;
 	int use_fftw = -1;
