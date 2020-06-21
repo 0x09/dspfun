@@ -45,9 +45,9 @@ int main(int argc, char* argv[]) {
 	intermediate gain;
 	switch(opts.params.gaintype) {
 		case gaintype_none:
-		case gaintype_native: gain = mi(127.5) * mi(sqrt)(w*h*4); break;
-		case gaintype_lenna:  gain = mi(127.5) * 1024; break;
-		case gaintype_custom: gain = opts.gain; break;
+		case gaintype_native:    gain = mi(127.5) * mi(sqrt)(w*h*4); break;
+		case gaintype_reference: gain = mi(127.5) * 1024; break;
+		case gaintype_custom:    gain = opts.gain; break;
 	}
 
 	for(i = 0; i < l; i++)

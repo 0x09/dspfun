@@ -44,7 +44,7 @@
 
 #define gaintype(X,T)\
 	X(T,native)\
-	X(T,lenna)\
+	X(T,reference)\
 	X(T,custom)
 
 enum_gen(spectype)
