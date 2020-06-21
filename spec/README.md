@@ -20,11 +20,11 @@ Presets (-t):
 
 # Examples
 
-Generate a traditional Lenna spectrogram:
+Generate the spectrogram of [an image](http://0x09.net/i/g/flower.png):
 
-	spec Lenna.png Lenna.spec.png
+	spec flower.png flower.spec.png
 
-![Lenna spectrogram](http://0x09.net/i/g/Lenna.spec.png "Lenna spectrogram")
+![Flower spectrogram](http://0x09.net/i/g/flower.spec.png "Flower spectrogram")
 
 `spec` can be used as a filter, particularly when piping with imagemagick. This allows you to perform e.g. sinc resizes using crop/expand filters:
 

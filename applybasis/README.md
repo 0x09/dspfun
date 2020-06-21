@@ -50,15 +50,15 @@ This tool shares several parameters with `genbasis`, documented above.
 
 ## Example
 
-Progressively-summed 16x16 Lenna DCT/iDCT
+Progressively-summed 16x16 DCT/iDCT of [an example image](http://0x09.net/i/g/flower.png).
 	
-	for i in 1 4 16; do applybasis -i /tmp/lenna.png -fDCT2 -s${i}x${i} -S$i -o l$i.png; done
-	applybasis -i /tmp/lenna.png -fDCT2 -s16x16 -S16 -d/tmp/out.coeff -o /dev/null
-	for i in 1 4 16; do applybasis -i /tmp/out.coeff -fDCT3 -I -s${i}x${i} -S$i -o il$i.png; done
+	for i in 1 4 16; do applybasis -i /tmp/flower.png -fDCT2 -s${i}x${i} -S$i -o fdct_$i.png; done
+	applybasis -i /tmp/flower.png -fDCT2 -s16x16 -S16 -d/tmp/out.coeff -o /dev/null
+	for i in 1 4 16; do applybasis -i /tmp/out.coeff -fDCT3 -I -s${i}x${i} -S$i -o idct_$i.png; done
 
 Forward on top, inverse on bottom:
 
-![Progressively-summed Lenna DCT](http://0x09.net/i/g/lpart.png "Progressively-summed Lenna DCT")
+![Progressively-summed example image DCT](http://0x09.net/i/g/flower_sums.png "Progressively-summed example image DCT")
 
 # draw
 Draw images in frequency space by setting coordinates and coefficient value.
