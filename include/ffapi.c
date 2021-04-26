@@ -468,40 +468,38 @@ void ffapi_free_frame(AVFrame* frame) {
 int ffapi_read_frame(FFContext* in, AVFrame* frame) {
 	AVFrame* readframe = in->sws ? in->swsframe : frame;
 	int err;
+	AVPacket* packet = av_packet_alloc();
 	while((err = avcodec_receive_frame(in->codec, readframe)) == AVERROR(EAGAIN)) {
-		AVPacket packet = {0};
-		while(!(err = av_read_frame(in->fmt,&packet)) && packet.stream_index != in->st->index)
-			av_packet_unref(&packet);
-		if(err) {
-			packet.data = NULL;
-			packet.size = 0;
+		while(!(err = av_read_frame(in->fmt,packet)) && packet->stream_index != in->st->index)
+			av_packet_unref(packet);
+		if(!err) {
+			avcodec_send_packet(in->codec, packet);
+			av_packet_unref(packet);
 		}
-		avcodec_send_packet(in->codec, &packet);
-		av_packet_unref(&packet);
 	}
 	if(!err) {
 		if(in->sws)
 			sws_scale(in->sws,(const uint8_t* const*)in->swsframe->data,in->swsframe->linesize,0,in->st->codecpar->height,frame->data,frame->linesize);
 		frame->pts = readframe->best_effort_timestamp;
 	}
+	av_packet_free(&packet);
 	return err;
 }
 
 static int flush_frame(FFContext* out, AVFrame* frame) {
 	AVCodecContext* codec = out->codec;
-	AVPacket packet = {0};
-	av_init_packet(&packet);
+	AVPacket* packet = av_packet_alloc();
 	int err = 0;
-	while(!err && !(err = avcodec_receive_packet(codec,&packet))) {
-		if(packet.pts != AV_NOPTS_VALUE)
-			packet.pts = av_rescale_q(packet.pts,codec->time_base,out->st->time_base);
-		else if(frame) packet.pts = frame->best_effort_timestamp;
-		if(packet.dts != AV_NOPTS_VALUE)
-			packet.dts = av_rescale_q(packet.dts,codec->time_base,out->st->time_base);
-		packet.stream_index = out->st->index;
-		err = av_write_frame(out->fmt,&packet);
-		av_packet_unref(&packet);
+	while(!err && !(err = avcodec_receive_packet(codec,packet))) {
+		if(packet->pts != AV_NOPTS_VALUE)
+			packet->pts = av_rescale_q(packet->pts,codec->time_base,out->st->time_base);
+		else if(frame) packet->pts = frame->best_effort_timestamp;
+		if(packet->dts != AV_NOPTS_VALUE)
+			packet->dts = av_rescale_q(packet->dts,codec->time_base,out->st->time_base);
+		packet->stream_index = out->st->index;
+		err = av_write_frame(out->fmt,packet);
 	}
+	av_packet_free(&packet);
 	if(err == AVERROR(EOF))
 		err = 0;
 	return err;
@@ -519,8 +517,6 @@ int ffapi_write_frame(FFContext* out, AVFrame* frame) {
 
 static int write_end(FFContext* out) {
 	AVCodecContext* codec = out->codec;
-	AVPacket packet = {0};
-	av_init_packet(&packet);
 	avcodec_send_frame(codec,NULL);
 	int err = flush_frame(out,NULL);
 	while(!err)
