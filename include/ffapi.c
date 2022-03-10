@@ -60,7 +60,7 @@ const static struct FFColorDefaults ffapi_format_color_defaults[] = {
 	},{0}
 };
 
-static void fill_color_defaults(AVOutputFormat* fmt, AVCodecContext* avc) {
+static void fill_color_defaults(const AVOutputFormat* fmt, AVCodecContext* avc) {
 	const struct FFColorDefaults* defaults;
 	for(defaults = ffapi_format_color_defaults; defaults->format && strcmp(defaults->format,fmt->name); defaults++)
 		;
@@ -152,13 +152,13 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	if(!format && (!strncmp(file,"pipe:",5) || (!stat(file,&st) && S_ISFIFO(st.st_mode))))
 		format = "yuv4mpegpipe";
 
-	AVInputFormat* ifmt = NULL;
+	const AVInputFormat* ifmt = NULL;
 	if(format) ifmt = av_find_input_format(format);
 	if(avformat_open_input(&in->fmt,file,ifmt,&opts))
 		goto error;
 
 	avformat_find_stream_info(in->fmt,NULL);
-	AVCodec* dec;
+	const AVCodec* dec;
 	int stream = av_find_best_stream(in->fmt,AVMEDIA_TYPE_VIDEO,-1,-1,&dec,0);
 	if(stream < 0)
 		goto error;
@@ -305,7 +305,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
 		goto error;
 
-	AVCodec* enc = NULL;
+	const AVCodec* enc = NULL;
 	if(encoder)
 		enc = avcodec_find_encoder_by_name(encoder);
 	if(!enc || avformat_query_codec(out->fmt->oformat,enc->id,FF_COMPLIANCE_NORMAL) != 1)
