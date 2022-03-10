@@ -7,6 +7,7 @@
 #define FFAPI_H
 
 #include <libswscale/swscale.h>
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/pixdesc.h>
 #include <libavutil/parseutils.h>

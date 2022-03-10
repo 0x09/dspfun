@@ -91,6 +91,7 @@ int main(int argc, char* argv[]) {
 	float quant = 0;
 	int shell = 0, preserve_dc = 0, fftw_flags = FFTW_ESTIMATE;
 	int loglevel = AV_LOG_ERROR;
+	struct spec_params sparams = {0};
 	const struct option gopts[] = {
 		{"size",required_argument,NULL,'s'},
 		{"blocksize",required_argument,NULL,'b'},
@@ -477,6 +478,7 @@ int main(int argc, char* argv[]) {
 							}
 				if(spec <= 0) fftwf_execute(planinverse[i]);
 				else if(spec == 1) c[i] = 255/logl(fabsl(dc * scalefactor[i] * normalization[i])+1);
+				else if(spec > 2 && sparams.signtype == signtype_abs) spec_set_max(sp[i], dc*scalefactor[i]*normalization[i]*normalization[i]/255);
 				for(int z = 0; z < scaled[i].d; z++)
 					for(int y = 0; y < scaled[i].h; y++)
 						for(int x = 0; x < scaled[i].w; x++) {
