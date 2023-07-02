@@ -149,6 +149,7 @@ int main(int argc, char* argv[]) {
 	int opt;
 	char* infile = NULL,* outfile = NULL,* outcoeffs = NULL;
 	coords terms = {}, partsum = {};
+	coords terms = {}, partsum = {1,1};
 	offsets offset = {};
 	int inverse = false, orthogonal = false;
 	unsigned int scale = 1, padding = 1;
