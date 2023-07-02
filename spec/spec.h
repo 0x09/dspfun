@@ -107,6 +107,9 @@ static inline struct specopts spec_args(int argc, char* argv[], const char* igno
 	opts.input = opts.output = "-";
 	if(argc > 0) opts.input  = argv[0];
 	if(argc > 1) opts.output = argv[1];
+	else if(isatty(STDOUT_FILENO))
+		opts.output = "sixel:-";
+
 	opterr = 0;
 	//optreset = optind = 1;
 	optind = 1;

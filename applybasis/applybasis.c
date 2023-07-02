@@ -10,6 +10,7 @@
 #include <float.h>
 #include <getopt.h>
 #include <strings.h>
+#include <unistd.h>
 
 #include "magickwand.h"
 #include "longmath.h"
@@ -148,7 +149,8 @@ static void usage() {
 int main(int argc, char* argv[]) {
 	int opt;
 	char* infile = NULL,* outfile = NULL,* outcoeffs = NULL;
-	coords terms = {}, partsum = {};
+	if(isatty(STDOUT_FILENO))
+		outfile = "sixel:-";
 	coords terms = {}, partsum = {1,1};
 	offsets offset = {};
 	int inverse = false, orthogonal = false;

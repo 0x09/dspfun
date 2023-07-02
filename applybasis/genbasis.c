@@ -10,6 +10,7 @@
 #include <float.h>
 #include <getopt.h>
 #include <strings.h>
+#include <unistd.h>
 
 #include "magickwand.h"
 #include "longmath.h"
@@ -92,7 +93,7 @@ static void usage() {
 }
 int main(int argc, char* argv[]) {
 	int opt;
-	char* outfile = NULL;
+	const char* outfile = isatty(STDOUT_FILENO) ? "sixel:-" : NULL;
 	coords terms = {0}, size = {0};
 	offsets offset = {0};
 	int natural = false, inverse = false;

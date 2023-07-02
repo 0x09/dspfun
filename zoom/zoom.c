@@ -9,6 +9,7 @@
 #include <string.h>
 #include <math.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #include <fftw3.h>
 
@@ -61,10 +62,16 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(argc-optind < 2)
+	argc -= optind;
+	if(argc < 1)
 		usage(argv[0]);
 
-	const char* infile = argv[optind++],* outfile = argv[optind++];
+	const char* infile = argv[optind],* outfile = NULL;
+	if(argc > 1)
+		outfile = argv[optind+1];
+	else if(isatty(STDOUT_FILENO))
+		outfile = "sixel:-";
+	else usage(argv[0]);
 
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();

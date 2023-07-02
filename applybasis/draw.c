@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 	int fns = 0, nc = 0;
 	float energy = 0.f;
 	int opt;
-	while((opt = getopt(argc,argv,"b:f:")) != -1) {
+	while((opt = getopt(argc,argv,"b:f:h")) != -1) {
 		switch(opt) {
 			case 'b': sscanf(optarg,"%dx%d",&bs.w,&bs.h); break;
 			case 'f':
@@ -40,10 +40,16 @@ int main(int argc, char* argv[]) {
 				else energy += ba[fns].w;
 				fns++;
 				break;
+			default: usage();
 		}
 	}
-	if(argc-optind < 1)
-		usage();
+
+	const char* outfile = NULL;
+	if(argc - optind)
+		outfile = argv[optind];
+	else if(isatty(STDOUT_FILENO))
+		outfile = "sixel:-";
+	else usage();
 
 	for(int i = 0; i < fns; i++)
 		if(ba[i].w == -1) ba[i].w = (1-energy)/nc;
@@ -62,7 +68,7 @@ int main(int argc, char* argv[]) {
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
 	MagickConstituteImage(wand,bs.w,bs.h,"I",FloatPixel,coefs);
-	MagickWriteImage(wand,argv[argc-1]);
+	MagickWriteImage(wand,outfile);
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
 
