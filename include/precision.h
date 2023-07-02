@@ -11,6 +11,7 @@
 #define L 4
 #define FF (F<<3|F)
 #define FD (D<<3|F)
+#define FL (L<<3|F)
 #define DD (D<<3|D)
 #define DL (L<<3|D)
 #define LL (L<<3|L)
