@@ -138,10 +138,11 @@ typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } 
 typedef union { long long a[2]; struct { long long w, h; }; } offsets;
 
 static void usage() {
-	puts("Usage: applybasis -i infile -o outfile [-d out.coeff]\n"
-	     "            -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT  [-I|--inverse]\n"
-	     "            [-P|--plane=(real),imag,mag,phase]  [-R|--rescale=(linear),log,gain,level[-...]]  [-N|--range=shift,(shift2),abs,invert,hue]\n"
-	     "            [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]");
+	fprintf(stderr,
+	        "Usage: applybasis -i infile -o outfile [-d out.coeff]\n"
+	        "            -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT  [-I|--inverse]\n"
+	        "            [-P|--plane=(real),imag,mag,phase]  [-R|--rescale=(linear),log,gain,level[-...]]  [-N|--range=shift,(shift2),abs,invert,hue]\n"
+	        "            [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {

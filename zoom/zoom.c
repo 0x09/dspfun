@@ -22,7 +22,7 @@ enum basis {
 };
 
 void usage(const char* self) {
-	printf("usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=1(point),2(grid) -cgP input output\n",self);
+	fprintf(stderr,"Usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=1(point),2(grid) -cgP input output\n",self);
 	exit(0);
 }
 

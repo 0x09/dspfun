@@ -20,7 +20,7 @@ struct size { int w,h; };
 struct coef { int x,y; float w; };
 
 void usage() {
-	puts("usage: draw -b WxH -f XxY:strength");
+	fprintf(stderr,"usage: draw -b WxH -f XxY:strength\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {

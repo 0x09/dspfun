@@ -85,8 +85,9 @@ typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } 
 typedef union { long long a[2]; struct { long long w, h; }; } offsets;
 
 static void usage() {
-	puts("Usage: genbasis -o outfile -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT [-I|--inverse] [-n|--natural] [-P|--plane=(real),imag,mag,phase,cplx]\n"
-	     "             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale s]\n");
+	fprintf(stderr,
+	        "Usage: genbasis -o outfile -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT [-I|--inverse] [-n|--natural] [-P|--plane=(real),imag,mag,phase,cplx]\n"
+	        "             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale s]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
