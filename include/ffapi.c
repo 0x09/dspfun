@@ -227,11 +227,11 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		av_opt_set_int(in->sws, "dst_format", color_props->pix_fmt, 0);
 		av_opt_set_int(in->sws, "sws_flags", SWS_BICUBIC, 0);
 		int xpos, ypos;
-		if(!avcodec_enum_to_chroma_pos(&xpos, &ypos, avc->chroma_sample_location)) {
+		if(!av_chroma_location_enum_to_pos(&xpos, &ypos, avc->chroma_sample_location)) {
 			av_opt_set_int(in->sws,"src_h_chr_pos",xpos,0);
 			av_opt_set_int(in->sws,"src_v_chr_pos",ypos,0);
 		}
-		if(!avcodec_enum_to_chroma_pos(&xpos, &ypos, color_props->chroma_location)) {
+		if(!av_chroma_location_enum_to_pos(&xpos, &ypos, color_props->chroma_location)) {
 			av_opt_set_int(in->sws,"dst_h_chr_pos",xpos,0);
 			av_opt_set_int(in->sws,"dst_v_chr_pos",ypos,0);
 		}
@@ -275,10 +275,10 @@ error:
 	return NULL;
 }
 
-static void ffapi_io_close_pipe(AVFormatContext *s, AVIOContext* pb) {
-    avio_close(pb);
+static int ffapi_io_close_pipe(AVFormatContext *s, AVIOContext* pb) {
 	if(s->opaque)
 		pclose((FILE*)s->opaque);
+	return avio_close(pb);
 }
 
 FFContext* ffapi_open_output(const char* file, const char* options,
@@ -356,7 +356,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 			goto error;
 		}
 		free(cmd);
-		out->fmt->io_close = ffapi_io_close_pipe;
+		out->fmt->io_close2 = ffapi_io_close_pipe;
 		int fd = fileno((FILE*)out->fmt->opaque);
 		av_free(out->fmt->url);
 		out->fmt->url = av_asprintf("pipe:%d",fd);
@@ -387,11 +387,11 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		av_opt_set_int(out->sws, "dst_format", avc->pix_fmt, 0);
 		av_opt_set_int(out->sws, "sws_flags", SWS_BICUBIC, 0);
 		int xpos, ypos;
-		if(!avcodec_enum_to_chroma_pos(&xpos, &ypos, in_color_props->chroma_location)) {
+		if(!av_chroma_location_enum_to_pos(&xpos, &ypos, in_color_props->chroma_location)) {
 			av_opt_set_int(out->sws,"src_h_chr_pos",xpos,0);
 			av_opt_set_int(out->sws,"src_v_chr_pos",ypos,0);
 		}
-		if(!avcodec_enum_to_chroma_pos(&xpos, &ypos, avc->chroma_sample_location)) {
+		if(!av_chroma_location_enum_to_pos(&xpos, &ypos, avc->chroma_sample_location)) {
 			av_opt_set_int(out->sws,"dst_h_chr_pos",xpos,0);
 			av_opt_set_int(out->sws,"dst_v_chr_pos",ypos,0);
 		}
@@ -510,7 +510,7 @@ int ffapi_write_frame(FFContext* out, AVFrame* frame) {
 	if(out->sws) sws_scale(out->sws,(const uint8_t* const*)frame->data,frame->linesize,0,out->st->codecpar->height,out->swsframe->data,out->swsframe->linesize);
 	else writeframe = frame;
 	AVCodecContext* codec = out->codec;
-	writeframe->pts = codec->frame_number; //for now timebase == 1/rate
+	writeframe->pts = codec->frame_num; //for now timebase == 1/rate
 	avcodec_send_frame(codec,writeframe);
 	return flush_frame(out,writeframe);
 }
@@ -539,7 +539,7 @@ int ffapi_close(FFContext* ctx) {
 
 	if(ctx->fmt->oformat) {
 		if(!((ctx->fmt->oformat->flags & AVFMT_NOFILE) || (ctx->fmt->flags & AVFMT_FLAG_CUSTOM_IO)))
-			ctx->fmt->io_close(ctx->fmt,ctx->fmt->pb);
+			ctx->fmt->io_close2(ctx->fmt,ctx->fmt->pb);
 		avformat_free_context(ctx->fmt);
 	}
 	else avformat_close_input(&ctx->fmt);
