@@ -9,6 +9,7 @@
 #include <libavutil/eval.h>
 
 #include "ffapi.h"
+#include "precision.h"
 
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
@@ -82,9 +83,9 @@ int main(int argc, char* argv[]) {
 	unsigned long long int offset = 0, maxframes = 0;
 	int samerate = false, samesize = false, spec = 0, dithering = false;
 	range bandpass = {0};
-	float boost[4] = {1,1,1,1};
-	float damp[4] = {0,0,0,0};
-	float quant = 0;
+	coeff boost[4] = {1,1,1,1};
+	coeff damp[4] = {0,0,0,0};
+	coeff quant = 0;
 	int shell = 0, preserve_dc = 0, fftw_flags = FFTW_ESTIMATE;
 	int loglevel = AV_LOG_ERROR;
 	bool quiet = false;
@@ -123,8 +124,8 @@ int main(int argc, char* argv[]) {
 			case 'b': sscanf(optarg,"%llux%llux%llu",&block->w,&block->h,&block->d); break;
 			case 's': sscanf(optarg,"%llux%llux%llu",&scaled->w,&scaled->h,&scaled->d); break;
 			case 'p': sscanf(optarg,"%llux%llux%llu-%llux%llux%llu",&bandpass.begin->w,&bandpass.begin->h,&bandpass.begin->d,&bandpass.end->w,&bandpass.end->h,&bandpass.end->d); break;
-			case 'B': for(int i = sscanf(optarg,"%f:%f:%f:%f",boost,boost+1,boost+2,boost+3); i < 4; i++) boost[i] = i ? boost[i-1] : 1; break;
-			case 'D': for(int i = sscanf(optarg,"%f:%f:%f:%f",damp,damp+1,damp+2,damp+3); i < 4; i++) damp[i] = i ? damp[i-1] : 0; break;
+			case 'B': for(int i = sscanf(optarg,"%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER,boost,boost+1,boost+2,boost+3); i < 4; i++) boost[i] = i ? boost[i-1] : 1; break;
+			case 'D': for(int i = sscanf(optarg,"%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER,damp,damp+1,damp+2,damp+3); i < 4; i++) damp[i] = i ? damp[i-1] : 0; break;
 			case 'c': colorspace = optarg; break;
 			case  2 : offset = strtoull(optarg,NULL,10); break;
 			case  3 : maxframes = strtoull(optarg,NULL,10); break;
@@ -315,7 +316,7 @@ int main(int argc, char* argv[]) {
 
 		if(minbuf[i].w*minbuf[i].h*minbuf[i].d > mincomponent) mincomponent = minbuf[i].w*minbuf[i].h*minbuf[i].d;
 	}
-	float* coeffs = fftwf_malloc(sizeof(float)*mincomponent);
+	coeff* coeffs = fftw(malloc)(sizeof(coeff)*mincomponent);
 	unsigned char** pixels[components];
 	for(int i = 0; i < components; i++) {
 		pixels[i] = malloc(sizeof(char*)*nblocks[i].w*nblocks[i].h);
@@ -324,12 +325,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(fftw_wisdom_file)
-		fftwf_import_wisdom_from_filename(fftw_wisdom_file);
+		fftw(import_wisdom_from_filename)(fftw_wisdom_file);
 
 	int unique_plans = 0;
-	fftwf_plan plans[components*2];
-	fftwf_plan planforward[components];
-	fftwf_plan planinverse[components];
+	fftw(plan) plans[components*2];
+	fftw(plan) planforward[components];
+	fftw(plan) planinverse[components];
 	for(int i = 0; i < components; i++) {
 		if(spec >= 0) {
 			planforward[i] = NULL;
@@ -340,7 +341,7 @@ int main(int argc, char* argv[]) {
 				}
 			if(!planforward[i])
 				plans[unique_plans++] = planforward[i] =
-					fftwf_plan_many_r2r(3,(const int[3]){block[i].d,block[i].h,block[i].w},1,
+					fftw(plan_many_r2r)(3,(const int[3]){block[i].d,block[i].h,block[i].w},1,
 						coeffs,(const int[3]){minbuf[i].d,minbuf[i].h,minbuf[i].w},1,0,
 						coeffs,(const int[3]){minbuf[i].d,minbuf[i].h,minbuf[i].w},1,0,
 						(const fftw_r2r_kind[3]){FFTW_REDFT10,FFTW_REDFT10,FFTW_REDFT10},fftw_flags);
@@ -354,7 +355,7 @@ int main(int argc, char* argv[]) {
 				}
 			if(!planinverse[i])
 				plans[unique_plans++] = planinverse[i] =
-					fftwf_plan_many_r2r(3,(const int[3]){scaled[i].d,scaled[i].h,scaled[i].w},1,
+					fftw(plan_many_r2r)(3,(const int[3]){scaled[i].d,scaled[i].h,scaled[i].w},1,
 						coeffs,(const int[3]){minbuf[i].d,minbuf[i].h,minbuf[i].w},1,0,
 						coeffs,(const int[3]){minbuf[i].d,minbuf[i].h,minbuf[i].w},1,0,
 						(const fftw_r2r_kind[3]){FFTW_REDFT01,FFTW_REDFT01,FFTW_REDFT01},fftw_flags);
@@ -362,17 +363,17 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(fftw_wisdom_file)
-		fftwf_export_wisdom_to_filename(fftw_wisdom_file);
+		fftw(export_wisdom_to_filename)(fftw_wisdom_file);
 
-	long double scalefactor[components];
-	long double normalization[components];
-	long double c[components];
-	float quantizer[components];
+	intermediate scalefactor[components];
+	intermediate normalization[components];
+	intermediate c[components];
+	coeff quantizer[components];
 	for(int i = 0; i < components; i++) {
-		scalefactor[i] = (scaled[i].w*scaled[i].h*scaled[i].d)/(long double)(block[i].w*block[i].h*block[i].d);
-		normalization[i] = 1/sqrtl(scaled[i].w*scaled[i].h*scaled[i].d*8);
-		if(spec && spec != 1) c[i] = 127.5/logl(scaled[i].w*scaled[i].h*scaled[i].d*255*8+1);
-		quantizer[i] = (quant*8.L*sqrtl(scaled[i].w*scaled[i].h*scaled[i].d));
+		scalefactor[i] = (scaled[i].w*scaled[i].h*scaled[i].d)/(intermediate)(block[i].w*block[i].h*block[i].d);
+		normalization[i] = 1/mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d*8);
+		if(spec && spec != 1) c[i] = mi(127.5)/mi(log)(scaled[i].w*scaled[i].h*scaled[i].d*255*8+1);
+		quantizer[i] = (quant*mi(8.)*mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d));
 	}
 
 	int padb = log10f(source->d)+1, pads = log10f(newres->d)+1;
@@ -400,18 +401,18 @@ int main(int argc, char* argv[]) {
 			if(bz >= nblocks[i].d) continue;
 			for(int b = 0; b < nblocks[i].h * nblocks[i].w; b++) {
 				unsigned char* pblock = pixels[i][b];
-				memset(coeffs,0,sizeof(float)*mincomponent);
+				memset(coeffs,0,sizeof(coeff)*mincomponent);
 				for(int z = 0; z < block[i].d; z++)
 					for(int y = 0; y < block[i].h; y++)
 						for(int x = 0; x < block[i].w; x++) {
 							unsigned char pel = pblock[(z*minbuf[i].h+y)*minbuf[i].w+x];
 							if(spec < 0)
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = copysignl((powl(M_E,fabsl((pel-127.5L)/c[i]))-1),pel-127.5L);
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(copysign)((mi(pow)(mi(M_E),mi(fabs)((pel-mi(127.5))/c[i]))-1),pel-mi(127.5));
 							else
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel;
 						}
-				if(spec >= 0) fftwf_execute(planforward[i]);
-				float dc = coeffs[0];
+				if(spec >= 0) fftw(execute)(planforward[i]);
+				coeff dc = coeffs[0];
 
 				if(expr)
 					for(int z = 0; z < active[i].d; z++)
@@ -470,7 +471,7 @@ int main(int argc, char* argv[]) {
 						if(preserve_dc < 2)
 							coeffs[0] = dc;
 						else
-							coeffs[0] += (1-(dcstop ? damp[i] : boost[i])) * 127.5/(normalization[i]*normalization[i]*scalefactor[i]);
+							coeffs[0] += (1-(dcstop ? damp[i] : boost[i])) * mi(127.5)/(normalization[i]*normalization[i]*scalefactor[i]);
 					}
 				}
 
@@ -478,31 +479,32 @@ int main(int argc, char* argv[]) {
 					for(int z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++) {
-								float q = quantizer[i] * (z?1:M_SQRT2) * (y?1:M_SQRT2) * (x?1:M_SQRT2);
-								coeffs_coded += !!(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = roundf(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] / q)*q);
+								intermediate q = quantizer[i] * (z?mi(1.):mi(M_SQRT2)) * (y?mi(1.):mi(M_SQRT2)) * (x?mi(1.):mi(M_SQRT2));
+								coeffs_coded += !!(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(round)(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] / q)*q);
 							}
-				if(spec <= 0) fftwf_execute(planinverse[i]);
-				else if(spec == 1) c[i] = 255/logl(fabsl(dc * scalefactor[i] * normalization[i])+1);
+				if(spec <= 0) fftw(execute)(planinverse[i]);
+				else if(spec == 1) c[i] = 255/mi(log)(mi(fabs)(dc * scalefactor[i] * normalization[i])+1);
 				for(int z = 0; z < scaled[i].d; z++)
 					for(int y = 0; y < scaled[i].h; y++)
 						for(int x = 0; x < scaled[i].w; x++) {
-							long double pel = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] * scalefactor[i];
+							intermediate pel = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] * scalefactor[i];
 							if(spec > 0) {
 								if(spec == 1)
-									pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = round(c[i]*logl(fabsl(pel*normalization[i])+1));
+									pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(lround)(c[i]*mi(log)(mi(fabs)(pel*normalization[i])+1));
 								else
-									pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = round(c[i]*copysignl(logl(fabsl(pel)+1),pel)+127.5);
+									pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(lround)(c[i]*mi(copysign)(mi(log)(mi(fabs)(pel)+1),pel)+mi(127.5));
 							}
 							else {
 								pel *= normalization[i]*normalization[i];
-								pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : round(pel);
+								pel = mi(fabs)(pel);
+								pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : mi(lround)(pel);
 								if(dithering) {
-									double dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-pblock[(z*minbuf[i].h+y)*minbuf[i].w+x]/(normalization[i]*normalization[i]*scalefactor[i]);
-									if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*7.0/16.0;
+									intermediate dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-pblock[(z*minbuf[i].h+y)*minbuf[i].w+x]/(normalization[i]*normalization[i]*scalefactor[i]);
+									if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*mi(7.0)/mi(16.0);
 									if(y < scaled[i].h-1) {
-										if(x) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x-1] += dp*3.0/16.0;
-										coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x] += dp*5.0/16.0;
-										if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x+1] += dp/16.0;
+										if(x) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x-1] += dp*mi(3.0)/mi(16.0);
+										coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x] += dp*mi(5.0)/mi(16.0);
+										if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x+1] += dp/mi(16.0);
 									}
 								}
 							}
@@ -534,15 +536,15 @@ int main(int argc, char* argv[]) {
 			fprintf(stderr,"coeffs: %llu / %llu (%2.0f%%)\nzeroes: %llu / %llu (%2.0f%%)\n",coeffs_coded,total,coeffs_coded*100.0/total,total-coeffs_coded,total,(total-coeffs_coded)*100.0/total);
 	}
 
-	fftwf_free(coeffs);
+	fftw(free)(coeffs);
 	for(int i = 0; i < components; i++) {
 		for(int b = 0; b < nblocks[i].h * nblocks[i].w; b++)
 			free(pixels[i][b]);
 		free(pixels[i]);
 	}
 	for(int i = 0; i < unique_plans; i++)
-		fftwf_destroy_plan(plans[i]);
-	fftwf_cleanup();
+		fftw(destroy_plan)(plans[i]);
+	fftw(cleanup)();
 
 	ffapi_close(out);
 	ffapi_close(in);
