@@ -10,11 +10,6 @@
 
 #include "ffapi.h"
 
-long double sinc(long double x) {
-	return cos(M_PI*x)/2+0.5;
-	x*=M_PI;
-	return x?(sin(x)/(x)):1;
-}
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
