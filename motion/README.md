@@ -12,7 +12,7 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 	[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]
 	[-Q|--quiet]
 
-	-b|--blocksize - 3D size of blocks to operate on. (full input dimensions)
+	-b|--blocksize - 3D size of blocks to operate on. (full frame dimensions)
 	-s|--size - 3D size of output blocks, if scaling. (blocksize)
 	-p|--bandpass - Beginning and end coordinates of brick-wall bandpass. (blocksize)
 	-B|--boost - Multiplier for the pass band. (1)
@@ -33,7 +33,7 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 
 3D coordinates can take 0 to represent their parent's size.
 
-Beware that the default block size will be the dimensions of the input. For all but the smallest videos this will consume a massive amount of memory. To operate on a full-frame basis instead, use -b0x0x1
+motion defaults to a block size of one frame (-b0x0x1). To transform the entire input as a 3D volume use `-b 0x0x0`, but note that the full dimensions of the input must fit into memory.
 
 Refer to the FFmpeg documentation for colorspace, format, encoder, and enc/decopts.
 
@@ -47,11 +47,11 @@ Perform a 3-dimensional analog to JPEG-style compression:
 
 Watch a 2D spectrum of a video
 
-	motion -b0x0x1 --spectrogram -i ... -o ffplay:
+	motion --spectrogram -i ... -o ffplay:
 
 Perform a linear 3D smoothing filter using FFmpeg's expression evaluator
 
-	motion -b0x0x1 --eval 'c * ((width-x)/width) * ((height-y)/height) * ((depth-z)/depth)' -i ... -o ...
+	motion --eval 'c * ((width-x)/width) * ((height-y)/height) * ((depth-z)/depth)' -i ... -o ...
 
 
 # Rotate

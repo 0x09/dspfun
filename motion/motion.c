@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
 	int opt;
 	int longoptind = 0;
 	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL,* exprstr = NULL,* fftw_wisdom_file = NULL;
-	coords block = {0}, scaled = {0};
+	coords block = {0,0,1}, scaled = {0};
 	unsigned long long int offset = 0, maxframes = 0;
 	int samerate = false, samesize = false, spec = 0, dithering = false;
 	range bandpass = {0};
