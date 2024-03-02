@@ -1,8 +1,10 @@
 PREFIX ?= /usr/local
 
+pcdeps = fftw3f MagickWand libavcodec libavformat libswscale libavutil
+
 CC ?= cc
-CFLAGS := -DPRECISION=F -D_GNU_SOURCE -Wno-initializer-overrides -std=c11 -Ofast -flto -I../include $(CFLAGS) -DMAGICKWAND_VERSION=$(shell pkg-config --modversion MagickWand | cut -d. -f1)
-LIBS := -lavcodec -lavformat -lswscale -lavutil -lm $(shell pkg-config --cflags --libs fftw3f MagickWand)
+CFLAGS := -DPRECISION=F -D_GNU_SOURCE -Wno-initializer-overrides -std=c11 -Ofast -flto -I../include $(shell pkg-config --cflags $(pcdeps)) $(CFLAGS) -DMAGICKWAND_VERSION=$(shell pkg-config --modversion MagickWand | cut -d. -f1)
+LIBS := $(shell pkg-config --libs $(pcdeps)) -lm
 
 TOOLS = scan
 
