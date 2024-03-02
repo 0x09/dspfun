@@ -9,7 +9,7 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 	[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]
 	[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type]
 	[--fftw-planning-method method] [--fftw-wisdom-file file]
-	[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]
+	[-r|--framerate] [--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]
 	[-Q|--quiet]
 
 	-b|--blocksize - 3D size of blocks to operate on. (full frame dimensions)

@@ -71,7 +71,7 @@ static void usage() {
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
 	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
 	               "[--fftw-planning-method method] [--fftw-wisdom-file file]\n"
-	               "[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]\n"
+	               "[-r|--framerate] [--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]\n"
 	               "[-Q|--quiet]\n");
 	exit(0);
 }
@@ -82,6 +82,7 @@ int main(int argc, char* argv[]) {
 	coords block = {0,0,1}, scaled = {0};
 	unsigned long long int offset = 0, maxframes = 0;
 	int samerate = false, samesize = false, spec = 0, dithering = false;
+	AVRational out_rate = {0};
 	range bandpass = {0};
 	coeff boost[4] = {1,1,1,1};
 	coeff damp[4] = {0,0,0,0};
@@ -94,6 +95,7 @@ int main(int argc, char* argv[]) {
 		{"blocksize",required_argument,NULL,'b'},
 		{"offset",required_argument,NULL,2},
 		{"frames",required_argument,NULL,3},
+		{"framerate",required_argument,NULL,'r'},
 		{"keep-rate",no_argument,&samerate,1},
 		{"samesize-chroma",no_argument,&samesize,1},
 		{"spectrogram",optional_argument,NULL,4},
@@ -117,7 +119,7 @@ int main(int argc, char* argv[]) {
 		{"quiet",required_argument,NULL,'Q'},
 		{0}
 	};
-	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:rP:Q",gopts,&longoptind)) != -1)
+	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Q",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'b': sscanf(optarg,"%llux%llux%llu",&block->w,&block->h,&block->d); break;
 			case 's': sscanf(optarg,"%llux%llux%llu",&scaled->w,&scaled->h,&scaled->d); break;
@@ -125,6 +127,7 @@ int main(int argc, char* argv[]) {
 			case 'B': for(int i = sscanf(optarg,"%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER,boost,boost+1,boost+2,boost+3); i < 4; i++) boost[i] = i ? boost[i-1] : 1; break;
 			case 'D': for(int i = sscanf(optarg,"%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER,damp,damp+1,damp+2,damp+3); i < 4; i++) damp[i] = i ? damp[i-1] : 0; break;
 			case 'c': colorspace = optarg; break;
+			case 'r': av_parse_video_rate(&out_rate,optarg); break;
 			case  2 : offset = strtoull(optarg,NULL,10); break;
 			case  3 : maxframes = strtoull(optarg,NULL,10); break;
 			case  4 : spec = 1;
@@ -252,10 +255,14 @@ int main(int argc, char* argv[]) {
 		truncated[i].d = nblocks[i].d * block[i].d;
 	}
 
-	AVRational scale = {1,1};
-	if(!samerate)
-		av_reduce(&scale.num,&scale.den,scaled->d,block->d,INT_MAX);
-	r_frame_rate = av_mul_q(r_frame_rate,scale);
+	if(out_rate.num == 0 && out_rate.den == 0) {
+		AVRational scale = {1,1};
+		if(!samerate)
+			av_reduce(&scale.num,&scale.den,scaled->d,block->d,INT_MAX);
+		r_frame_rate = av_mul_q(r_frame_rate,scale);
+	}
+	else r_frame_rate = out_rate;
+
 	if(shell) {
 		printf(
 			"w=%llu h=%llu fps_num=%d fps_den=%d pixel_format=%s color_range=%s color_primaries=%s color_trc=%s colorspace=%s chroma_sample_location=%s",
