@@ -67,7 +67,7 @@ int parse_fftw_flag(const char* arg) {
 }
 
 static void usage() {
-	fprintf(stderr,"Usage: motion -i infile [-o outfile]\n"
+	fprintf(stderr,"Usage: motion [options] <infile> [outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
 	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
 	               "[--fftw-planning-method method] [--fftw-wisdom-file file]\n"
@@ -117,10 +117,8 @@ int main(int argc, char* argv[]) {
 		{"quiet",required_argument,NULL,'Q'},
 		{0}
 	};
-	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:rP:Q",gopts,&longoptind)) != -1)
+	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:rP:Q",gopts,&longoptind)) != -1)
 		switch(opt) {
-			case 'i': infile = optarg; break;
-			case 'o': outfile = optarg; break;
 			case 'b': sscanf(optarg,"%llux%llux%llu",&block->w,&block->h,&block->d); break;
 			case 's': sscanf(optarg,"%llux%llux%llu",&scaled->w,&scaled->h,&scaled->d); break;
 			case 'p': sscanf(optarg,"%llux%llux%llu-%llux%llux%llu",&bandpass.begin->w,&bandpass.begin->h,&bandpass.begin->d,&bandpass.end->w,&bandpass.end->h,&bandpass.end->d); break;
@@ -151,6 +149,14 @@ int main(int argc, char* argv[]) {
 			case 'Q': quiet = true; break;
 			default : usage();
 		}
+
+	argv += optind;
+	argc -= optind;
+
+	infile = argv[0];
+	if(argc > 0)
+		outfile = argv[1];
+
 	if(!infile) usage();
 
 	// Setup input

@@ -5,7 +5,7 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 
 ## Usage
 
-	motion -i infile [-o outfile]
+	motion [options] <infile> [outfile]
 	[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]
 	[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type]
 	[--fftw-planning-method method] [--fftw-wisdom-file file]
@@ -43,15 +43,15 @@ Unless a format is specified, pipe output (`-o -`) defaults to yuv4mpeg, which c
 
 Perform a 3-dimensional analog to JPEG-style compression:
 	
-	motion -b8x8x8 -q 20 --samesize-chroma -i ... -o ...
+	motion -b8x8x8 -q 20 --samesize-chroma <input> <output>
 
 Watch a 2D spectrum of a video
 
-	motion --spectrogram -i ... -o ffplay:
+	motion --spectrogram <input> ffplay:
 
 Perform a linear 3D smoothing filter using FFmpeg's expression evaluator
 
-	motion --eval 'c * ((width-x)/width) * ((height-y)/height) * ((depth-z)/depth)' -i ... -o ...
+	motion --eval 'c * ((width-x)/width) * ((height-y)/height) * ((depth-z)/depth)' <input> <output>
 
 
 # Rotate
