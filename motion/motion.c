@@ -70,7 +70,8 @@ static void usage() {
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
 	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
 	               "[--fftw-planning-method method] [--fftw-wisdom-file file]\n"
-	               "[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]\n");
+	               "[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]\n"
+	               "[-Q|--quiet]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
@@ -86,6 +87,7 @@ int main(int argc, char* argv[]) {
 	float quant = 0;
 	int shell = 0, preserve_dc = 0, fftw_flags = FFTW_ESTIMATE;
 	int loglevel = AV_LOG_ERROR;
+	bool quiet = false;
 	const struct option gopts[] = {
 		{"size",required_argument,NULL,'s'},
 		{"blocksize",required_argument,NULL,'b'},
@@ -111,9 +113,10 @@ int main(int argc, char* argv[]) {
 		{"eval",required_argument,NULL,12},
 		{"fftw-planning-method",required_argument,NULL,13},
 		{"fftw-wisdom-file",required_argument,NULL,14},
+		{"quiet",required_argument,NULL,'Q'},
 		{0}
 	};
-	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:rP:",gopts,&longoptind)) != -1)
+	while((opt = getopt_long(argc,argv,"i:o:b:s:p:B:D:c:q:rP:Q",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'i': infile = optarg; break;
 			case 'o': outfile = optarg; break;
@@ -144,6 +147,7 @@ int main(int argc, char* argv[]) {
 				}; break;
 			case 14 : fftw_wisdom_file = optarg; break;
 			case  0 : if(gopts[longoptind].flag != NULL) break;
+			case 'Q': quiet = true; break;
 			default : usage();
 		}
 	if(!infile) usage();
@@ -185,7 +189,7 @@ int main(int argc, char* argv[]) {
 	}
 	coords subsample_factors = {{0,0,0},{pixdesc.log2_chroma_w,pixdesc.log2_chroma_h,0},{pixdesc.log2_chroma_w,pixdesc.log2_chroma_h,0},{0,0,0}};
 	propagate_planes(source,subsample_factors);
-	if(!shell) { fprintf(stderr,"  source: ");print_coords(source); }
+	if(!(quiet || shell)) { fprintf(stderr,"  source: ");print_coords(source); }
 
 	if(!shell && !outfile) {
 		ffapi_close(in);
@@ -223,7 +227,7 @@ int main(int argc, char* argv[]) {
 	limit_coords(block,bandpass.begin);
 	limit_coords(block,bandpass.end);
 
-	if(!shell && (source->w % block->w || source->h % block->h || source->d % block->d))
+	if(!(quiet || shell) && (source->w % block->w || source->h % block->h || source->d % block->d))
 	 	fprintf(stderr,"Warning: Blocks not evenly divisible, truncating dimensions\n");
 
 	coords nblocks, truncated, newres;
@@ -259,14 +263,16 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-	fprintf(stderr,"   using: ");print_coords(truncated);
-	fprintf(stderr,"   block: ");print_coords(block);
-	fprintf(stderr,"bp begin: ");print_coords(bandpass.begin);
-	fprintf(stderr,"bp   end: ");print_coords(bandpass.end);
-	fprintf(stderr,"  scaled: ");print_coords(scaled);
-	fprintf(stderr," nblocks: ");print_coords(nblocks);
-	fprintf(stderr," outsize: ");print_coords(newres);
-	fprintf(stderr,"\n");
+	if(!quiet) {
+		fprintf(stderr,"   using: ");print_coords(truncated);
+		fprintf(stderr,"   block: ");print_coords(block);
+		fprintf(stderr,"bp begin: ");print_coords(bandpass.begin);
+		fprintf(stderr,"bp   end: ");print_coords(bandpass.end);
+		fprintf(stderr,"  scaled: ");print_coords(scaled);
+		fprintf(stderr," nblocks: ");print_coords(nblocks);
+		fprintf(stderr," outsize: ");print_coords(newres);
+		fprintf(stderr,"\n");
+	}
 
 	// Setup output
 	FFContext* out = ffapi_open_output(outfile,encopts,format,encoder,AV_CODEC_ID_FFV1,&color_props,newres->w,newres->h,r_frame_rate);
@@ -276,12 +282,14 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	fprintf(stderr,"pixel_format %s --> %s --> %s\n",av_get_pix_fmt_name(in->codec->pix_fmt),pixdesc.name,av_get_pix_fmt_name(out->codec->pix_fmt));
-	fprintf(stderr,"color_range %s --> %s --> %s\n",av_color_range_name(in->codec->color_range),av_color_range_name(color_props.color_range),av_color_range_name(out->codec->color_range));
-	fprintf(stderr,"color_primaries %s --> %s --> %s\n",av_color_primaries_name(in->codec->color_primaries),av_color_primaries_name(color_props.color_primaries),av_color_primaries_name(out->codec->color_primaries));
-	fprintf(stderr,"color_trc %s --> %s --> %s\n",av_color_transfer_name(in->codec->color_trc),av_color_transfer_name(color_props.color_trc),av_color_transfer_name(out->codec->color_trc));
-	fprintf(stderr,"colorspace %s --> %s --> %s\n",av_color_space_name(in->codec->colorspace),av_color_space_name(color_props.color_space),av_color_space_name(out->codec->colorspace));
-	fprintf(stderr,"chroma_sample_location %s --> %s --> %s\n",av_chroma_location_name(in->codec->chroma_sample_location),av_chroma_location_name(color_props.chroma_location),av_chroma_location_name(out->codec->chroma_sample_location));
+	if(!quiet) {
+		fprintf(stderr,"pixel_format %s --> %s --> %s\n",av_get_pix_fmt_name(in->codec->pix_fmt),pixdesc.name,av_get_pix_fmt_name(out->codec->pix_fmt));
+		fprintf(stderr,"color_range %s --> %s --> %s\n",av_color_range_name(in->codec->color_range),av_color_range_name(color_props.color_range),av_color_range_name(out->codec->color_range));
+		fprintf(stderr,"color_primaries %s --> %s --> %s\n",av_color_primaries_name(in->codec->color_primaries),av_color_primaries_name(color_props.color_primaries),av_color_primaries_name(out->codec->color_primaries));
+		fprintf(stderr,"color_trc %s --> %s --> %s\n",av_color_transfer_name(in->codec->color_trc),av_color_transfer_name(color_props.color_trc),av_color_transfer_name(out->codec->color_trc));
+		fprintf(stderr,"colorspace %s --> %s --> %s\n",av_color_space_name(in->codec->colorspace),av_color_space_name(color_props.color_space),av_color_space_name(out->codec->colorspace));
+		fprintf(stderr,"chroma_sample_location %s --> %s --> %s\n",av_chroma_location_name(in->codec->chroma_sample_location),av_chroma_location_name(color_props.chroma_location),av_chroma_location_name(out->codec->chroma_sample_location));
+	}
 
 	AVExpr* expr = NULL;
 	const char* names[] = {"c","x","y","z","i","width","height","depth","components","bx","by","bz","bwidth","bheight","bdepth",NULL};
@@ -290,8 +298,9 @@ int main(int argc, char* argv[]) {
 
 	// Seeking
 	if(offset) {
-		ffapi_seek_frame(in, offset, seek_progress);
-		fprintf(stderr,"\n");
+		ffapi_seek_frame(in, offset, quiet ? NULL : seek_progress);
+		if(!quiet)
+			fprintf(stderr,"\n");
 	}
 	// Main loop
 	coords minbuf, active;
@@ -367,7 +376,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	int padb = log10f(source->d)+1, pads = log10f(newres->d)+1;
-	fprintf(stderr,"read: %*d wrote: %*d",padb,0,pads,0);
+	if(!quiet)
+		fprintf(stderr,"read: %*d wrote: %*d",padb,0,pads,0);
 	AVFrame* readframe = ffapi_alloc_frame(in);
 	AVFrame* writeframe = ffapi_alloc_frame(out);
 	unsigned long long coeffs_coded = 0;
@@ -383,7 +393,8 @@ int main(int argc, char* argv[]) {
 							for(int x = 0; x < block[i].w; x++)
 								pixels[i][by*nblocks[i].w+bx][(z*minbuf[i].h+y)*minbuf[i].w+x] = ffapi_getpel_direct(readframe,bx*block[i].w+x,by*block[i].h+y,comp);
 			}
-			fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,bz*block->d+z+1,pads,bz*scaled->d);
+			if(!quiet)
+				fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,bz*block->d+z+1,pads,bz*scaled->d);
 		}
 		for(int i = 0; i < components; i++) {
 			if(bz >= nblocks[i].d) continue;
@@ -509,7 +520,8 @@ int main(int argc, char* argv[]) {
 								ffapi_setpel_direct(writeframe,bx*scaled[i].w+x,by*scaled[i].h+y,comp,pixels[i][by*nblocks[i].w+bx][(z*minbuf[i].h+y)*minbuf[i].w+x]);
 			}
 			ffapi_write_frame(out,writeframe);
-			fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,(bz+1)*block->d,pads,bz*scaled->d+z+1);
+			if(!quiet)
+				fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,(bz+1)*block->d,pads,bz*scaled->d+z+1);
 		}
 	}
 	fprintf(stderr,"\n");
@@ -518,7 +530,8 @@ int main(int argc, char* argv[]) {
 		unsigned long long total = 0;
 		for(int i = 0; i < components; i++)
 			total += newres[i].w * newres[i].h * newres[i].d;
-		fprintf(stderr,"coeffs: %llu / %llu (%2.0f%%)\nzeroes: %llu / %llu (%2.0f%%)\n",coeffs_coded,total,coeffs_coded*100.0/total,total-coeffs_coded,total,(total-coeffs_coded)*100.0/total);
+		if(!quiet)
+			fprintf(stderr,"coeffs: %llu / %llu (%2.0f%%)\nzeroes: %llu / %llu (%2.0f%%)\n",coeffs_coded,total,coeffs_coded*100.0/total,total-coeffs_coded,total,(total-coeffs_coded)*100.0/total);
 	}
 
 	fftwf_free(coeffs);

@@ -9,7 +9,8 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 	[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]
 	[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type]
 	[--fftw-planning-method method] [--fftw-wisdom-file file]
-	[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts]
+	[--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]
+	[-Q|--quiet]
 
 	-b|--blocksize - 3D size of blocks to operate on. (full input dimensions)
 	-s|--size - 3D size of output blocks, if scaling. (blocksize)
@@ -27,6 +28,8 @@ motion - apply various 2- or 3-dimensional frequency-domain operations to an ima
 
 	--keep-rate - If scaling in time, maintain same framerate.
 	--samesize-chroma - Subsampled chroma planes will use the same block size as the Y plane.
+
+	-Q|--quiet - Silence progress and other non-error output.
 
 3D coordinates can take 0 to represent their parent's size.
 
