@@ -33,8 +33,9 @@ As a precaution the output rate can be limited to a very low or even fractional 
 	  --eval <expression>     Apply a formula to coefficients using FFmpeg's expression evaluator.
 	                          Provided arguments are coefficient "c" in a non-uniform range 0-1, indexes as "x", "y", "z", and "i" (color component), and dimensions "width", "height", "depth", and "components".
       
-	  --fftw-planning-method  How thoroughly to plan the transform: estimate (default), measure, patient, exhaustive. Higher values trade startup time for transform time.
-	  --fftw-wisdom-file      File to read accumulated FFTW plan wisdom from and save new wisdom to. Can be used to save startup time for higher planning methods for repeat block sizes.
+	  --fftw-planning-method <m>  How thoroughly to plan the transform: estimate (default), measure, patient, exhaustive. Higher values trade startup time for transform time.
+	  --fftw-wisdom-file <file>   File to read accumulated FFTW plan wisdom from and save new wisdom to. Can be used to save startup time for higher planning methods for repeat block sizes.
+	  --fftw-threads <num>        Maximum number of threads to use for FFTW [default: 1].
       
 	  -r, --framerate <rate>  Set the output framerate to this number or fraction (default: the input framerate).
 	  --keep-rate             If scaling in time with -s, retain the input framerate instead of scaling the framerate to retain the total duration. Ignored if --framerate is set.

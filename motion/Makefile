@@ -17,7 +17,7 @@ ffapi.o: ../include/ffapi.c
 	$(CC) $(CFLAGS) -c -o $@ $+
 
 motion: motion.c ffapi.o
-	$(CC) $(CFLAGS) -o $@ $+ $(shell pkg-config --cflags --libs $(fftw)) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $+ $(shell pkg-config --cflags --libs $(fftw)) $(LIBS) -l$(fftw)_threads -lpthread
 
 rotate: rotate.c ffapi.o
 	$(CC) $(CFLAGS) -o $@ $+ $(LIBS)

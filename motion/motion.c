@@ -70,7 +70,7 @@ static void usage() {
 	fprintf(stderr,"Usage: motion [options] <infile> [outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
 	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
-	               "[--fftw-planning-method method] [--fftw-wisdom-file file]\n"
+	               "[--fftw-planning-method method] [--fftw-wisdom-file file] [--fftw-threads nthreads]\n"
 	               "[-r|--framerate] [--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]\n"
 	               "[-Q|--quiet]\n");
 	exit(1);
@@ -98,8 +98,9 @@ static void help() {
 	"  --eval <expression>     Apply a formula to coefficients using FFmpeg's expression evaluator.\n"
 	"                          Provided arguments are coefficient \"c\" in a non-uniform range 0-1, indexes as \"x\", \"y\", \"z\", and \"i\" (color component), and dimensions \"width\", \"height\", \"depth\", and \"components\".\n"
 	"\n"
-	"  --fftw-planning-method  How thoroughly to plan the transform: estimate (default), measure, patient, exhaustive. Higher values trade startup time for transform time.\n"
-	"  --fftw-wisdom-file      File to read accumulated FFTW plan wisdom from and save new wisdom to. Can be used to save startup time for higher planning methods for repeat block sizes.\n"
+	"  --fftw-planning-method <m>  How thoroughly to plan the transform: estimate (default), measure, patient, exhaustive. Higher values trade startup time for transform time.\n"
+	"  --fftw-wisdom-file <file>   File to read accumulated FFTW plan wisdom from and save new wisdom to. Can be used to save startup time for higher planning methods for repeat block sizes.\n"
+	"  --fftw-threads <num>        Maximum number of threads to use for FFTW [default: 1].\n"
 	"\n"
 	"  -r, --framerate <rate>  Set the output framerate to this number or fraction (default: the input framerate).\n"
 	"  --keep-rate             If scaling in time with -s, retain the input framerate instead of scaling the framerate to retain the total duration. Ignored if --framerate is set.\n"
@@ -131,7 +132,7 @@ int main(int argc, char* argv[]) {
 	coeff boost[4] = {1,1,1,1};
 	coeff damp[4] = {0,0,0,0};
 	coeff quant = 0;
-	int shell = 0, preserve_dc = 0, fftw_flags = FFTW_ESTIMATE;
+	int shell = 0, preserve_dc = 0, fftw_flags = FFTW_ESTIMATE, fftw_threads = 1;
 	int loglevel = AV_LOG_ERROR;
 	bool quiet = false;
 	const struct option gopts[] = {
@@ -160,6 +161,7 @@ int main(int argc, char* argv[]) {
 		{"eval",required_argument,NULL,12},
 		{"fftw-planning-method",required_argument,NULL,13},
 		{"fftw-wisdom-file",required_argument,NULL,14},
+		{"fftw-threads",required_argument,NULL,15},
 		{"quiet",required_argument,NULL,'Q'},
 		{"help",required_argument,NULL,'h'},
 		{0}
@@ -193,6 +195,11 @@ int main(int argc, char* argv[]) {
 					exit(1);
 				}; break;
 			case 14 : fftw_wisdom_file = optarg; break;
+			case 15 :
+				if((fftw_threads = strtol(optarg,NULL,10)) < 1) {
+					fprintf(stderr, "invalid number of threads %d\n", fftw_threads);
+					exit(1);
+				}; break;
 			case  0 : if(gopts[longoptind].flag != NULL) break;
 			case 'Q': quiet = true; break;
 			case 'h': help();
@@ -363,6 +370,10 @@ int main(int argc, char* argv[]) {
 			fprintf(stderr,"\n");
 	}
 	// Main loop
+
+	fftw(init_threads)();
+	fftw(plan_with_nthreads)(fftw_threads);
+
 	coords minbuf, active;
 	size_t mincomponent = 0;
 	for(int i = 0; i < components; i++) {
@@ -607,6 +618,8 @@ int main(int argc, char* argv[]) {
 
 	ffapi_close(out);
 	ffapi_close(in);
+
+	fftw(cleanup_threads)();
 
 	return 0;
 }
