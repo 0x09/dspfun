@@ -12,6 +12,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <stdint.h>
 
 struct scan_precomputed* scan_precompute(struct scan_context* ctx);
 
