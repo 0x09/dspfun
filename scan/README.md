@@ -5,36 +5,36 @@ scan - Progressively reconstruct images using various frequency space scans.
 Flower image part way through a radial scan, showing intermediates. [Link to full sequence](http://0x09.net/i/g/scan/flower_radial.mp4).
 
 # Usage
-	usage: scan <options> input output
+	Usage: scan [options] <input> <output>
 	options:
-	   -h|--help
-	   -H|--fullhelp
-	   -m|--method <name>                scan method
-	   -o|--options <optstring>          scan-specific options
-	   -v|--visualize                    show scan in frequency-space
-	   -s|--spectrogram                  show scan over image spectrogram (implies -v)
-	   -i|--intermediates                show transform intermediates for current index (stacks with -v/-s)
-	   -M|--max-intermediates            use full range for transform intermediates (implies -i)
-	   -S|--step <int>                   number of scan iterations per frame of output
-	   -I|--invert                       invert scan order
-	   -n|--frames <int>                 limit the number of frames of output
-	   -O|--offset <int>                 offset into scan to start at
-	      --skip                         don't fill previous scan indexes when jumping to an offset with --offset
-	   -g|--linear                       operate in linear light
-	   -p|--pruned-idct <bool>           use built-in pruned idct instead of fftw, faster on small scan intervals (default: auto based on scan interval)
-	   -f|--serialization-file <path>    serialize scan to file
-	   -t|--serialization-format <fmt>   scan format to serialize (with -f)
+	   -h, --help                        this help text
+	   -H, --fullhelp                    print available scan methods, serialization formats, and spectrogram options
+	   -m, --method <name>               scan method
+	   -o, --options <optstring>         scan-specific options
+	   -v, --visualize                   show scan in frequency-space
+	   -s, --spectrogram                 show scan over image spectrogram (implies -v)
+	   -i, --intermediates               show transform intermediates for current index (stacks with -v/-s)
+	   -M, --max-intermediates           use full range for transform intermediates. may produce bright flashing in the output. (implies -i)
+	   -S, --step <int>                  number of scan iterations per frame of output
+	   -I, --invert                      invert scan order
+	   -n, --frames <int>                limit the number of frames of output
+	   -O, --offset <int>                offset into scan to start at
+	       --skip                        don't fill previous scan indexes when jumping to an offset with --offset
+	   -g, --linear                      operate in linear light
+	   -p, --pruned-idct <bool>          use built-in pruned idct instead of fftw, faster on small scan intervals [default: auto based on scan interval]
+	   -f, --serialization-file <path>   serialize scan to file
+	   -t, --serialization-format <fmt>  scan format to serialize (with -f)
 
 	ffmpeg options:
-	   --ff-format <avformat>   output format
-	   --ff-encoder <avcodec>   output codec
-	   --ff-rate <rate>         output framerate
-	   --ff-opts <optstring>    output av options string (k=v:...)
-	   --ff-loglevel <-8..64>   av loglevel
+	   --ff-format <avformat>  output format
+	   --ff-encoder <avcodec>  output codec
+	   --ff-rate <rate>        output framerate
+	   --ff-opts <optstring>   output av options string (k=v:...)
+	   --ff-loglevel <-8..64>  av loglevel
 
 	spec options:
-	   --spec-gain <float>       spectrogram log multiplier (with -s)
-	   --spec-opts <optstring>   spectrogram options string (k=v:...) (with -s)
+	   --spec-gain <float>      spectrogram log multiplier (with -s)
+	   --spec-opts <optstring>  spectrogram options string (k=v:...) (with -s)
 
 	scan methods   - options
 	   horizontal
