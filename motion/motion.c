@@ -73,8 +73,52 @@ static void usage() {
 	               "[--fftw-planning-method method] [--fftw-wisdom-file file]\n"
 	               "[-r|--framerate] [--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]\n"
 	               "[-Q|--quiet]\n");
+	exit(1);
+}
+
+static void help() {
+	puts("Usage: motion [options] <infile> [outfile]\n"
+	"\n"
+	"  <outfile>               Output file or pipe, or \"ffplay:\" for ffplay output. If no output file is given motion prints the input dimensions and exits.\n"
+	"\n"
+	"  -h, --help              This help text.\n"
+	"  -Q, --quiet             Silence progress and other non-error output.\n"
+	"\n"
+	"  -b, --blocksize <dims>  3D size of blocks to operate on in the form WxHxD. [default: 0x0x1 (the full input frame dimensions)]\n"
+	"  -s, --size <dims>       3D size of output blocks in the form WxHxD for scaling. [default: 0x0x0 (the blocksize)]\n"
+	"  -p, --bandpass <range>  Beginning and end coordinates of brick-wall bandpass in the form X1xY1xZ1-X2xY2xZ2. [default: 0x0x0 through blocksize]\n"
+	"  -B, --boost <float>     Multiplier for the pass band. [default: 1]\n"
+	"  -D, --damp <float>      Multiplier for the stop band. [default: 0]\n"
+	"  --spectrogram[=<type>]  Output a spectrogram visualization, optionally specifying the type as an integer.\n"
+	"                          type: 0: absolute value spectrum (default), 1: shifted spectrum, -1: input is a shifted spectrum to invert\n"
+	"  -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.\n"
+	"  -d, --dither            Apply 2D Floyd-Steinberg dithering to the high-precision transform products.\n"
+	"  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p.\n"
+	"                          type: dc (default), grey.\n"
+	"  --eval <expression>     Apply a formula to coefficients using FFmpeg's expression evaluator.\n"
+	"                          Provided arguments are coefficient \"c\" in a non-uniform range 0-1, indexes as \"x\", \"y\", \"z\", and \"i\" (color component), and dimensions \"width\", \"height\", \"depth\", and \"components\".\n"
+	"\n"
+	"  --fftw-planning-method  How thoroughly to plan the transform: estimate (default), measure, patient, exhaustive. Higher values trade startup time for transform time.\n"
+	"  --fftw-wisdom-file      File to read accumulated FFTW plan wisdom from and save new wisdom to. Can be used to save startup time for higher planning methods for repeat block sizes.\n"
+	"\n"
+	"  -r, --framerate <rate>  Set the output framerate to this number or fraction (default: the input framerate).\n"
+	"  --keep-rate             If scaling in time with -s, retain the input framerate instead of scaling the framerate to retain the total duration. Ignored if --framerate is set.\n"
+	"  --samesize-chroma       If processing in a pixel format with subsampled chroma planes like yuv420p, chroma planes will use the same block size as the Y plane.\n"
+	"\n"
+	"  --frames <limit>        Limit the number of output frames.\n"
+	"  --offset <pos>          Seek to this frame number in the input before processing.\n"
+	"\n"
+	"  -c, --csp <optstring>   Option string specifying the pixel format and color properties to convert to for processing.\n"
+	"                          e.g. pixel_format=rgb24 converts the decoded input to rgb24 before processing.\n"
+	"  --iformat <fmt>         FFmpeg input format name (e.g. for pipe input)\n"
+	"  --format <fmt>          FFmpeg output format name [default: selected by FFmpeg based on output file extension]\n"
+	"  --codec <enc>           FFmpeg output encoder name [default: ffv1 or selected by FFmpeg based on output format]\n"
+	"  --encopts <optstring>   Option string containing FFmpeg encoder options for the output file.\n"
+	"  --decopts <optstring>   Option string containing FFmpeg decoder options for the input file.\n"
+	"  --loglevel <int>        Integer FFmpeg log level [default: 16 (AV_LOG_ERROR)]\n");
 	exit(0);
 }
+
 int main(int argc, char* argv[]) {
 	int opt;
 	int longoptind = 0;
@@ -117,9 +161,10 @@ int main(int argc, char* argv[]) {
 		{"fftw-planning-method",required_argument,NULL,13},
 		{"fftw-wisdom-file",required_argument,NULL,14},
 		{"quiet",required_argument,NULL,'Q'},
+		{"help",required_argument,NULL,'h'},
 		{0}
 	};
-	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Q",gopts,&longoptind)) != -1)
+	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Qh",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'b': sscanf(optarg,"%llux%llux%llu",&block->w,&block->h,&block->d); break;
 			case 's': sscanf(optarg,"%llux%llux%llu",&scaled->w,&scaled->h,&scaled->d); break;
@@ -150,6 +195,7 @@ int main(int argc, char* argv[]) {
 			case 14 : fftw_wisdom_file = optarg; break;
 			case  0 : if(gopts[longoptind].flag != NULL) break;
 			case 'Q': quiet = true; break;
+			case 'h': help();
 			default : usage();
 		}
 
