@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
 	coeff boost[4] = {1,1,1,1};
 	coeff damp[4] = {0,0,0,0};
 	coeff quant = 0;
-	int shell = 0, preserve_dc = 0, fftw_flags = FFTW_ESTIMATE, fftw_threads = 1;
+	int preserve_dc = 0, fftw_flags = FFTW_ESTIMATE, fftw_threads = 1;
 	int loglevel = AV_LOG_ERROR;
 	bool quiet = false;
 	const struct option gopts[] = {
@@ -155,7 +155,6 @@ int main(int argc, char* argv[]) {
 		{"encopts",required_argument,NULL,7},
 		{"iformat",required_argument,NULL,8},
 		{"decopts",required_argument,NULL,9},
-		{"shell",no_argument,&shell,1},
 		{"loglevel",required_argument,NULL,10},
 		{"preserve-dc",optional_argument,NULL,11},
 		{"eval",required_argument,NULL,12},
@@ -229,7 +228,7 @@ int main(int argc, char* argv[]) {
 			color_props.color_range = AVCOL_RANGE_JPEG;
 	}
 	unsigned long w[4], h[4], components;
-	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!shell && (!outfile || !maxframes));
+	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!(outfile && maxframes));
 	if(!in) {
 		fprintf(stderr, "Error opening \"%s\"\n", infile);
 		return 1;
@@ -252,9 +251,9 @@ int main(int argc, char* argv[]) {
 	}
 	coords subsample_factors = {{0,0,0},{pixdesc.log2_chroma_w,pixdesc.log2_chroma_h,0},{pixdesc.log2_chroma_w,pixdesc.log2_chroma_h,0},{0,0,0}};
 	propagate_planes(source,subsample_factors);
-	if(!(quiet || shell)) { fprintf(stderr,"  source: ");print_coords(source); }
+	if(!quiet) { fprintf(stderr,"  source: ");print_coords(source); }
 
-	if(!shell && !outfile) {
+	if(!outfile) {
 		ffapi_close(in);
 		return 0;
 	}
@@ -290,7 +289,7 @@ int main(int argc, char* argv[]) {
 	limit_coords(block,bandpass.begin);
 	limit_coords(block,bandpass.end);
 
-	if(!(quiet || shell) && (source->w % block->w || source->h % block->h || source->d % block->d))
+	if(!quiet && (source->w % block->w || source->h % block->h || source->d % block->d))
 	 	fprintf(stderr,"Warning: Blocks not evenly divisible, truncating dimensions\n");
 
 	coords nblocks, truncated, newres;
@@ -315,20 +314,6 @@ int main(int argc, char* argv[]) {
 		r_frame_rate = av_mul_q(r_frame_rate,scale);
 	}
 	else r_frame_rate = out_rate;
-
-	if(shell) {
-		printf(
-			"w=%llu h=%llu fps_num=%d fps_den=%d pixel_format=%s color_range=%s color_primaries=%s color_trc=%s colorspace=%s chroma_sample_location=%s",
-			newres->w,newres->h,r_frame_rate.num,r_frame_rate.den,pixdesc.name,
-			av_color_range_name(color_props.color_range),
-			av_color_primaries_name(color_props.color_primaries),
-			av_color_transfer_name(color_props.color_trc),
-			av_color_space_name(color_props.color_space),
-			av_chroma_location_name(color_props.chroma_location)
-		);
-		ffapi_close(in);
-		return 0;
-	}
 
 	if(!quiet) {
 		fprintf(stderr,"   using: ");print_coords(truncated);
