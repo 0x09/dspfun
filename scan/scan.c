@@ -248,13 +248,16 @@ int main(int argc, char* argv[]) {
 	ffapi_parse_color_props(&color_props,"");
 	color_props.pix_fmt = AV_PIX_FMT_RGB24;
 	color_props.color_range = AVCOL_RANGE_JPEG;
-	if(linear || MagickGetImageColorspace(wand) == sRGBColorspace) {
+	int imagecolorspace = MagickGetImageColorspace(wand);
+	if(imagecolorspace == RGBColorspace)
+		linear = true;
+	else if(linear)
+		MagickTransformImageColorspace(wand,RGBColorspace);
+	if(linear || imagecolorspace == sRGBColorspace) {
 		color_props.color_trc = AVCOL_TRC_IEC61966_2_1;
 		color_props.color_space = AVCOL_SPC_RGB;
 		color_props.color_primaries = AVCOL_PRI_BT709;
 	}
-	if(linear)
-		MagickTransformImageColorspace(wand,RGBColorspace);
 
 	coeff* coeffs = fftw(malloc)(sizeof(*coeffs)*width*height*channels);
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",TypePixel,coeffs);
