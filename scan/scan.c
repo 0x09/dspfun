@@ -11,6 +11,7 @@
 #include <ctype.h>
 
 #include <fftw3.h>
+#include <libavutil/csp.h>
 
 #include "scan.h"
 #include "ffapi.h"
@@ -38,10 +39,6 @@ static inline void pruned_idct(coeff* restrict basis[2], coeff* restrict coeffs,
 				for(size_t n = 1; n < ncoords; n++)
 					for(size_t z = 0; z < channels; z++)
 						image[(y*width+x)*channels+z] += coeffs[(coords[n][0]*width+coords[n][1])*channels+z] * basis[0][y*height+coords[n][0]] * basis[1][x*width+coords[n][1]];
-}
-
-static inline intermediate srgb_encode(intermediate x) {
-	 return x <= mi(0.00313066844250063) ?  mi(12.92)*x : mi(1.055)*mi(pow)(x,1/mi(2.4)) - mi(0.055);
 }
 
 void help(bool fullhelp) {
@@ -293,6 +290,9 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "Error opening output context\n");
 		goto scan_end;
 	}
+	av_csp_trc_function trc_encode = NULL;
+	if(linear)
+		trc_encode = av_csp_trc_func_from_id(ffctx->codec->color_trc);
 
 	AVFrame* frame = ffapi_alloc_frame(ffctx);
 	if(!frame) {
@@ -372,8 +372,8 @@ int main(int argc, char* argv[]) {
 				for(size_t z = 0; z < channels; z++) {
 					sum[(y*width+x)*channels+z] += image[(y*width+x)*channels+z];
 					intermediate pel = sum[(y*width+x)*channels+z];
-					if(linear)
-						pel = srgb_encode(pel);
+					if(trc_encode)
+						pel = trc_encode(pel);
 					ffapi_setpel(ffctx, frame, x, y, z, pel*255);
 				}
 	}
@@ -414,8 +414,8 @@ int main(int argc, char* argv[]) {
 				for(size_t z = 0; z < channels; z++) {
 					sum[(y*width+x)*channels+z] += image[(y*width+x)*channels+z];
 					intermediate pel = sum[(y*width+x)*channels+z];
-					if(linear)
-						pel = srgb_encode(pel);
+					if(trc_encode)
+						pel = trc_encode(pel);
 					ffapi_setpel(ffctx, frame, x, y, z, pel*255);
 				}
 
@@ -445,8 +445,8 @@ int main(int argc, char* argv[]) {
 				for(size_t x = 0; x < width; x++)
 					for(size_t z = 0; z < channels; z++) {
 						intermediate pel = (((image[(y*width+x)*channels+z]+coeffs[z])-min[z])/(max[z]-min[z]));
-						if(linear)
-							pel = srgb_encode(pel);
+						if(trc_encode)
+							pel = trc_encode(pel);
 						ffapi_setpel(ffctx, frame, x, y+height, z, pel*255);
 					}
 		}
