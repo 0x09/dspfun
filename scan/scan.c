@@ -169,11 +169,11 @@ int main(int argc, char* argv[]) {
 			case 'H': help(opt == 'H'); break;
 			case 'm': method = optarg; break;
 			case 'n': nframes = strtoull(optarg,NULL,10); break;
-			case 's': spec = true;
+			case 's': spec = true; // fallthrough
 			case 'v': visualize = true; break;
 			case 'S': step = strtoull(optarg,NULL,10); break;
 			case 'I': invert = true; break;
-			case 'o': scan_options = optarg;
+			case 'o': scan_options = optarg; break;
 			case 'i': intermediates = true; break;
 			case 'g': linear = true; break;
 			case 'M': intermediates = max_intermediates = true; break;
