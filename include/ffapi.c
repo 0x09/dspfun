@@ -214,7 +214,6 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		color_props->pix_fmt != avc->pix_fmt ||
 		color_props->color_range != avc->color_range ||
 		color_props->color_primaries != avc->color_primaries ||
-		color_props->color_trc != avc->color_trc ||
 		color_props->color_space != avc->colorspace ||
 		color_props->chroma_location != avc->chroma_sample_location
 	) {
@@ -374,7 +373,6 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		in_color_props->pix_fmt != avc->pix_fmt ||
 		in_color_props->color_range != avc->color_range ||
 		in_color_props->color_primaries != avc->color_primaries ||
-		in_color_props->color_trc != avc->color_trc ||
 		in_color_props->color_space != avc->colorspace ||
 		in_color_props->chroma_location != avc->chroma_sample_location
 	) {
