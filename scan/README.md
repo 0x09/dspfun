@@ -9,6 +9,7 @@ Flower image part way through a radial scan, showing intermediates. [Link to ful
 	options:
 	   -h, --help                        this help text
 	   -H, --fullhelp                    print available scan methods, serialization formats, and spectrogram options
+	   -q, --quiet                       don't output scan progress
 	   -m, --method <name>               scan method
 	   -o, --options <optstring>         scan-specific options
 	   -v, --visualize                   show scan in frequency-space

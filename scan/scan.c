@@ -50,6 +50,7 @@ void help(bool fullhelp) {
 		"options:\n"
 		"   -h, --help                        this help text\n"
 		"   -H, --fullhelp                    print available scan methods, serialization formats, and spectrogram options\n"
+		"   -q, --quiet                       don't output scan progress\n"
 		"   -m, --method <name>               scan method\n"
 		"   -o, --options <optstring>         scan-specific options\n"
 		"   -v, --visualize                   show scan in frequency-space\n"
@@ -123,7 +124,7 @@ int main(int argc, char* argv[]) {
 	int loglevel = 0;
 	const char* method = "diag",* scan_options = NULL,* serialized_scan = NULL;
 	size_t nframes = 0, offset = 0;
-	bool spec = false, invert = false, intermediates = false, linear = false, max_intermediates = false, visualize = false, fill_offset = true;
+	bool spec = false, invert = false, intermediates = false, linear = false, max_intermediates = false, visualize = false, fill_offset = true, quiet = false;
 	int use_fftw = -1;
 	intermediate gain = 0;
 	struct spec_params sparams = {0};
@@ -134,6 +135,7 @@ int main(int argc, char* argv[]) {
 	const struct option gopts[] = {
 		{"help",no_argument,NULL,'h'},
 		{"fullhelp",no_argument,NULL,'H'},
+		{"quiet",no_argument,NULL,'q'},
 		{"method",required_argument,NULL,'m'},
 		{"options",required_argument,NULL,'o'},
 		{"visualize",no_argument,NULL,'v'},
@@ -163,10 +165,11 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((opt = getopt_long(argc,argv,"hHm:o:vsiMS:In:O:gp:f:t:",gopts,&longoptind)) != -1)
+	while((opt = getopt_long(argc,argv,"hHqm:o:vsiMS:In:O:gp:f:t:",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'h':
 			case 'H': help(opt == 'H'); break;
+			case 'q': quiet = true; break;
 			case 'm': method = optarg; break;
 			case 'n': nframes = strtoull(optarg,NULL,10); break;
 			case 's': spec = true; // fallthrough
@@ -446,14 +449,16 @@ int main(int argc, char* argv[]) {
 		}
 
 		ffapi_write_frame(ffctx, frame);
-		fprintf(stderr, "\r%*zu / %zu", pad, i-offset, nframes);
+		if(!quiet)
+			fprintf(stderr, "\r%*zu / %zu", pad, i-offset, nframes);
 
 		// just clear intermediate coords instead of wiping the entire frame
 		if(intermediates && visualize)
 			for(size_t ci = 0; ci < ncoords; ci++)
 				ffapi_setpixel(ffctx, frame, coords[ci][1]+width, coords[ci][0]+height, blackpixel);
 	}
-	fprintf(stderr,"\n");
+	if(!quiet)
+		fprintf(stderr,"\n");
 
 	free(sum);
 	spec_destroy(sp);
