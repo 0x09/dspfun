@@ -309,17 +309,16 @@ int main(int argc, char* argv[]) {
 		nframes = (limit+step-1)/step;
 	if(use_fftw < 0)
 		use_fftw = step*max_interval > log2(width*height);
-	use_fftw |= fill_offset;
 
 	coeff* reconstruction = fftw(malloc)(sizeof(*reconstruction)*width*height*channels);
 	coeff* image = fftw(malloc)(sizeof(*image)*width*height*channels);
 	memset(reconstruction,0,sizeof(*reconstruction)*width*height*channels);
 
-	fftw(plan) inverse;
+	fftw(plan) inverse = NULL;
 	coeff* basis[2];
-	if(use_fftw)
+	if(use_fftw || fill_offset)
 		inverse = fftw(plan_many_r2r)(2,(int[2]){height,width},channels,reconstruction,NULL,channels,1,image,NULL,channels,1,(fftw(r2r_kind)[2]){FFTW_REDFT01,FFTW_REDFT01},FFTW_MEASURE);
-	else {
+	if(!use_fftw) {
 		basis[0] = generate_basis_matrix(height);
 		basis[1] = width == height ? basis[0] : generate_basis_matrix(width);
 	}
@@ -466,9 +465,9 @@ int main(int argc, char* argv[]) {
 	free(sum);
 	spec_destroy(sp);
 
-	if(use_fftw)
+	if(inverse)
 		fftw(destroy_plan)(inverse);
-	else {
+	if(!use_fftw) {
 		free(basis[0]);
 		if(width != height)
 			free(basis[1]);
