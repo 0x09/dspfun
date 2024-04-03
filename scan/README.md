@@ -1,8 +1,8 @@
 scan - Progressively reconstruct images using various frequency space scans.
 
-![Flower image part way through a radial scan|http://0x09.net/i/g/scan/flower_radial.mp4](http://0x09.net/i/g/scan/flower_radial.png "Flower image part way through a radial scan")
+![Flower image part way through a radial scan|https://0x09.net/i/g/scan/flower_radial.mp4](https://0x09.net/i/g/scan/flower_radial.png "Flower image part way through a radial scan")
 
-Flower image part way through a radial scan, showing intermediates. [Link to full sequence](http://0x09.net/i/g/scan/flower_radial.mp4).
+Flower image part way through a radial scan, showing intermediates. [Link to full sequence](https://0x09.net/i/g/scan/flower_radial.mp4).
 
 # Usage
 	Usage: scan [options] <input> <output>
@@ -70,14 +70,14 @@ Labels below link to examples (capped to 2400 frames) with the exception of the 
 
  | | | 
 -|-|-|-
-[horizontal](http://0x09.net/i/g/scan/horizontal.mp4)|[vertical](http://0x09.net/i/g/scan/vertical.mp4)|[zigzag](http://0x09.net/i/g/scan/zigzag.mp4)|[diagonal](http://0x09.net/i/g/scan/diagonal.mp4)
-![horizontal](http://0x09.net/i/g/scan/horiz.png "horizontal")|![vertical](http://0x09.net/i/g/scan/vert.png "vertical")|![zigzag](http://0x09.net/i/g/scan/zigzag.png "zigzag")|![diag](http://0x09.net/i/g/scan/diag.png "diag")
-[row](http://0x09.net/i/g/scan/row.mp4)|[column](http://0x09.net/i/g/scan/column.mp4)|[box](http://0x09.net/i/g/scan/box.mp4)|[ibox](http://0x09.net/i/g/scan/ibox.mp4)
-![row](http://0x09.net/i/g/scan/row.png "row")|![column](http://0x09.net/i/g/scan/col.png "column")|![box](http://0x09.net/i/g/scan/box.png "box")|![ibox](http://0x09.net/i/g/scan/ibox.png "ibox")
-[radial](http://0x09.net/i/g/scan/radial.mp4)|[iradial](http://0x09.net/i/g/scan/iradial.mp4)|[mirror](http://0x09.net/i/g/scan/mirror.mp4)|[magnitude](http://0x09.net/i/g/scan/magnitude.mp4)
-![radial](http://0x09.net/i/g/scan/radial.png "radial")|![iradial](http://0x09.net/i/g/scan/iradial.png "iradial")|![mirror](http://0x09.net/i/g/scan/mirror.png "mirror")|![magnitude](http://0x09.net/i/g/scan/magnitude.png "magnitude")
-[random](http://0x09.net/i/g/scan/random.mp4)|evali|evalxy|file
-![random](http://0x09.net/i/g/scan/random.png "random")|![evali](http://0x09.net/i/g/scan/evali.png "evali")|![evalxy](http://0x09.net/i/g/scan/evalxy.png "evalxy")|![file](http://0x09.net/i/g/scan/file.png "file")
+[horizontal](https://0x09.net/i/g/scan/horizontal.mp4)|[vertical](https://0x09.net/i/g/scan/vertical.mp4)|[zigzag](https://0x09.net/i/g/scan/zigzag.mp4)|[diagonal](https://0x09.net/i/g/scan/diagonal.mp4)
+![horizontal](https://0x09.net/i/g/scan/horiz.png "horizontal")|![vertical](https://0x09.net/i/g/scan/vert.png "vertical")|![zigzag](https://0x09.net/i/g/scan/zigzag.png "zigzag")|![diag](https://0x09.net/i/g/scan/diag.png "diag")
+[row](https://0x09.net/i/g/scan/row.mp4)|[column](https://0x09.net/i/g/scan/column.mp4)|[box](https://0x09.net/i/g/scan/box.mp4)|[ibox](https://0x09.net/i/g/scan/ibox.mp4)
+![row](https://0x09.net/i/g/scan/row.png "row")|![column](https://0x09.net/i/g/scan/col.png "column")|![box](https://0x09.net/i/g/scan/box.png "box")|![ibox](https://0x09.net/i/g/scan/ibox.png "ibox")
+[radial](https://0x09.net/i/g/scan/radial.mp4)|[iradial](https://0x09.net/i/g/scan/iradial.mp4)|[mirror](https://0x09.net/i/g/scan/mirror.mp4)|[magnitude](https://0x09.net/i/g/scan/magnitude.mp4)
+![radial](https://0x09.net/i/g/scan/radial.png "radial")|![iradial](https://0x09.net/i/g/scan/iradial.png "iradial")|![mirror](https://0x09.net/i/g/scan/mirror.png "mirror")|![magnitude](https://0x09.net/i/g/scan/magnitude.png "magnitude")
+[random](https://0x09.net/i/g/scan/random.mp4)|evali|evalxy|file
+![random](https://0x09.net/i/g/scan/random.png "random")|![evali](https://0x09.net/i/g/scan/evali.png "evali")|![evalxy](https://0x09.net/i/g/scan/evalxy.png "evalxy")|![file](https://0x09.net/i/g/scan/file.png "file")
 
 # Examples
 Perform a classic zigzag scan and display the output with `ffplay`:

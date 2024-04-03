@@ -20,11 +20,11 @@ Presets (-t):
 
 # Examples
 
-Generate the spectrogram of [an image](http://0x09.net/i/g/flower.png):
+Generate the spectrogram of [an image](https://0x09.net/i/g/flower.png):
 
 	spec flower.png flower.spec.png
 
-![Flower spectrogram](http://0x09.net/i/g/flower.spec.png "Flower spectrogram")
+![Flower spectrogram](https://0x09.net/i/g/flower.spec.png "Flower spectrogram")
 
 `spec` can be used as a filter, particularly when piping with imagemagick. This allows you to perform e.g. sinc resizes using crop/expand filters:
 
@@ -36,7 +36,7 @@ Or a smooth low-pass filter using the gradient tool of an image editor:
 	<edit tempimg.png>
 	ispec -tshift tempimg.png | display
 
-![Gradient lowpass](http://0x09.net/i/g/gradlp.png "Gradient lowpass") ![Gradient lowpass](http://0x09.net/i/g/smoothpass.png "Gradient lowpass")
+![Gradient lowpass](https://0x09.net/i/g/gradlp.png "Gradient lowpass") ![Gradient lowpass](https://0x09.net/i/g/smoothpass.png "Gradient lowpass")
 
 Draw into the absolute value frequency spectrum of an image:
 
@@ -48,6 +48,6 @@ And uncover the message later\*:
 
 	spec -tabs cover_image.png hidden_message.png
 
-![Hidden message](http://0x09.net/i/g/hidden.png "Hidden message") ![Cover image](http://0x09.net/i/g/cover.png "Cover image")
+![Hidden message](https://0x09.net/i/g/hidden.png "Hidden message") ![Cover image](https://0x09.net/i/g/cover.png "Cover image")
 
 \*If it hasn't been destroyed by clipping/quantization of the cover image.

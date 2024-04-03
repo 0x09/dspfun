@@ -18,8 +18,8 @@ This tool is not suitable for processing large images wholesale but is geared to
 	          centered: first and last samples of input correspond to first and last samples output
 
 # Example
-Interpolate [Kodak parrot's](http://r0k.us/graphics/kodak/kodak/kodim23.png) eye 20x
+Interpolate [Kodak parrot's](https://r0k.us/graphics/kodak/kodak/kodim23.png) eye 20x
 
 	zoom -s20x20 -p 10000x3200 -v 512x512 kodim23.png zoomed.png
 	
-![Zoom](http://0x09.net/i/g/zoom.png)
+![Zoom](https://0x09.net/i/g/zoom.png)

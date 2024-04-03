@@ -1,6 +1,6 @@
 DSP Funbox - Set of *nix utilities for experimentation and learning about spectral analysis of images.
 
-![dspfun](http://0x09.net/i/g/dspfun.png "8x8 DFT basis")
+![dspfun](https://0x09.net/i/g/dspfun.png "8x8 DFT basis")
 
 # Overview
 
@@ -13,7 +13,7 @@ DSP Funbox - Set of *nix utilities for experimentation and learning about spectr
 See subprojects for respective READMEs.
 
 # Dependencies
-Most tools in this framework depend on [FFTW](http://www.fftw.org), [ImageMagick](http://www.imagemagick.org), and/or [FFmpeg](http://ffmpeg.org).
+Most tools in this framework depend on [FFTW](https://www.fftw.org), [ImageMagick](https://www.imagemagick.org), and/or [FFmpeg](https://ffmpeg.org).
 
 # Building
 Running

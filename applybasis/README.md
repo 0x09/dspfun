@@ -18,14 +18,14 @@ Generate basis function plots in the style of [this one](https://upload.wikimedi
 	genbasis --function=DFT --size 16x16 --padding 2 --natural --plane=cplx -o dftbasis.png
 	genbasis -s16x16 -p2 -n -Pcplx -o dftbasis.png
 
-![16x16 complex DFT basis](http://0x09.net/i/g/dftbasis.png "16x16 complex DFT basis")
+![16x16 complex DFT basis](https://0x09.net/i/g/dftbasis.png "16x16 complex DFT basis")
 
 8x8 DCT basis scaled up:
 
 	genbasis --function=DCT2 --size 8x8 --padding 4 --scale 4 -o dctbasis.png
 	genbasis -fDCT -s8x8 -p4 -S4 -o dctbasis.png
 
-![8x8 DCT basis](http://0x09.net/i/g/dctbasis.png "8x8 DCT basis")
+![8x8 DCT basis](https://0x09.net/i/g/dctbasis.png "8x8 DCT basis")
 
 # applybasis
 Apply basis functions from various 2D transforms to an image file, progressively sum the result, or invert a generated set of coefficients. Allows for visualization of each stage in a multidimensional transform.
@@ -50,7 +50,7 @@ This tool shares several parameters with `genbasis`, documented above.
 
 ## Example
 
-Progressively-summed 16x16 DCT/iDCT of [an example image](http://0x09.net/i/g/flower.png).
+Progressively-summed 16x16 DCT/iDCT of [an example image](https://0x09.net/i/g/flower.png).
 	
 	for i in 1 4 16; do applybasis -i /tmp/flower.png -fDCT2 -s${i}x${i} -S$i -o fdct_$i.png; done
 	applybasis -i /tmp/flower.png -fDCT2 -s16x16 -S16 -d/tmp/out.coeff -o /dev/null
@@ -58,7 +58,7 @@ Progressively-summed 16x16 DCT/iDCT of [an example image](http://0x09.net/i/g/fl
 
 Forward on top, inverse on bottom:
 
-![Progressively-summed example image DCT](http://0x09.net/i/g/flower_sums.png "Progressively-summed example image DCT")
+![Progressively-summed example image DCT](https://0x09.net/i/g/flower_sums.png "Progressively-summed example image DCT")
 
 # draw
 Draw images in frequency space by setting coordinates and coefficient value.
@@ -71,4 +71,4 @@ Drawing with several coefficients
 
 	draw -b 256x256 -f 3x3:0.4 -f 2x5:0.2 -f4x6:0.2 -f 145x132:0.05 draw.png
 
-![Drawing with several coefficients](http://0x09.net/i/g/draw.png "Drawing with several coefficients")
+![Drawing with several coefficients](https://0x09.net/i/g/draw.png "Drawing with several coefficients")
