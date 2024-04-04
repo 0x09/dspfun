@@ -16,6 +16,14 @@
 #define DL (L<<3|D)
 #define LL (L<<3|L)
 
+#if COEFF_PRECISION + 0 == 0
+#undef COEFF_PRECISION
+#endif
+
+#if INTERMEDIATE_PRECISION + 0 == 0
+#undef INTERMEDIATE_PRECISION
+#endif
+
 // can be specified individually or together with PRECISION
 #ifndef COEFF_PRECISION
 	#define COEFF_PRECISION (PRECISION & 7)
@@ -25,7 +33,7 @@
 	#define INTERMEDIATE_PRECISION (PRECISION >> 3)
 #endif
 
-#if INTERMEDIATE_PRECISION + 0 == 0
+#if INTERMEDIATE_PRECISION == 0
 #undef INTERMEDIATE_PRECISION
 #define INTERMEDIATE_PRECISION (COEFF_PRECISION << 1)
 #endif
