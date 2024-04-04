@@ -37,6 +37,9 @@ Flower image part way through a radial scan, showing intermediates. [Link to ful
 	   --spec-gain <float>      spectrogram log multiplier (with -s)
 	   --spec-opts <optstring>  spectrogram options string (k=v:...) (with -s)
 
+	fftw options:
+	   --fftw-threads <num>  Maximum number of threads to use for FFTW [default: 1]
+
 	scan methods   - options
 	   horizontal
 	   vertical   

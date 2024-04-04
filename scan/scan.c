@@ -75,6 +75,9 @@ void help(bool fullhelp) {
 		"   --spec-gain <float>      spectrogram log multiplier (with -s)\n"
 		"   --spec-opts <optstring>  spectrogram options string (k=v:...) (with -s)\n"
 		"\n"
+		"fftw options:\n"
+		"   --fftw-threads <int>  Maximum number of threads to use for FFTW [default: 1]\n"
+		"\n"
 	);
 	if(!fullhelp)
 		exit(0);
@@ -122,7 +125,7 @@ int main(int argc, char* argv[]) {
 	const char* method = "diag",* scan_options = NULL,* serialized_scan = NULL;
 	size_t nframes = 0, offset = 0;
 	bool spec = false, invert = false, intermediates = false, linear = false, max_intermediates = false, visualize = false, fill_offset = true, quiet = false;
-	int use_fftw = -1;
+	int use_fftw = -1, fftw_threads = 1;
 	intermediate gain = 0;
 	struct spec_params sparams = {0};
 	enum scan_serialization serialization_format = 0;
@@ -159,6 +162,9 @@ int main(int argc, char* argv[]) {
 		// spec opts
 		{"spec-gain",required_argument,NULL,7},
 		{"spec-opts",required_argument,NULL,8},
+
+		// fftw opts
+		{"fftw-threads",required_argument,NULL,9},
 		{0}
 	};
 
@@ -213,6 +219,14 @@ int main(int argc, char* argv[]) {
 					exit(1);
 				}
 			} break;
+			case 9: {
+				long nthreads = strtol(optarg,NULL,10);
+				if(nthreads < 1 || nthreads > INT_MAX) {
+					fprintf(stderr, "Invalid number of threads: %ld\n", nthreads);
+					exit(1);
+				}
+				fftw_threads = nthreads;
+			} break;
 			default : help(false);
 		}
 	argv += optind;
@@ -260,6 +274,9 @@ int main(int argc, char* argv[]) {
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",TypePixel,coeffs);
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
+
+	fftw(init_threads)();
+	fftw(plan_with_nthreads)(fftw_threads);
 
 	fftw(plan) forward = fftw(plan_many_r2r)(2,(int[2]){height,width},channels,coeffs,NULL,channels,1,coeffs,NULL,channels,1,(fftw(r2r_kind)[2]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
 	fftw(execute)(forward);
@@ -487,6 +504,7 @@ scan_end:
 fftw_end:
 	fftw(free)(coeffs);
 	fftw(cleanup)();
+	fftw(cleanup_threads)();
 
 	return ret;
 }
