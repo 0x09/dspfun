@@ -14,12 +14,11 @@
 
 #include "magickwand.h"
 #include "longmath.h"
+#include "precision.h"
 
 #ifndef I
 #define I _Complex_I
 #endif
-
-#define CLAMP(x) ((x)<0?0:(x)>255?255:(x))
 
 long double real(complex long double ccoeff) {
 	return creall(ccoeff);
@@ -31,14 +30,14 @@ long double mag(complex long double ccoeff) {
 	return cabsl(ccoeff);
 }
 long double phase(complex long double ccoeff) {
-	return 255.l*cargl(ccoeff+FLT_EPSILON*I)/M_PIl;
+	return cargl(ccoeff+FLT_EPSILON*I)/M_PIl;
 }
 
 void linear(long double coeff[3], long double scale) {
 	for(int i = 0; i < 3; i++) coeff[i] /= scale;
 }
 void logscale(long double coeff[3], long double scale) {
-	for(int i = 0; i < 3; i++) coeff[i] = copysignl(255.l*log1pl(fabsl(coeff[i]))/log1pl(255.l*scale),coeff[i]);
+	for(int i = 0; i < 3; i++) coeff[i] = copysignl(log1pl(fabsl(coeff[i]))/log1pl(scale),coeff[i]);
 }
 void gain(long double coeff[3], long double scale) {
 	linear(coeff,sqrtl(scale));
@@ -55,11 +54,11 @@ void absolute(long double coeff[3]) {
 }
 void invert(long double coeff[3]) {
 	for(int i = 0; i < 3; i++)
-		coeff[i] += (coeff[i]<0)*255.l;
+		coeff[i] += coeff[i]<0;
 }
 void shift(long double coeff[3]) {
 	for(int i = 0; i < 3; i++)
-		coeff[i] = (coeff[i]+255.l)/2.l;
+		coeff[i] = (coeff[i]+1.l)/2.l;
 }
 void (*shift2)(long double[3]) = shift; //dummy
 
@@ -143,7 +142,7 @@ static void usage() {
 	        "Usage: applybasis -i infile -o outfile [-d out.coeff]\n"
 	        "            -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT  [-I|--inverse]\n"
 	        "            [-P|--plane=(real),imag,mag,phase]  [-R|--rescale=(linear),log,gain,level[-...]]  [-N|--range=shift,(shift2),abs,invert,hue]\n"
-	        "            [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]\n");
+	        "            [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]  [-g|--linear]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
@@ -153,13 +152,13 @@ int main(int argc, char* argv[]) {
 		outfile = "sixel:-";
 	coords terms = {}, partsum = {1,1};
 	offsets offset = {};
-	int inverse = false, orthogonal = false;
+	int inverse = false, orthogonal = false, linearlight = false;
 	unsigned int scale = 1, padding = 1;
 	long double (*realize)(complex long double) = real;
 	void (*rescale[2])(long double[3],long double) = {linear};
 	void (*range)(long double[3]) = shift2;
 	complex long double (*function)(long long, long long, unsigned long long,bool) = dft;
-	unsigned char padcolor[3] = {0,0,0};
+	double padcolor[3] = {0,0,0};
 	const struct option gopts[] = {
 		{"function",required_argument,NULL,'f'},
 		{"inverse",no_argument,NULL,'I'},
@@ -171,6 +170,7 @@ int main(int argc, char* argv[]) {
 		{"offset",required_argument,NULL,'O'},
 		{"padding",required_argument,NULL,'p'},
 		{"scale",required_argument,NULL,'S'},
+		{"linear",no_argument,NULL,'g'},
 		{}
 	};
 	while((opt = getopt_long(argc,argv,"i:o:d:f:IP:R:N:t:s:O:p:S:",gopts,NULL)) != -1)
@@ -224,6 +224,7 @@ int main(int argc, char* argv[]) {
 			case 'O': sscanf(optarg,"%lldx%lld",&offset.w,&offset.h); break;
 			case 'p': padding = strtoul(optarg,NULL,10); break;
 			case 'S': scale = strtoul(optarg,NULL,10); break;
+			case 'g': linearlight = true; break;
 			default : usage();
 		}
 	if(!infile || !outfile)
@@ -255,13 +256,15 @@ int main(int argc, char* argv[]) {
 		insize.w = MagickGetImageWidth(wand);
 		insize.h = MagickGetImageHeight(wand);
 		pixels = malloc(sizeof(*pixels)*insize.w*insize.h*3);
-		unsigned char* magickpixels = malloc(insize.w*insize.h*3);
-		MagickExportImagePixels(wand,0,0,insize.w,insize.h,"RGB",CharPixel,magickpixels);
+		if(linearlight)
+			MagickTransformImageColorspace(wand,RGBColorspace);
+		double* magickpixels = malloc(insize.w*insize.h*3*sizeof(*magickpixels));
+		MagickExportImagePixels(wand,0,0,insize.w,insize.h,"RGB",DoublePixel,magickpixels);
 		for(int i = 0; i < insize.w*insize.h*3; i++)
 			pixels[i] = magickpixels[i];
 		if(range == shift2)
 			for(int i = 0; i < insize.w*insize.h*3; i++)
-				pixels[i] = pixels[i]*2 - 255;
+				pixels[i] = pixels[i]*2 - 1;
 		free(magickpixels);
 		DestroyMagickWand(wand);
 	}
@@ -295,7 +298,7 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i < 2; i++)
 		framesize.a[i] = size.a[i]*terms.a[i]*scale+padding*terms.a[i]+padding;
 
-	unsigned char* frame = malloc(framesize.w*framesize.h*3);
+	double* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
 	for(int i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
@@ -330,12 +333,16 @@ int main(int argc, char* argv[]) {
 					for(size_t ys = 0; ys < scale; ys++)
 						for(size_t xs = 0; xs < scale; xs++)
 							for(int d = 0; d < 3; d++)
-								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = CLAMP(coeff[d]);
+								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = coeff[d];
 					if(df)
 						fwrite(partsums,sizeof(partsums),1,df);
 				}
 	wand = NewMagickWand();
-	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",CharPixel,frame);
+	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",DoublePixel,frame);
+	if(linearlight) {
+		MagickSetImageColorspace(wand,RGBColorspace);
+		MagickTransformImageColorspace(wand,sRGBColorspace);
+	}
 	MagickWriteImage(wand,outfile);
 	DestroyMagickWand(wand);
 	MagickWandTerminus();

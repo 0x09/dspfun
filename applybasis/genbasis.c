@@ -20,25 +20,25 @@
 #endif
 
 void real(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 127.5l*(creall(ccoeff)+1.l);
+	coeff[0] = 0.5l*(creall(ccoeff)+1.l);
 	for(int i = 1; i < 3; i++) coeff[i] = coeff[0];
 }
 void imag(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 127.5l*(cimagl(ccoeff)+1.l);
+	coeff[0] = 0.5l*(cimagl(ccoeff)+1.l);
 	for(int i = 1; i < 3; i++) coeff[i] = coeff[0];
 }
 void mag(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 127.5l*(cabsl(ccoeff)+1.l);
+	coeff[0] = 0.5l*(cabsl(ccoeff)+1.l);
 	for(int i = 1; i < 3; i++) coeff[i] = coeff[0];
 }
 void phase(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 127.5l*(cargl(ccoeff+DBL_EPSILON*I)+M_PIl)/M_PIl;
+	coeff[0] = 0.5l*(cargl(ccoeff+DBL_EPSILON*I)+M_PIl)/M_PIl;
 	for(int i = 1; i < 3; i++) coeff[i] = coeff[0];
 }
 void cplx(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 127.5l*(creall(ccoeff)+1.l);
+	coeff[0] = 0.5l*(creall(ccoeff)+1.l);
 	coeff[1] = 0;
-	coeff[2] = 127.5l*(cimagl(ccoeff)+1.l);
+	coeff[2] = 0.5l*(cimagl(ccoeff)+1.l);
 }
 
 
@@ -88,7 +88,7 @@ typedef union { long long a[2]; struct { long long w, h; }; } offsets;
 static void usage() {
 	fprintf(stderr,
 	        "Usage: genbasis -o outfile -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT [-I|--inverse] [-n|--natural] [-P|--plane=(real),imag,mag,phase,cplx]\n"
-	        "             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale s]\n");
+	        "             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale s] [-g|--linear]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
@@ -96,9 +96,9 @@ int main(int argc, char* argv[]) {
 	const char* outfile = isatty(STDOUT_FILENO) ? "sixel:-" : NULL;
 	coords terms = {0}, size = {0};
 	offsets offset = {0};
-	int natural = false, inverse = false;
+	int natural = false, inverse = false, linear = false;
 	unsigned int scale = 1, padding = 1;
-	unsigned char padcolor[3] = {255,0,0};
+	double padcolor[3] = {1,0,0};
 	complex long double (*function)(long long, long long, unsigned long long) = dft;
 	void (*realize)(complex long double, long double[3]) = real;
 	const struct option gopts[] = {
@@ -111,9 +111,10 @@ int main(int argc, char* argv[]) {
 		{"scale",required_argument,NULL,'S'},
 		{"size",required_argument,NULL,'s'},
 		{"natural",no_argument,NULL,'n'},
+		{"linear",no_argument,NULL,'g'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"o:f:InP:t:O:p:S:s:",gopts,NULL)) != -1)
+	while((opt = getopt_long(argc,argv,"o:f:InP:t:O:p:S:s:g",gopts,NULL)) != -1)
 		switch(opt) {
 			case 'o': outfile = optarg; break;
 			case 'f': {
@@ -140,13 +141,14 @@ int main(int argc, char* argv[]) {
 				if     (!strcmp(optarg,"imag"))  realize = imag;
 				else if(!strcmp(optarg,"mag"))   realize = mag;
 				else if(!strcmp(optarg,"phase")) realize = phase;
-				else if(!strcmp(optarg,"cplx")){ realize = cplx; memcpy(padcolor,((unsigned char[3]){16,48,16}),3); }
+				else if(!strcmp(optarg,"cplx")){ realize = cplx; memcpy(padcolor,((double[3]){0.0625,0.1875,0.0625}),sizeof(*padcolor)*3); }
 			} break;
 			case 's': sscanf(optarg,"%llux%llu",&size.w,&size.h); break;
 			case 't': sscanf(optarg,"%llux%llu",&terms.w,&terms.h); break;
 			case 'O': sscanf(optarg,"%lldx%lld",&offset.w,&offset.h); break;
 			case 'p': padding = strtoul(optarg,NULL,10); break;
 			case 'S': scale = strtoul(optarg,NULL,10); break;
+			case 'g': linear = true; break;
 			default : usage();
 		}
 	if(!outfile)
@@ -173,7 +175,7 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; natural && i < 2; i++)
 		offset.a[i] -= terms.a[i]/2;
 
-	unsigned char* frame = malloc(framesize.w*framesize.h*3);
+	double* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
 	for(int i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
@@ -199,7 +201,11 @@ int main(int argc, char* argv[]) {
 	MagickWandGenesis();
 	MagickWand* wand;
 	wand = NewMagickWand();
-	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",CharPixel,frame);
+	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",DoublePixel,frame);
+	if(linear) { // linear here refers to the processing colorspace, so this actually means genbasis should convert to nonlinear for output
+		MagickSetImageColorspace(wand,RGBColorspace);
+		MagickTransformImageColorspace(wand,sRGBColorspace);
+	}
 	MagickWriteImage(wand,outfile);
 	DestroyMagickWand(wand);
 	MagickWandTerminus();

@@ -5,7 +5,7 @@ Generate basis function plots in the style of [this one](https://upload.wikimedi
 
 ## Usage
     genbasis -o outfile -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT [-I|--inverse] [-n|--natural] [-P|--plane=(real),imag,mag,phase,cplx]
-             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale WxH]
+             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale WxH] [-g|--linear]
 
 	plane - How to represent complex values. Arguments other than `real` only meaningful for the DFT.
 	inverse - Generate the transpose.
@@ -35,7 +35,7 @@ Apply basis functions from various 2D transforms to an image file, progressively
     applybasis -i infile -o outfile [-d out.coeff]
                -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT  [-I|--inverse]
                [-P|--plane=(real),imag,mag,phase]  [-R|--rescale=(linear),log,gain,level[-...]]  [-N|--range=shift,(shift2),abs,invert,hue]
-               [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]
+               [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale] [-g|--linear]
 
 	range - How to visualize negative values:
 		shift - shift into 0-255 range (brightens image)
