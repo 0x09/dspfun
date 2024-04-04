@@ -22,8 +22,14 @@ enum basis {
 	NATIVE
 };
 
+enum sample_display {
+	NONE = 0,
+	POINT,
+	GRID
+};
+
 void usage(const char* self) {
-	fprintf(stderr,"Usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=1(point),2(grid) -cgP input output\n",self);
+	fprintf(stderr,"Usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=point,grid -cgP input output\n",self);
 	exit(1);
 }
 
@@ -51,7 +57,15 @@ int main(int argc, char* argv[]) {
 			case 'c': centered = true; break;
 			case 'P': input_coords = true; break;
 			case 'g': gamma = true; break;
-			case 1: showsamples = strtol(optarg,NULL,10); break;
+			case 1: {
+				showsamples = POINT;
+				if(optarg) {
+					if(!strcmp(optarg,"grid"))
+						showsamples = GRID;
+					else if(strcmp(optarg,"point"))
+						usage(argv[0]);
+				}
+			} break;
 			case 2: {
 				if(!strcmp(optarg,"centered"))
 					basis = CENTERED;
@@ -157,11 +171,11 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(showsamples==1)
+	if(showsamples == POINT)
 		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
 			for(size_t x = scale-(size_t)vx%(int)scale; x < vw; x+=scale)
 				memcpy(icoeffs+(y*vh+x)*3,((double[]){0,1,0}),3*sizeof(*icoeffs));
-	else if(showsamples==2) {
+	else if(showsamples == GRID) {
 		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
 			for(size_t x = 0; x < vw; x++)
 				memcpy(icoeffs+(y*vh+x)*3,((double[]){0,1,0}),3*sizeof(*icoeffs));

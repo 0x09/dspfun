@@ -3,7 +3,7 @@ zoom - Interpolate images with a cosine basis at arbitrary scales/offsets.
 This tool is not suitable for processing large images wholesale but is geared toward extracting moderately sized segments at potentially very high zoom levels.
 
 # Usage
-	zoom -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=1(point),2(grid) -cgP input output
+	zoom -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=point,grid -cgP input output
 
 	-s WxH - Rational or floating point scale factor.
 	-p XxY - Floating point position in *scaled* image to start the viewport (unless -P).
@@ -11,7 +11,8 @@ This tool is not suitable for processing large images wholesale but is geared to
 	-c - Anchor viewport to center of image
 	-P - Translate position coordinates into scaled space
 	-g - Scale and output in linear RGB
-	--showsamples - Draw a grid on integer samples as if looking at a graphing calculator.
+	--showsamples - Show where integer coordinates in the input are located in the scaled image.
+	                type: point (default), grid.
 	--basis - Set the boundaries of the interpolated basis functions
 	          interpolated: even around the scaled half sample (default)
 	          native: even around the unscaled half sample
