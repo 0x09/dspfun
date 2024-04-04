@@ -24,7 +24,7 @@ enum basis {
 
 void usage(const char* self) {
 	fprintf(stderr,"Usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=1(point),2(grid) -cgP input output\n",self);
-	exit(0);
+	exit(1);
 }
 
 int main(int argc, char* argv[]) {
@@ -57,6 +57,8 @@ int main(int argc, char* argv[]) {
 					basis = CENTERED;
 				else if(!strcmp(optarg,"native"))
 					basis = NATIVE;
+				else if(strcmp(optarg,"interpolated"))
+					usage(argv[0]);
 			}; break;
 			default: usage(argv[0]);
 		}
