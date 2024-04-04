@@ -99,6 +99,7 @@ int main(int argc, char* argv[]) {
 			for(i = d; i < l; i++)
 				f[i] = !signbit(f[i]);
 			break;
+		case signtype_retain: break;
 	}
 
 	wand = NewMagickWand();

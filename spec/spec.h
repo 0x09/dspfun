@@ -31,7 +31,8 @@
 #define signtype(X,T)\
 	X(T,abs)\
 	X(T,shift)\
-	X(T,saturate)
+	X(T,saturate)\
+	X(T,retain)
 
 #define rangetype(X,T)\
 	X(T,one)\

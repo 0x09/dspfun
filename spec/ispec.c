@@ -69,6 +69,7 @@ int main(int argc, char* argv[]) {
 		for(i = d; i < l; i++)
 			f[i] = f[i]*2-1;
 		break;
+		case signtype_retain: break;
 	}
 
 	intermediate gain;
