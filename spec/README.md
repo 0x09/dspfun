@@ -1,8 +1,8 @@
 spec - Generate invertible DCT frequency spectrums for viewing and editing.
 
 # Usage
-	spec -g -c csp -t (abs|shift|flat|sign) -R (one|dc|dcs) -T (linear|log) -S (abs|shift|saturate|retain) -G (native|reference|custom(float)) <infile> <outfile>
-	ispec -g -c csp -t (abs|shift|flat|sign) -R (one|dc|dcs) -T (linear|log) -S (abs|shift|saturate|retain) -G (native|reference|custom(float)) -p -m <signmap> <infile> <outfile>
+	spec -g -c csp -t (abs|shift|flat|sign|copy) -R (one|dc|dcs) -T (linear|log) -S (abs|shift|saturate|retain) -G (native|reference|custom(float)) <infile> <outfile>
+	ispec -g -c csp -t (abs|shift|flat|sign|copy) -R (one|dc|dcs) -T (linear|log) -S (abs|shift|saturate|retain) -G (native|reference|custom(float)) -p -m <signmap> <infile> <outfile>
 
 ## Spectrogram types
 
@@ -12,6 +12,7 @@ Presets (-t):
 * shift - Log-scaled spectrum shifted into the 0-1 range, suitable for editing and inverting even at low bitdepths. (`-Rone -Tlog -Sshift -Gnative`)
 * flat - Linear-scaled shifted spectrum for editing with higher-bitdepth editors. (`-Rone -Tlinear -Sshift -G1`)
 * sign - Sign map. Can be provided to ispec to invert an `abs` spectrum. (`-Rone -Tlinear -Ssat -G1`)
+* copy - The unmodified spectrum in the range -1 through 1 for formats that support this. (`-Rone -Tlinear -Sretain -G1`)
 
 ## Other options
 -c: Color planes to operate on (R/G/B)

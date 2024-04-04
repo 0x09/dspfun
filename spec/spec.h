@@ -26,7 +26,8 @@
 	X(T,abs)\
 	X(T,shift)\
 	X(T,flat)\
-	X(T,sign)
+	X(T,sign)\
+	X(T,copy)
 
 #define signtype(X,T)\
 	X(T,abs)\
@@ -74,6 +75,7 @@ struct specopts {
 	X("shift",(&(struct specparams){scaletype_log,   signtype_shift,   gaintype_native,rangetype_one}))\
 	X("flat", (&(struct specparams){scaletype_linear,signtype_shift,   gaintype_custom,rangetype_one}))\
 	X("sign", (&(struct specparams){scaletype_linear,signtype_saturate,gaintype_custom,rangetype_one}))\
+	X("copy", (&(struct specparams){scaletype_linear,signtype_retain,  gaintype_custom,rangetype_one}))\
 	X(NULL,   (&(struct specparams){0}))
 
 assoc_gen(specparams)
