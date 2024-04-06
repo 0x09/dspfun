@@ -161,12 +161,19 @@ int main(int argc, char* argv[]) {
 		MagickTransformImageColorspace(wand,RGBColorspace);
 
 	size_t width = MagickGetImageWidth(wand), height = MagickGetImageHeight(wand);
-	if(!vw) vw = width*scale_num/scale_den;
-	if(!vh) vh = height*scale_num/scale_den;
-
 	double* coeffs = malloc(sizeof(double)*width*height*3);
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",DoublePixel,coeffs);
 	DestroyMagickWand(wand);
+
+	fftw_plan p = fftw_plan_many_r2r(2,(int[]){height,width},3,coeffs,NULL,3,1,coeffs,NULL,3,1,(fftw_r2r_kind[]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
+	fftw_execute(p);
+	fftw_destroy_plan(p);
+	fftw_cleanup();
+
+	if(!vw)
+		vw = width*scale_num/scale_den;
+	if(!vh)
+		vh = height*scale_num/scale_den;
 
 	if(input_coords || centered) {
 		vx *= scale_num/scale_den;
@@ -180,16 +187,12 @@ int main(int argc, char* argv[]) {
 	size_t cwidth  = min(width,  round(width  * scale_num/scale_den)),
 	       cheight = min(height, round(height * scale_num/scale_den));
 
-	double* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
-	double* tmp = malloc(sizeof(double)*cheight);
-
 	double* basis[2];
 	basis[0] = generate_scaled_basis(scaling_type,scale_num,scale_den,vx,vw,cwidth,width),
 	basis[1] = width == height && vx == vy ? basis[0] : generate_scaled_basis(scaling_type,scale_num,scale_den,vy,vh,cheight,height);
 
-	fftw_plan p = fftw_plan_many_r2r(2,(int[]){height,width},3,coeffs,NULL,3,1,coeffs,NULL,3,1,(fftw_r2r_kind[]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
-	fftw_execute(p);
-	fftw_destroy_plan(p);
+	double* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
+	double* tmp = malloc(sizeof(double)*cheight);
 
 	for(int z = 0; z < 3; z++) {
 		for(int i = 0; i < vw; i++) {
@@ -208,6 +211,12 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	free(tmp);
+	free(coeffs);
+	if(basis[1] != basis[0])
+		free(basis[1]);
+	free(basis[0]);
+
 	if(showsamples == POINT)
 		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
 			for(size_t x = scale-(size_t)vx%(int)scale; x < vw; x+=scale)
@@ -223,19 +232,13 @@ int main(int argc, char* argv[]) {
 
 	wand = NewMagickWand();
 	MagickConstituteImage(wand,vw,vh,"RGB",DoublePixel,icoeffs);
+	free(icoeffs);
+
 	if(gamma) {
 		MagickSetImageColorspace(wand,RGBColorspace);
 		MagickTransformImageColorspace(wand,sRGBColorspace);
 	}
 	MagickWriteImage(wand,outfile);
-
-	free(coeffs);
-	free(icoeffs);
-	free(tmp);
-	if(basis[1] != basis[0])
-		free(basis[1]);
-	free(basis[0]);
-
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
 
