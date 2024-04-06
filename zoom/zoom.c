@@ -16,7 +16,7 @@
 #include "magickwand.h"
 #include "longmath.h"
 
-enum basis {
+enum scaling_type {
 	INTERPOLATED = 0,
 	CENTERED,
 	NATIVE
@@ -27,6 +27,35 @@ enum sample_display {
 	POINT,
 	GRID
 };
+
+#define min(x,y) ((x) < (y) ? (x) : (y))
+
+static double* generate_scaled_basis(enum scaling_type scaling_type, long double scale_num, long double scale_den, long double offset, size_t nvectors, size_t ncomponents, size_t sampling_len) {
+	double* basis = malloc(nvectors*(ncomponents-1)*sizeof(*basis));
+	if(!basis)
+		return NULL;
+
+	for(size_t b = 0; b < nvectors; b++)
+		for(size_t n = 1; n < ncomponents; n++) {
+			long double k, N;
+			switch(scaling_type) {
+				case NATIVE:
+					k = b+offset;
+					N = sampling_len * scale_num/scale_den;
+					break;
+				case INTERPOLATED:
+					k = (b+offset) * scale_den/scale_num;
+					N = sampling_len;
+					break;
+				case CENTERED:
+					k = (b+offset) * (sampling_len-1) * scale_den / (sampling_len * scale_num - scale_den);
+					N = sampling_len;
+					break;
+			}
+			basis[b*(ncomponents-1)+n-1] = cos(M_PIl * (k+0.5) * n / N);
+		}
+	return basis;
+}
 
 void usage(const char* self) {
 	fprintf(stderr,"Usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=point,grid -cgP input output\n",self);
@@ -40,7 +69,7 @@ int main(int argc, char* argv[]) {
 	int showsamples = 0;
 	long double scale_num = 1;
 	unsigned long long scale_den = 1;
-	int basis = INTERPOLATED;
+	int scaling_type = INTERPOLATED;
 	int c;
 	const struct option opts[] = {
 		{"showsamples",optional_argument,NULL,1},
@@ -68,9 +97,9 @@ int main(int argc, char* argv[]) {
 			} break;
 			case 2: {
 				if(!strcmp(optarg,"centered"))
-					basis = CENTERED;
+					scaling_type = CENTERED;
 				else if(!strcmp(optarg,"native"))
-					basis = NATIVE;
+					scaling_type = NATIVE;
 				else if(strcmp(optarg,"interpolated"))
 					usage(argv[0]);
 			}; break;
@@ -117,38 +146,16 @@ int main(int argc, char* argv[]) {
 	}
 
 	long double scale = scale_num / scale_den;
-	size_t nwidth = round(width * scale_num / scale_den), nheight = round(height * scale_num / scale_den);
-	size_t cwidth = nwidth < width ? nwidth : width, cheight = nheight < height ? nheight : height;
+	size_t cwidth  = min(width,  round(width  * scale_num/scale_den)),
+	       cheight = min(height, round(height * scale_num/scale_den));
+
 	double* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
 	double* tmp = malloc(sizeof(double)*cheight);
-	double* twiddles[2] = {malloc(sizeof(double)*vw*(cwidth-1)),malloc(sizeof(double)*vh*(cheight-1))};
 
-	switch(basis) {
-		case INTERPOLATED: {
-			for(size_t t1 = 0; t1 < vw; t1++)
-				for(size_t t2 = 1; t2 < cwidth; t2++)
-					twiddles[0][t1*(cwidth-1)+t2-1] = cos(((t1+vx)*scale_den/scale_num+0.5L) * t2 * M_PIl / width);
-			for(size_t t1 = 0; t1 < vh; t1++)
-				for(int t2 = 1; t2 < cheight; t2++)
-					twiddles[1][t1*(cheight-1)+t2-1] = cos(((t1+vy)*scale_den/scale_num+0.5L) * t2 * M_PIl / height);
-		}; break;
-		case CENTERED: {
-			for(size_t t1 = 0; t1 < vw; t1++)
-				for(size_t t2 = 1; t2 < cwidth; t2++)
-					twiddles[0][t1*(cwidth-1)+t2-1] = cos(((t1+vx)*(width-1)*scale_den/(scale_num*width-scale_den)+0.5L) * t2 * M_PIl / width);
-			for(size_t t1 = 0; t1 < vh; t1++)
-				for(int t2 = 1; t2 < cheight; t2++)
-					twiddles[1][t1*(cheight-1)+t2-1] = cos(((t1+vy)*(height-1)*scale_den/(scale_num*height-scale_den)+vy+0.5L) * t2 * M_PIl / height);
-		}; break;
-		case NATIVE: {
-			for(size_t t1 = 0; t1 < vw; t1++)
-				for(size_t t2 = 1; t2 < cwidth; t2++)
-					twiddles[0][t1*(cwidth-1)+t2-1] = cos((t1+vx+0.5L) * t2 * M_PIl*scale_den / (scale_num*width));
-			for(size_t t1 = 0; t1 < vh; t1++)
-				for(int t2 = 1; t2 < cheight; t2++)
-					twiddles[1][t1*(cheight-1)+t2-1] = cos((t1+vy+0.5L) * t2 * M_PIl*scale_den / (scale_num*height));
-		}; break;
-	}
+	double* basis[2] = {
+		generate_scaled_basis(scaling_type,scale_num,scale_den,vx,vw,cwidth,width),
+		generate_scaled_basis(scaling_type,scale_num,scale_den,vy,vh,cheight,height)
+	};
 
 	fftw_plan p = fftw_plan_many_r2r(2,(int[]){height,width},3,coeffs,NULL,3,1,coeffs,NULL,3,1,(fftw_r2r_kind[]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
 	fftw_execute(p);
@@ -159,12 +166,12 @@ int main(int argc, char* argv[]) {
 			for(int row = 0; row < cheight; row++) {
 				tmp[row] = coeffs[row*width*3+z]/2;
 				for(int u = 1; u < cwidth; u++)
-					tmp[row] += coeffs[(row*width+u)*3+z] * twiddles[0][i*(cwidth-1)+u-1];
+					tmp[row] += coeffs[(row*width+u)*3+z] * basis[0][i*(cwidth-1)+u-1];
 			}
 			for(int j = 0; j < vh; j++) {
 				double s = tmp[0]/2;
 				for(int v = 1; v < cheight; v++)
-					s += tmp[v] * twiddles[1][j*(cheight-1)+v-1];
+					s += tmp[v] * basis[1][j*(cheight-1)+v-1];
 				s /= width*height;
 				icoeffs[(j*vw+i)*3+z] = s;
 			}
@@ -194,8 +201,8 @@ int main(int argc, char* argv[]) {
 	free(coeffs);
 	free(icoeffs);
 	free(tmp);
-	free(twiddles[0]);
-	free(twiddles[1]);
+	free(basis[0]);
+	free(basis[1]);
 
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
