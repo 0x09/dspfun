@@ -193,9 +193,10 @@ int main(int argc, char* argv[]) {
 
 	wand = NewMagickWand();
 	MagickConstituteImage(wand,vw,vh,"RGB",DoublePixel,icoeffs);
-	MagickSetImageColorspace(wand,RGBColorspace);
-	if(!gamma)
-		MagickSetImageColorspace(wand,sRGBColorspace);
+	if(gamma) {
+		MagickSetImageColorspace(wand,RGBColorspace);
+		MagickTransformImageColorspace(wand,sRGBColorspace);
+	}
 	MagickWriteImage(wand,outfile);
 
 	free(coeffs);
