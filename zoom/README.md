@@ -14,7 +14,7 @@ It's meant to offer a look at how these behave when sampled in between and outsi
       -P          Translate position coordinates into scaled space
       -g          Scale and output in linear RGB
     
-      --showsamples[=<type>]  Show where integer coordinates in the input are located in the scaled image.
+      --showsamples[=<type>]  Show where integer coordinates in the input are located in the scaled image when upscaling.
                               type: point (default), grid.
     
       --basis <type>  Set the boundaries of the interpolated basis functions. [default: interpolated]

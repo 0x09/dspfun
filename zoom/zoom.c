@@ -73,7 +73,7 @@ static void help(const char* self) {
 		"  -P          Position coordinates with -p are relative to the input rather than the scaled output\n"
 		"  -g          Scale in linear RGB\n"
 		"\n"
-		"  --showsamples[=<type>]  Show where integer coordinates in the input are located in the scaled image.\n"
+		"  --showsamples[=<type>]  Show where integer coordinates in the input are located in the scaled image when upscaling.\n"
 		"                          type: point (default), grid.\n"
 		"\n"
 		"  --basis <type>  Set the boundaries of the interpolated basis functions. [default: interpolated]\n"
@@ -137,6 +137,12 @@ int main(int argc, char* argv[]) {
 	if(argc < 1)
 		usage(argv[0]);
 
+	long double scale = scale_num / scale_den;
+	if(showsamples && scale < 1) {
+		fprintf(stderr,"warning: downscaling requested, --showsamples will be disabled\n");
+		showsamples = NONE;
+	}
+
 	const char* infile = argv[optind],* outfile = NULL;
 	if(argc > 1)
 		outfile = argv[optind+1];
@@ -171,7 +177,6 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	long double scale = scale_num / scale_den;
 	size_t cwidth  = min(width,  round(width  * scale_num/scale_den)),
 	       cheight = min(height, round(height * scale_num/scale_den));
 
