@@ -1,14 +1,17 @@
 PREFIX ?= /usr/local
 
-CC ?= cc
-CFLAGS := -std=c11 -Ofast -DMAGICKWAND_VERSION=$(shell pkg-config --modversion MagickWand | cut -d. -f1) $(CFLAGS)
-LIBS := -I../include $(shell pkg-config --cflags --libs MagickWand fftw3) -lm
+fftw := fftw3$(subst L,l,$(subst D,,$(subst F,f,$(COEFF_PRECISION))))
 
+CC ?= cc
+CFLAGS := -DCOEFF_PRECISION=$(COEFF_PRECISION) -DINTERMEDIATE_PRECISION=$(INTERMEDIATE_PRECISION) -std=c11 -Ofast -I../include -DMAGICKWAND_VERSION=$(shell pkg-config --modversion MagickWand | cut -d. -f1) $(CFLAGS)
+LIBS := $(shell pkg-config --cflags --libs MagickWand $(fftw)) -lm
+
+DEPS =../include/precision.h
 TOOLS = zoom
 
 all: $(TOOLS)
 
-zoom: zoom.c
+zoom: zoom.c $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 clean:

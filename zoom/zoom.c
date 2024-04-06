@@ -15,6 +15,7 @@
 
 #include "magickwand.h"
 #include "longmath.h"
+#include "precision.h"
 
 enum scaling_type {
 	INTERPOLATED = 0,
@@ -30,14 +31,14 @@ enum sample_display {
 
 #define min(x,y) ((x) < (y) ? (x) : (y))
 
-static double* generate_scaled_basis(enum scaling_type scaling_type, long double scale_num, long double scale_den, long double offset, size_t nvectors, size_t ncomponents, size_t sampling_len) {
-	double* basis = malloc(nvectors*(ncomponents-1)*sizeof(*basis));
+static coeff* generate_scaled_basis(enum scaling_type scaling_type, intermediate scale_num, intermediate scale_den, intermediate offset, size_t nvectors, size_t ncomponents, size_t sampling_len) {
+	coeff* basis = malloc(nvectors*(ncomponents-1)*sizeof(*basis));
 	if(!basis)
 		return NULL;
 
 	for(size_t b = 0; b < nvectors; b++)
 		for(size_t n = 1; n < ncomponents; n++) {
-			long double k, N;
+			intermediate k, N;
 			switch(scaling_type) {
 				case NATIVE:
 					k = b+offset;
@@ -52,7 +53,7 @@ static double* generate_scaled_basis(enum scaling_type scaling_type, long double
 					N = sampling_len;
 					break;
 			}
-			basis[b*(ncomponents-1)+n-1] = cos(M_PIl * (k+0.5) * n / N);
+			basis[b*(ncomponents-1)+n-1] = mi(cos)(mi(M_PI) * (k+mi(0.5)) * n / N);
 		}
 	return basis;
 }
@@ -87,11 +88,11 @@ static void help(const char* self) {
 }
 
 int main(int argc, char* argv[]) {
-	long double vx = 0, vy = 0;
+	intermediate vx = 0, vy = 0;
 	size_t vw = 0, vh = 0;
 	bool centered = false, input_coords = false, gamma = false;
 	int showsamples = 0;
-	long double scale_num = 1;
+	intermediate scale_num = 1;
 	unsigned long long scale_den = 1;
 	int scaling_type = INTERPOLATED;
 	int c;
@@ -106,9 +107,9 @@ int main(int argc, char* argv[]) {
 		switch(c) {
 			case  0 : break;
 			case 'h': help(argv[0]);
-			case 's': sscanf(optarg,"%Lf/%llu",&scale_num,&scale_den); break;
+			case 's': sscanf(optarg,"%" INTERMEDIATE_SPECIFIER "/%llu",&scale_num,&scale_den); break;
 			case 'v': sscanf(optarg,"%zux%zu",&vw,&vh); break;
-			case 'p': sscanf(optarg,"%Lfx%Lf",&vx,&vy); break;
+			case 'p': sscanf(optarg,"%" INTERMEDIATE_SPECIFIER "x%" INTERMEDIATE_SPECIFIER,&vx,&vy); break;
 			case 'c': centered = true; break;
 			case 'P': input_coords = true; break;
 			case 'g': gamma = true; break;
@@ -137,7 +138,7 @@ int main(int argc, char* argv[]) {
 	if(argc < 1)
 		usage(argv[0]);
 
-	long double scale = scale_num / scale_den;
+	intermediate scale = scale_num / scale_den;
 	if(showsamples && scale < 1) {
 		fprintf(stderr,"warning: downscaling requested, --showsamples will be disabled\n");
 		showsamples = NONE;
@@ -161,14 +162,14 @@ int main(int argc, char* argv[]) {
 		MagickTransformImageColorspace(wand,RGBColorspace);
 
 	size_t width = MagickGetImageWidth(wand), height = MagickGetImageHeight(wand);
-	double* coeffs = malloc(sizeof(double)*width*height*3);
-	MagickExportImagePixels(wand,0,0,width,height,"RGB",DoublePixel,coeffs);
+	coeff* coeffs = malloc(sizeof(coeff)*width*height*3);
+	MagickExportImagePixels(wand,0,0,width,height,"RGB",TypePixel,coeffs);
 	DestroyMagickWand(wand);
 
-	fftw_plan p = fftw_plan_many_r2r(2,(int[]){height,width},3,coeffs,NULL,3,1,coeffs,NULL,3,1,(fftw_r2r_kind[]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
-	fftw_execute(p);
-	fftw_destroy_plan(p);
-	fftw_cleanup();
+	fftw_plan p = fftw(plan_many_r2r)(2,(int[]){height,width},3,coeffs,NULL,3,1,coeffs,NULL,3,1,(fftw_r2r_kind[]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
+	fftw(execute)(p);
+	fftw(destroy_plan)(p);
+	fftw(cleanup)();
 
 	if(!vw)
 		vw = width*scale_num/scale_den;
@@ -179,20 +180,20 @@ int main(int argc, char* argv[]) {
 		vx *= scale_num/scale_den;
 		vy *= scale_num/scale_den;
 		if(centered) {
-			vx -= vw/2.L;
-			vy -= vh/2.L;
+			vx -= vw/mi(2.);
+			vy -= vh/mi(2.);
 		}
 	}
 
 	size_t cwidth  = min(width,  round(width  * scale_num/scale_den)),
 	       cheight = min(height, round(height * scale_num/scale_den));
 
-	double* basis[2];
+	coeff* basis[2];
 	basis[0] = generate_scaled_basis(scaling_type,scale_num,scale_den,vx,vw,cwidth,width),
 	basis[1] = width == height && vx == vy ? basis[0] : generate_scaled_basis(scaling_type,scale_num,scale_den,vy,vh,cheight,height);
 
-	double* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
-	double* tmp = malloc(sizeof(double)*cheight);
+	coeff* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
+	intermediate* tmp = malloc(sizeof(*tmp)*cheight);
 
 	for(int z = 0; z < 3; z++) {
 		for(int i = 0; i < vw; i++) {
@@ -202,7 +203,7 @@ int main(int argc, char* argv[]) {
 					tmp[row] += coeffs[(row*width+u)*3+z] * basis[0][i*(cwidth-1)+u-1];
 			}
 			for(int j = 0; j < vh; j++) {
-				double s = tmp[0]/2;
+				intermediate s = tmp[0]/mi(2.);
 				for(int v = 1; v < cheight; v++)
 					s += tmp[v] * basis[1][j*(cheight-1)+v-1];
 				s /= width*height;
@@ -220,18 +221,18 @@ int main(int argc, char* argv[]) {
 	if(showsamples == POINT)
 		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
 			for(size_t x = scale-(size_t)vx%(int)scale; x < vw; x+=scale)
-				memcpy(icoeffs+(y*vh+x)*3,((double[]){0,1,0}),3*sizeof(*icoeffs));
+				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
 	else if(showsamples == GRID) {
 		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
 			for(size_t x = 0; x < vw; x++)
-				memcpy(icoeffs+(y*vh+x)*3,((double[]){0,1,0}),3*sizeof(*icoeffs));
+				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
 		for(size_t y = 0; y < vh; y++)
 			for(size_t x = scale-(size_t)vx%(int)scale; x < vw; x+=scale)
-				memcpy(icoeffs+(y*vh+x)*3,((double[]){0,1,0}),3*sizeof(*icoeffs));
+				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
 	}
 
 	wand = NewMagickWand();
-	MagickConstituteImage(wand,vw,vh,"RGB",DoublePixel,icoeffs);
+	MagickConstituteImage(wand,vw,vh,"RGB",TypePixel,icoeffs);
 	free(icoeffs);
 
 	if(gamma) {
