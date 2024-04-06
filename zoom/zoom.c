@@ -57,9 +57,33 @@ static double* generate_scaled_basis(enum scaling_type scaling_type, long double
 	return basis;
 }
 
-void usage(const char* self) {
-	fprintf(stderr,"Usage: %s -s scale -p pos -v viewport --basis=interpolated,centered,native --showsamples=point,grid -cgP input output\n",self);
+static void usage(const char* self) {
+	fprintf(stderr,"Usage: %s [-s <scale> -p <pos> -v <size> --basis <type> --showsamples[=<type>] -c -g -P] <input> <output>\n", self);
 	exit(1);
+}
+static void help(const char* self) {
+	fprintf(stderr,
+		"Usage: %s [options] <input> <output>\n"
+		"\n"
+		"  -h, --help  This help text.\n"
+		"  -s <scale>  Rational or decimal scale factor.\n"
+		"  -p <pos>    Floating point offset in image, in the form XxY (e.g. 100.0x100.0). Coordinates are in terms of the scaled output unless -P is set\n"
+		"  -v <size>   Output view size in WxH.\n"
+		"  -c          Anchor view to center of image\n"
+		"  -P          Position coordinates with -p are relative to the input rather than the scaled output\n"
+		"  -g          Scale in linear RGB\n"
+		"\n"
+		"  --showsamples[=<type>]  Show where integer coordinates in the input are located in the scaled image.\n"
+		"                          type: point (default), grid.\n"
+		"\n"
+		"  --basis <type>  Set the boundaries of the interpolated basis functions. [default: interpolated]\n"
+		"                  type:\n"
+		"                    interpolated: even around half of a sample of the scaled output\n"
+		"                    native: even around half of a sample of the input before scaling\n"
+		"                    centered: the first and last samples of the input correspond to the first and last samples of the output\n"
+		"\n", self
+	);
+	exit(0);
 }
 
 int main(int argc, char* argv[]) {
@@ -72,14 +96,16 @@ int main(int argc, char* argv[]) {
 	int scaling_type = INTERPOLATED;
 	int c;
 	const struct option opts[] = {
+		{"help",no_argument,NULL,'h'},
 		{"showsamples",optional_argument,NULL,1},
 		{"basis",required_argument,NULL,2},
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"s:v:p:cgaP",opts,NULL)) != -1) {
+	while((c = getopt_long(argc,argv,"hs:v:p:cgaP",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
+			case 'h': help(argv[0]);
 			case 's': sscanf(optarg,"%Lf/%llu",&scale_num,&scale_den); break;
 			case 'v': sscanf(optarg,"%zux%zu",&vw,&vh); break;
 			case 'p': sscanf(optarg,"%Lfx%Lf",&vx,&vy); break;
