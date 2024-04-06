@@ -178,10 +178,9 @@ int main(int argc, char* argv[]) {
 	double* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
 	double* tmp = malloc(sizeof(double)*cheight);
 
-	double* basis[2] = {
-		generate_scaled_basis(scaling_type,scale_num,scale_den,vx,vw,cwidth,width),
-		generate_scaled_basis(scaling_type,scale_num,scale_den,vy,vh,cheight,height)
-	};
+	double* basis[2];
+	basis[0] = generate_scaled_basis(scaling_type,scale_num,scale_den,vx,vw,cwidth,width),
+	basis[1] = width == height && vx == vy ? basis[0] : generate_scaled_basis(scaling_type,scale_num,scale_den,vy,vh,cheight,height);
 
 	fftw_plan p = fftw_plan_many_r2r(2,(int[]){height,width},3,coeffs,NULL,3,1,coeffs,NULL,3,1,(fftw_r2r_kind[]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
 	fftw_execute(p);
@@ -228,8 +227,9 @@ int main(int argc, char* argv[]) {
 	free(coeffs);
 	free(icoeffs);
 	free(tmp);
+	if(basis[1] != basis[0])
+		free(basis[1]);
 	free(basis[0]);
-	free(basis[1]);
 
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
