@@ -41,7 +41,8 @@ All tools which produce image output default to Sixel graphics for inline displa
 FFmpeg's libraries are used for video input and output and so likewise formats supported by it are accepted. Tools which output video also accept a special argument `ffplay:` instead of a file or pipe to display raw video output using the ffplay binary. This will configure ffplay with the correct color properties for the output so may be preferable to e.g. piping yuv4mpeg.  
 
 ## Configurable floating point precision
-For many tools the internal floating point precision may be configured at compile time by setting make vars `COEFF_PRECISION` and `INTERMEDIATE_PRECISION` with a value of F, D, or L for float, double, or long double. This is intended to allow for some simple configurability of tools' speed and memory use vs precision.  
+The internal floating point precision for all tools may be configured at compile time by setting make vars `COEFF_PRECISION` and `INTERMEDIATE_PRECISION` with a value of F, D, or L for float, double, or long double.
+This is intended to allow for some simple configurability of tools' speed and memory use vs precision, or simply to see how different levels of precision affect results.  
 These define the precision used for FFTW transforms and storage buffers (coeff precision), and for intermediate calculations (intermediate precision.)
 Specifying these is optional and each project that can be configured this way has defaults appropriate for it.
 

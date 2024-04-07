@@ -14,80 +14,81 @@
 
 #include "magickwand.h"
 #include "longmath.h"
+#include "precision.h"
 
 #ifndef I
 #define I _Complex_I
 #endif
 
-void real(complex long double component, double real_component[3]) {
-	real_component[0] = (creall(component)+1)/2;
+void real(complex_intermediate component, coeff real_component[3]) {
+	real_component[0] = (mi(creal)(component)+1)/2;
 
 	for(int i = 1; i < 3; i++)
 		real_component[i] = real_component[0];
 }
-void imag(complex long double component, double real_component[3]) {
-	real_component[0] = (cimagl(component)+1)/2;
+void imag(complex_intermediate component, coeff real_component[3]) {
+	real_component[0] = (mi(cimag)(component)+1)/2;
 
 	for(int i = 1; i < 3; i++)
 		real_component[i] = real_component[0];
 }
-void mag(complex long double component, double real_component[3]) {
-	real_component[0] = (cabsl(component)+1)/2;
+void mag(complex_intermediate component, coeff real_component[3]) {
+	real_component[0] = (mi(cabs)(component)+1)/2;
 
 	for(int i = 1; i < 3; i++)
 		real_component[i] = real_component[0];
 }
-void phase(complex long double component, double real_component[3]) {
-	real_component[0] = (cargl(component+I*LDBL_EPSILON)+M_PIl)/M_PIl/2;
+void phase(complex_intermediate component, coeff real_component[3]) {
+	real_component[0] = (mi(carg)(component+I*INTERMEDIATE_CONST(EPSILON))+mi(M_PI))/mi(M_PI)/2;
 
 	for(int i = 1; i < 3; i++)
 		real_component[i] = real_component[0];
 }
-void cplx(complex long double component, double real_component[3]) {
-	real_component[0] = (creall(component)+1)/2;
+void cplx(complex_intermediate component, coeff real_component[3]) {
+	real_component[0] = (mi(creal)(component)+1)/2;
 	real_component[1] = 0;
-	real_component[2] = (cimagl(component)+1)/2;
+	real_component[2] = (mi(cimag)(component)+1)/2;
 }
 
 
-complex long double dft(long long k, long long n, unsigned long long N) {
-	return cexpl((-2*I*M_PIl*k*n)/N);
+complex_intermediate dft(long long k, long long n, unsigned long long N) {
+	return mi(cexp)((-2*I*mi(M_PI)*k*n)/N);
 }
-complex long double idft(long long k, long long n, unsigned long long N) {
-	return cexpl((2*I*M_PIl*k*n)/N);
+complex_intermediate idft(long long k, long long n, unsigned long long N) {
+	return mi(cexp)((2*I*mi(M_PI)*k*n)/N);
 }
-complex long double dct1(long long k, long long n, unsigned long long N) {
-	return (n && N-1-n) ? cosl((M_PIl*(k*n))/(N-1)) : 0.5l*(1+powl(-1,k));
+complex_intermediate dct1(long long k, long long n, unsigned long long N) {
+	return (n && N-1-n) ? mi(cos)((mi(M_PI)*(k*n))/(N-1)) : (mi(pow)(-1,k)+1)/2;
 }
-complex long double dct2(long long k, long long n, unsigned long long N) {
-	return cosl((M_PIl*(k*(2*n+1)))/(2*N));
+complex_intermediate dct2(long long k, long long n, unsigned long long N) {
+	return mi(cos)((mi(M_PI)*(k*(2*n+1)))/(2*N));
 }
-complex long double dct3(long long k, long long n, unsigned long long N) {
-	return n ? cosl((M_PIl*(n*(2*k+1)))/(2*N)) : 0.5l;
+complex_intermediate dct3(long long k, long long n, unsigned long long N) {
+	return n ? mi(cos)((mi(M_PI)*(n*(2*k+1)))/(2*N)) : mi(0.5);
 }
-complex long double dct4(long long k, long long n, unsigned long long N) {
-	return cosl((M_PIl*((2*k+1)*(2*n+1)))/(4*N));
+complex_intermediate dct4(long long k, long long n, unsigned long long N) {
+	return mi(cos)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
 }
-complex long double dst1(long long k, long long n, unsigned long long N) {
-	return sinl((M_PIl*((k+1)*(n+1)))/(N+1));
+complex_intermediate dst1(long long k, long long n, unsigned long long N) {
+	return mi(sin)((mi(M_PI)*((k+1)*(n+1)))/(N+1));
 }
-complex long double dst2(long long k, long long n, unsigned long long N) {
-	return sinl((M_PIl*((k+1)*(2*n+1)))/(2*N));
+complex_intermediate dst2(long long k, long long n, unsigned long long N) {
+	return mi(sin)((mi(M_PI)*((k+1)*(2*n+1)))/(2*N));
 }
-complex long double dst3(long long k, long long n, unsigned long long N) {
-	return (N-1-n) ? sinl((M_PIl*((2*k+1)*(n+1)))/(2*N)) : powl(-1,k)/2;
+complex_intermediate dst3(long long k, long long n, unsigned long long N) {
+	return (N-1-n) ? mi(sin)((mi(M_PI)*((2*k+1)*(n+1)))/(2*N)) : mi(pow)(-1,k)/2;
 }
-complex long double dst4(long long k, long long n, unsigned long long N) {
-	return sinl((M_PIl*((2*k+1)*(2*n+1)))/(4*N));
+complex_intermediate dst4(long long k, long long n, unsigned long long N) {
+	return mi(sin)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
 }
-complex long double wht(long long k, long long n, unsigned long long N) {
+complex_intermediate wht(long long k, long long n, unsigned long long N) {
 	unsigned long long sig = 0;
 	for(int i = 0; i < log2(N); i++)
 		sig += ((n>>i)&1LL)*((
 			     //k>>i //natural order
 			       i?(k>>(unsigned long long)(log2(N)-i-1))+(k>>(unsigned long long)(log2(N)-i)):k>>(unsigned long long)(log2(N)-1)
 		       )&1LL);
-	return powl(-1,sig);
+	return mi(pow)(-1,sig);
 }
 
 typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } coords;
@@ -106,9 +107,9 @@ int main(int argc, char* argv[]) {
 	offsets offset = {0};
 	int natural = false, inverse = false, linear = false;
 	unsigned int scale = 1, padding = 1;
-	double padcolor[3] = {1,0,0};
-	complex long double (*function)(long long, long long, unsigned long long) = dft;
-	void (*realize)(complex long double, double[3]) = real;
+	coeff padcolor[3] = {1,0,0};
+	complex_intermediate (*function)(long long, long long, unsigned long long) = dft;
+	void (*realize)(complex_intermediate, coeff[3]) = real;
 	const struct option gopts[] = {
 		{"function",required_argument,NULL,'f'},
 		{"inverse",no_argument,NULL,'I'},
@@ -151,7 +152,7 @@ int main(int argc, char* argv[]) {
 				else if(!strcmp(optarg,"phase")) realize = phase;
 				else if(!strcmp(optarg,"cplx")) {
 					realize = cplx;
-					memcpy(padcolor,((double[3]){0.0625,0.1875,0.0625}),sizeof(*padcolor)*3);
+					memcpy(padcolor,((coeff[3]){0.0625,0.1875,0.0625}),sizeof(*padcolor)*3);
 				}
 			} break;
 			case 's': sscanf(optarg,"%llux%llu",&size.w,&size.h); break;
@@ -186,7 +187,7 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; natural && i < 2; i++)
 		offset.a[i] -= terms.a[i]/2;
 
-	double* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
+	coeff* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
 	for(int i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
@@ -195,13 +196,13 @@ int main(int argc, char* argv[]) {
 		for(k->w = 0; k->w < K->w; k->w++)
 			for(n->h = 0; n->h < N->h; n->h++)
 				for(n->w = 0; n->w < N->w; n->w++) {
-					complex long double component = 1;
+					complex_intermediate component = 1;
 					for(int j = 0; j < 2; j++) {
 						bi.a[j]+=offset.a[j];
 						component *= function(k->a[j],n->a[j],size.a[j]);
 						bi.a[j]-=offset.a[j];
 					}
-					double real_component[3];
+					coeff real_component[3];
 					realize(component,real_component);
 					for(size_t ys = 0; ys < scale; ys++)
 						for(size_t xs = 0; xs < scale; xs++)
@@ -212,7 +213,7 @@ int main(int argc, char* argv[]) {
 	MagickWandGenesis();
 	MagickWand* wand;
 	wand = NewMagickWand();
-	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",DoublePixel,frame);
+	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",TypePixel,frame);
 	if(linear) { // linear here refers to the processing colorspace, so this actually means genbasis should convert to nonlinear for output
 		MagickSetImageColorspace(wand,RGBColorspace);
 		MagickTransformImageColorspace(wand,sRGBColorspace);

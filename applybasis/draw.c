@@ -14,10 +14,10 @@
 #include <fftw3.h>
 
 #include "magickwand.h"
+#include "precision.h"
 
-#define a(n,N) (n?sqrt(2.f/N):sqrt(1.f/N))
 struct size { int w,h; };
-struct coef { int x,y; float w; };
+struct coef { int x,y; coeff w; };
 
 void usage() {
 	fprintf(stderr,"usage: draw -b WxH -f XxY:strength\n");
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 	struct size bs = { 512, 512 };
 	struct coef* ba = NULL;
 	int fns = 0, nc = 0;
-	float energy = 0.f;
+	coeff energy = 0;
 	int opt;
 	while((opt = getopt(argc,argv,"b:f:h")) != -1) {
 		switch(opt) {
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
 				ba = realloc(ba,sizeof(struct coef)*(fns+1));
 				memset(ba+fns,0,sizeof(struct coef));
 				ba[fns].w = -1;
-				if(sscanf(optarg,"%dx%d:%f",&ba[fns].x,&ba[fns].y,&ba[fns].w) == 2) nc++;
+				if(sscanf(optarg,"%dx%d:%" COEFF_SPECIFIER,&ba[fns].x,&ba[fns].y,&ba[fns].w) == 2) nc++;
 				else energy += ba[fns].w;
 				fns++;
 				break;
@@ -53,27 +53,27 @@ int main(int argc, char* argv[]) {
 
 	for(int i = 0; i < fns; i++)
 		if(ba[i].w == -1) ba[i].w = (1-energy)/nc;
-	float* coefs = fftwf_alloc_real(bs.w*bs.h);
-	memset(coefs,0,sizeof(float)*bs.w*bs.h);
+	coeff* coefs = fftw(alloc_real)(bs.w*bs.h);
+	memset(coefs,0,sizeof(*coefs)*bs.w*bs.h);
 
 	for(int i = 0; i < fns; i++)
 		coefs[ba[i].y*bs.w+ba[i].x] = ba[i].w/4;
-	coefs[0] += 0.5;
+	coefs[0] += mc(0.5);
 	free(ba);
 
-	fftwf_plan p = fftwf_plan_r2r_2d(bs.h,bs.w,coefs,coefs,FFTW_REDFT01,FFTW_REDFT01,FFTW_ESTIMATE);
-	fftwf_execute(p);
-	fftwf_destroy_plan(p);
+	fftw(plan) p = fftw(plan_r2r_2d)(bs.h,bs.w,coefs,coefs,FFTW_REDFT01,FFTW_REDFT01,FFTW_ESTIMATE);
+	fftw(execute)(p);
+	fftw(destroy_plan)(p);
 
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
-	MagickConstituteImage(wand,bs.w,bs.h,"I",FloatPixel,coefs);
+	MagickConstituteImage(wand,bs.w,bs.h,"I",TypePixel,coefs);
 	MagickWriteImage(wand,outfile);
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
 
-	fftwf_free(coefs);
-	fftwf_cleanup();
+	fftw(free)(coefs);
+	fftw(cleanup)();
 
 	return 0;
 }

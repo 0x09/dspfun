@@ -20,118 +20,119 @@
 #define I _Complex_I
 #endif
 
-long double real(complex long double coeff) {
-	return creall(coeff);
+intermediate real(complex_intermediate coeff) {
+	return mi(creal)(coeff);
 }
-long double imag(complex long double coeff) {
-	return cimagl(coeff);
+intermediate imag(complex_intermediate coeff) {
+	return mi(cimag)(coeff);
 }
-long double mag(complex long double coeff) {
-	return cabsl(coeff);
+intermediate mag(complex_intermediate coeff) {
+	return mi(cabs)(coeff);
 }
-long double phase(complex long double coeff) {
-	return cargl(coeff+FLT_EPSILON*I)/M_PIl;
+intermediate phase(complex_intermediate coeff) {
+	return mi(carg)(coeff+I*INTERMEDIATE_CONST(EPSILON))/mi(M_PI);
 }
 
-void linear(long double coeff[3], long double scale) {
+void linear(intermediate coeff[3], intermediate scale) {
 	for(int i = 0; i < 3; i++) coeff[i] /= scale;
 }
-void logscale(long double coeff[3], long double scale) {
-	for(int i = 0; i < 3; i++) coeff[i] = copysignl(log1pl(fabsl(coeff[i]))/log1pl(scale),coeff[i]);
+void logscale(intermediate coeff[3], intermediate scale) {
+	for(int i = 0; i < 3; i++) coeff[i] = mi(copysign)(mi(log1p)(mi(fabs)(coeff[i]))/mi(log1p)(scale),coeff[i]);
 }
-void gain(long double coeff[3], long double scale) {
-	linear(coeff,sqrtl(scale));
-	logscale(coeff,sqrtl(scale));
+void gain(intermediate coeff[3], intermediate scale) {
+	scale = mi(sqrt)(scale);
+	linear(coeff,scale);
+	logscale(coeff,scale);
 }
-void loglevel(long double coeff[3], long double scale) {
+void mi(logleve)(intermediate coeff[3], intermediate scale) {
 	linear(coeff,scale);
 	logscale(coeff,1);
 }
 
-void absolute(long double coeff[3]) {
+void absolute(intermediate coeff[3]) {
 	for(int i = 0; i < 3; i++)
-		coeff[i] = fabsl(coeff[i]);
+		coeff[i] = mi(fabs)(coeff[i]);
 }
-void invert(long double coeff[3]) {
+void invert(intermediate coeff[3]) {
 	for(int i = 0; i < 3; i++)
 		coeff[i] += coeff[i]<0;
 }
-void shift(long double coeff[3]) {
+void shift(intermediate coeff[3]) {
 	for(int i = 0; i < 3; i++)
-		coeff[i] = (coeff[i]+1.l)/2.l;
+		coeff[i] = (coeff[i]+1)/2;
 }
-void (*shift2)(long double[3]) = shift; //dummy
+void (*shift2)(intermediate[3]) = shift; //dummy
 
-void hue(long double coeff[3]) {
+void hue(intermediate coeff[3]) {
 	if(coeff[0] >= 0 && coeff[1] >= 0 && coeff[2] >= 0)
 		return;
 	absolute(coeff);
 	memcpy(coeff,
-		((long double[3]){
+		((intermediate[3]){
 			(- coeff[0] + 2*coeff[1] + 2*coeff[2])/3,
 			(2*coeff[0] -   coeff[1] + 2*coeff[2])/3,
 			(2*coeff[0] + 2*coeff[1] -   coeff[2])/3
 		}),
-	sizeof(long double[3]));
+	sizeof(intermediate[3]));
 }
 
-complex long double dft(long long k, long long n, unsigned long long N, bool ortho) {
-	return cexpl((-2*I*M_PIl*k*n)/N);
+complex_intermediate dft(long long k, long long n, unsigned long long N, bool ortho) {
+	return mi(cexp)((-2*I*mi(M_PI)*k*n)/N);
 }
-complex long double idft(long long k, long long n, unsigned long long N, bool ortho) {
-	return cexpl((2*I*M_PIl*k*n)/N);
+complex_intermediate idft(long long k, long long n, unsigned long long N, bool ortho) {
+	return mi(cexp)((2*I*mi(M_PI)*k*n)/N);
 }
-complex long double dct1(long long k, long long n, unsigned long long N, bool ortho) {
+complex_intermediate dct1(long long k, long long n, unsigned long long N, bool ortho) {
 	if(ortho)
 		return 0; //unimplemented
-	return (n && N-1-n) ? cosl((M_PIl*(k*n))/(N-1)) : 0.5l*(1+powl(-1,k));
+	return (n && N-1-n) ? mi(cos)((mi(M_PI)*(k*n))/(N-1)) : (1+mi(pow)(-1,k))/2;
 }
-complex long double dct2(long long k, long long n, unsigned long long N, bool ortho) {
-	long double coeff = cosl((M_PIl*(k*(2*n+1)))/(2*N));
+complex_intermediate dct2(long long k, long long n, unsigned long long N, bool ortho) {
+	intermediate coeff = mi(cos)((mi(M_PI)*(k*(2*n+1)))/(2*N));
 	if(ortho)
-		coeff *= (k ? M_SQRT2l : 1);
+		coeff *= (k ? mi(M_SQRT2) : 1);
 	return coeff;
 }
-complex long double dct3(long long k, long long n, unsigned long long N, bool ortho) {
-	long double coeff = n ? cosl((M_PIl*(n*(2*k+1)))/(2*N)) : 0.5l;
+complex_intermediate dct3(long long k, long long n, unsigned long long N, bool ortho) {
+	intermediate coeff = n ? mi(cos)((mi(M_PI)*(n*(2*k+1)))/(2*N)) : mi(0.5);
 	if(ortho)
-		coeff *= n ? M_SQRT2l : 2;
+		coeff *= n ? mi(M_SQRT2) : 2;
 	return coeff;
 }
-complex long double dct4(long long k, long long n, unsigned long long N, bool ortho) {
-	long double coeff = cosl((M_PIl*((2*k+1)*(2*n+1)))/(4*N));
+complex_intermediate dct4(long long k, long long n, unsigned long long N, bool ortho) {
+	intermediate coeff = mi(cos)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
 	if(ortho)
-		coeff *= M_SQRT2l;
+		coeff *= mi(M_SQRT2);
 	return coeff;
 }
-complex long double dst1(long long k, long long n, unsigned long long N, bool ortho) {
-	long double coeff = sinl((M_PIl*((k+1)*(n+1)))/(N+1));
+complex_intermediate dst1(long long k, long long n, unsigned long long N, bool ortho) {
+	intermediate coeff = mi(sin)((mi(M_PI)*((k+1)*(n+1)))/(N+1));
 	if(ortho)
-		coeff *= M_SQRT2l*sqrt(N/(long double)(N+1));
+		coeff *= mi(M_SQRT2)*mi(sqrt)(N/(intermediate)(N+1));
 	return coeff;
 }
-complex long double dst2(long long k, long long n, unsigned long long N, bool ortho) {
+complex_intermediate dst2(long long k, long long n, unsigned long long N, bool ortho) {
 	if(ortho)
 		return 0; //unimplemented
-	return sinl((M_PIl*((k+1)*(2*n+1)))/(2*N));
+	return mi(sin)((mi(M_PI)*((k+1)*(2*n+1)))/(2*N));
 }
-complex long double dst3(long long k, long long n, unsigned long long N, bool ortho) {
+complex_intermediate dst3(long long k, long long n, unsigned long long N, bool ortho) {
 	if(ortho)
 		return 0; //unimplemented
-	return (N-1-n) ? sinl((M_PIl*((2*k+1)*(n+1)))/(2*N)) : powl(-1,k)/2;
+	return (N-1-n) ? mi(sin)((mi(M_PI)*((2*k+1)*(n+1)))/(2*N)) : mi(pow)(-1,k)/2;
 }
-complex long double dst4(long long k, long long n, unsigned long long N, bool ortho) {
-	long double coeff = sinl((M_PIl*((2*k+1)*(2*n+1)))/(4*N));
+complex_intermediate dst4(long long k, long long n, unsigned long long N, bool ortho) {
+	intermediate coeff = mi(sin)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
 	if(ortho)
-		coeff *= M_SQRT2l;
+		coeff *= mi(M_SQRT2);
 	return coeff;
 }
-complex long double wht(long long k, long long n, unsigned long long N, bool ortho) {
-	N = log2(N);
+complex_intermediate wht(long long k, long long n, unsigned long long N, bool ortho) {
+	N = mi(log2)(N);
 	unsigned long long sig = (n & (k >> (N-1))) & 1LL;
 	for(N--, n>>=1; N; N--, n>>=1)
 		sig += (n & ((k>>(N-1))+(k>>N))) & 1LL;
-	return powl(-1,sig);
+	return mi(pow)(-1,sig);
 }
 
 typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } coords;
@@ -154,11 +155,11 @@ int main(int argc, char* argv[]) {
 	offsets offset = {};
 	int inverse = false, orthogonal = false, linearlight = false;
 	unsigned int scale = 1, padding = 1;
-	long double (*realize)(complex long double) = real;
-	void (*rescale[2])(long double[3],long double) = {linear};
-	void (*range)(long double[3]) = shift2;
-	complex long double (*function)(long long, long long, unsigned long long,bool) = dft;
-	double padcolor[3] = {0,0,0};
+	intermediate (*realize)(complex_intermediate) = real;
+	void (*rescale[2])(intermediate[3],intermediate) = {linear};
+	void (*range)(intermediate[3]) = shift2;
+	complex_intermediate (*function)(long long, long long, unsigned long long,bool) = dft;
+	coeff padcolor[3] = {0,0,0};
 	const struct option gopts[] = {
 		{"function",required_argument,NULL,'f'},
 		{"inverse",no_argument,NULL,'I'},
@@ -231,7 +232,7 @@ int main(int argc, char* argv[]) {
 		usage();
 
 	size_t inrange = 1;
-	complex long double* pixels;
+	complex_intermediate* pixels;
 	coords insize, size;
 
 	MagickWandGenesis();
@@ -258,8 +259,8 @@ int main(int argc, char* argv[]) {
 		pixels = malloc(sizeof(*pixels)*insize.w*insize.h*3);
 		if(linearlight)
 			MagickTransformImageColorspace(wand,RGBColorspace);
-		double* magickpixels = malloc(insize.w*insize.h*3*sizeof(*magickpixels));
-		MagickExportImagePixels(wand,0,0,insize.w,insize.h,"RGB",DoublePixel,magickpixels);
+		coeff* magickpixels = malloc(insize.w*insize.h*3*sizeof(*magickpixels));
+		MagickExportImagePixels(wand,0,0,insize.w,insize.h,"RGB",TypePixel,magickpixels);
 		for(int i = 0; i < insize.w*insize.h*3; i++)
 			pixels[i] = magickpixels[i];
 		if(range == shift2)
@@ -298,7 +299,7 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i < 2; i++)
 		framesize.a[i] = size.a[i]*terms.a[i]*scale+padding*terms.a[i]+padding;
 
-	double* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
+	coeff* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
 	for(int i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
@@ -309,10 +310,10 @@ int main(int argc, char* argv[]) {
 		for(k->w = 0; k->w < K->w; k->w++)
 			for(n->h = 0; n->h < N->h; n->h++)
 				for(n->w = 0; n->w < N->w; n->w++) {
-					complex long double partsums[3] = {0};
+					complex_intermediate partsums[3] = {0};
 					for(s.h = 0; s.h < partsum.h; s.h++)
 						for(s.w = 0; s.w < partsum.w; s.w++) {
-							complex long double component = 1;
+							complex_intermediate component = 1;
 							for(int j = 0; j < 2; j++) {
 								bi.a[j]+=offset.a[j];
 								component *= function(k->a[j],n->a[j]*partsum.a[j]+s.a[j],insize.a[j],orthogonal);
@@ -321,13 +322,13 @@ int main(int argc, char* argv[]) {
 							for(int j = 0; j < 3; j++)
 								partsums[j] += component * pixels[((n->h*partsum.h+s.h)*insize.w+n->w*partsum.w+s.w)*3+j];
 						}
-					long double real_coeff[3], tmp[3];
+					intermediate real_coeff[3], tmp[3];
 					for(int j = 0; j < 3; j++)
 						real_coeff[j] = tmp[j] = realize(partsums[j]);
 					rescale[0](real_coeff,coeff_scale);
 					if(rescale[1]) {
 						rescale[1](tmp,coeff_scale);
-						long double NN = sqrtl(insize.w*insize.h)-1, nn = sqrtl(coeff_scale)-1;
+						intermediate NN = mi(sqrt)(insize.w*insize.h)-1, nn = mi(sqrt)(coeff_scale)-1;
 						for(int j = 0; j < 3; j++)
 							real_coeff[j] = ((NN-nn)*real_coeff[j]+nn*tmp[j])/NN;
 					}
@@ -340,7 +341,7 @@ int main(int argc, char* argv[]) {
 						fwrite(partsums,sizeof(partsums),1,df);
 				}
 	wand = NewMagickWand();
-	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",DoublePixel,frame);
+	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",TypePixel,frame);
 	if(linearlight) {
 		MagickSetImageColorspace(wand,RGBColorspace);
 		MagickTransformImageColorspace(wand,sRGBColorspace);
