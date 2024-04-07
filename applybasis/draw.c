@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 
 	for(int i = 0; i < fns; i++)
 		if(ba[i].w == -1) ba[i].w = (1-energy)/nc;
-	float* coefs = fftwf_malloc(sizeof(float)*bs.w*bs.h);
+	float* coefs = fftwf_alloc_real(bs.w*bs.h);
 	memset(coefs,0,sizeof(float)*bs.w*bs.h);
 
 	for(int i = 0; i < fns; i++)

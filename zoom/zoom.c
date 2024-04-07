@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
 		MagickTransformImageColorspace(wand,RGBColorspace);
 
 	size_t width = MagickGetImageWidth(wand), height = MagickGetImageHeight(wand);
-	coeff* coeffs = fftw(malloc)(sizeof(coeff)*width*height*3);
+	coeff* coeffs = fftw(alloc_real)(width*height*3);
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",TypePixel,coeffs);
 	DestroyMagickWand(wand);
 

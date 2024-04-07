@@ -270,7 +270,7 @@ int main(int argc, char* argv[]) {
 		color_props.color_primaries = AVCOL_PRI_BT709;
 	}
 
-	coeff* coeffs = fftw(malloc)(sizeof(*coeffs)*width*height*channels);
+	coeff* coeffs = fftw(alloc_real)(width*height*channels);
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",TypePixel,coeffs);
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
@@ -327,8 +327,8 @@ int main(int argc, char* argv[]) {
 	if(use_fftw < 0)
 		use_fftw = step*max_interval > log2(width*height);
 
-	coeff* reconstruction = fftw(malloc)(sizeof(*reconstruction)*width*height*channels);
-	coeff* image = fftw(malloc)(sizeof(*image)*width*height*channels);
+	coeff* reconstruction = fftw(alloc_real)(width*height*channels);
+	coeff* image = fftw(alloc_real)(width*height*channels);
 	memset(reconstruction,0,sizeof(*reconstruction)*width*height*channels);
 
 	fftw(plan) inverse = NULL;

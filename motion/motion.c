@@ -371,7 +371,7 @@ int main(int argc, char* argv[]) {
 
 		if(minbuf[i].w*minbuf[i].h*minbuf[i].d > mincomponent) mincomponent = minbuf[i].w*minbuf[i].h*minbuf[i].d;
 	}
-	coeff* coeffs = fftw(malloc)(sizeof(coeff)*mincomponent);
+	coeff* coeffs = fftw(alloc_real)(mincomponent);
 	unsigned char** pixels[components];
 	for(int i = 0; i < components; i++) {
 		pixels[i] = malloc(sizeof(char*)*nblocks[i].w*nblocks[i].h);
