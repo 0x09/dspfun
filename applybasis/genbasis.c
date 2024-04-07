@@ -19,26 +19,34 @@
 #define I _Complex_I
 #endif
 
-void real(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 0.5l*(creall(ccoeff)+1.l);
-	for(int i = 1; i < 3; i++) coeff[i] = coeff[0];
+void real(complex long double component, double real_component[3]) {
+	real_component[0] = (creall(component)+1)/2;
+
+	for(int i = 1; i < 3; i++)
+		real_component[i] = real_component[0];
 }
-void imag(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 0.5l*(cimagl(ccoeff)+1.l);
-	for(int i = 1; i < 3; i++) coeff[i] = coeff[0];
+void imag(complex long double component, double real_component[3]) {
+	real_component[0] = (cimagl(component)+1)/2;
+
+	for(int i = 1; i < 3; i++)
+		real_component[i] = real_component[0];
 }
-void mag(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 0.5l*(cabsl(ccoeff)+1.l);
-	for(int i = 1; i < 3; i++) coeff[i] = coeff[0];
+void mag(complex long double component, double real_component[3]) {
+	real_component[0] = (cabsl(component)+1)/2;
+
+	for(int i = 1; i < 3; i++)
+		real_component[i] = real_component[0];
 }
-void phase(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 0.5l*(cargl(ccoeff+DBL_EPSILON*I)+M_PIl)/M_PIl;
-	for(int i = 1; i < 3; i++) coeff[i] = coeff[0];
+void phase(complex long double component, double real_component[3]) {
+	real_component[0] = (cargl(component+I*LDBL_EPSILON)+M_PIl)/M_PIl/2;
+
+	for(int i = 1; i < 3; i++)
+		real_component[i] = real_component[0];
 }
-void cplx(complex long double ccoeff, long double coeff[3]) {
-	coeff[0] = 0.5l*(creall(ccoeff)+1.l);
-	coeff[1] = 0;
-	coeff[2] = 0.5l*(cimagl(ccoeff)+1.l);
+void cplx(complex long double component, double real_component[3]) {
+	real_component[0] = (creall(component)+1)/2;
+	real_component[1] = 0;
+	real_component[2] = (cimagl(component)+1)/2;
 }
 
 
@@ -100,7 +108,7 @@ int main(int argc, char* argv[]) {
 	unsigned int scale = 1, padding = 1;
 	double padcolor[3] = {1,0,0};
 	complex long double (*function)(long long, long long, unsigned long long) = dft;
-	void (*realize)(complex long double, long double[3]) = real;
+	void (*realize)(complex long double, double[3]) = real;
 	const struct option gopts[] = {
 		{"function",required_argument,NULL,'f'},
 		{"inverse",no_argument,NULL,'I'},
@@ -141,7 +149,10 @@ int main(int argc, char* argv[]) {
 				if     (!strcmp(optarg,"imag"))  realize = imag;
 				else if(!strcmp(optarg,"mag"))   realize = mag;
 				else if(!strcmp(optarg,"phase")) realize = phase;
-				else if(!strcmp(optarg,"cplx")){ realize = cplx; memcpy(padcolor,((double[3]){0.0625,0.1875,0.0625}),sizeof(*padcolor)*3); }
+				else if(!strcmp(optarg,"cplx")) {
+					realize = cplx;
+					memcpy(padcolor,((double[3]){0.0625,0.1875,0.0625}),sizeof(*padcolor)*3);
+				}
 			} break;
 			case 's': sscanf(optarg,"%llux%llu",&size.w,&size.h); break;
 			case 't': sscanf(optarg,"%llux%llu",&terms.w,&terms.h); break;
@@ -184,18 +195,18 @@ int main(int argc, char* argv[]) {
 		for(k->w = 0; k->w < K->w; k->w++)
 			for(n->h = 0; n->h < N->h; n->h++)
 				for(n->w = 0; n->w < N->w; n->w++) {
-					complex long double ccoeff = 1;
+					complex long double component = 1;
 					for(int j = 0; j < 2; j++) {
 						bi.a[j]+=offset.a[j];
-						ccoeff *= function(k->a[j],n->a[j],size.a[j]);
+						component *= function(k->a[j],n->a[j],size.a[j]);
 						bi.a[j]-=offset.a[j];
 					}
-					long double coeff[3];
-					realize(ccoeff,coeff);
+					double real_component[3];
+					realize(component,real_component);
 					for(size_t ys = 0; ys < scale; ys++)
 						for(size_t xs = 0; xs < scale; xs++)
 							for(int d = 0; d < 3; d++)
-								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = coeff[d];
+								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = real_component[d];
 				}
 
 	MagickWandGenesis();

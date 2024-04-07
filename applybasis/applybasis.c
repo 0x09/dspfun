@@ -20,17 +20,17 @@
 #define I _Complex_I
 #endif
 
-long double real(complex long double ccoeff) {
-	return creall(ccoeff);
+long double real(complex long double coeff) {
+	return creall(coeff);
 }
-long double imag(complex long double ccoeff) {
-	return cimagl(ccoeff);
+long double imag(complex long double coeff) {
+	return cimagl(coeff);
 }
-long double mag(complex long double ccoeff) {
-	return cabsl(ccoeff);
+long double mag(complex long double coeff) {
+	return cabsl(coeff);
 }
-long double phase(complex long double ccoeff) {
-	return cargl(ccoeff+FLT_EPSILON*I)/M_PIl;
+long double phase(complex long double coeff) {
+	return cargl(coeff+FLT_EPSILON*I)/M_PIl;
 }
 
 void linear(long double coeff[3], long double scale) {
@@ -302,38 +302,40 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
+	unsigned long long coeff_scale = partsum.w*partsum.h*inrange;
+
 	#define INDEX(d) ((size.d*bi.d+i.d)*scale+padding*bi.d+padding)
 	for(k->h = 0; k->h < K->h; k->h++)
 		for(k->w = 0; k->w < K->w; k->w++)
 			for(n->h = 0; n->h < N->h; n->h++)
 				for(n->w = 0; n->w < N->w; n->w++) {
-					complex long double partsums[3] = {};
+					complex long double partsums[3] = {0};
 					for(s.h = 0; s.h < partsum.h; s.h++)
 						for(s.w = 0; s.w < partsum.w; s.w++) {
-							complex long double ccoeff = 1;
+							complex long double component = 1;
 							for(int j = 0; j < 2; j++) {
 								bi.a[j]+=offset.a[j];
-								ccoeff *= function(k->a[j],n->a[j]*partsum.a[j]+s.a[j],insize.a[j],orthogonal);
+								component *= function(k->a[j],n->a[j]*partsum.a[j]+s.a[j],insize.a[j],orthogonal);
 								bi.a[j]-=offset.a[j];
 							}
 							for(int j = 0; j < 3; j++)
-								partsums[j] += ccoeff * pixels[((n->h*partsum.h+s.h)*insize.w+n->w*partsum.w+s.w)*3+j];
+								partsums[j] += component * pixels[((n->h*partsum.h+s.h)*insize.w+n->w*partsum.w+s.w)*3+j];
 						}
-					long double coeff[3], coeff2[3];
+					long double real_coeff[3], tmp[3];
 					for(int j = 0; j < 3; j++)
-						coeff[j] = coeff2[j] = realize(partsums[j]);
-					rescale[0](coeff,partsum.w*partsum.h*inrange);
+						real_coeff[j] = tmp[j] = realize(partsums[j]);
+					rescale[0](real_coeff,coeff_scale);
 					if(rescale[1]) {
-						rescale[1](coeff2,partsum.w*partsum.h*inrange);
-						long double NN = sqrtl(insize.w*insize.h)-1, nn = sqrtl(partsum.w*partsum.h*inrange)-1;
+						rescale[1](tmp,coeff_scale);
+						long double NN = sqrtl(insize.w*insize.h)-1, nn = sqrtl(coeff_scale)-1;
 						for(int j = 0; j < 3; j++)
-							coeff[j] = ((NN-nn)*coeff[j]+nn*coeff2[j])/NN;
+							real_coeff[j] = ((NN-nn)*real_coeff[j]+nn*tmp[j])/NN;
 					}
-					range(coeff);
+					range(real_coeff);
 					for(size_t ys = 0; ys < scale; ys++)
 						for(size_t xs = 0; xs < scale; xs++)
 							for(int d = 0; d < 3; d++)
-								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = coeff[d];
+								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = real_coeff[d];
 					if(df)
 						fwrite(partsums,sizeof(partsums),1,df);
 				}
