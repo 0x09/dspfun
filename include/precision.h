@@ -77,6 +77,8 @@
 
 typedef INTERMEDIATE_TYPE intermediate;
 typedef COEFF_TYPE coeff;
+typedef _Complex INTERMEDIATE_TYPE complex_intermediate;
+typedef _Complex COEFF_TYPE complex_coeff;
 
 #define CAT_(x,y) x##y
 #define CAT(x,y) CAT_(x,y)
