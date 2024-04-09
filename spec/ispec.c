@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 		break;
 		case signtype_shift:
 		for(i = 0; i < l; i++)
-			f[i] = (f[i]/(mi(254.)/255)-mi(0.5))*mi(2.);
+			f[i] = (f[i]*mi(255.)/254-mi(0.5))*2;
 		break;
 		case signtype_saturate:
 		for(i = d; i < l; i++)

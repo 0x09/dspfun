@@ -180,8 +180,8 @@ int main(int argc, char* argv[]) {
 		vx *= scale_num/scale_den;
 		vy *= scale_num/scale_den;
 		if(centered) {
-			vx -= vw/mi(2.);
-			vy -= vh/mi(2.);
+			vx -= vw/2;
+			vy -= vh/2;
 		}
 	}
 

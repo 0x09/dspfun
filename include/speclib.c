@@ -108,10 +108,10 @@ static intermediate specfn_scale_exp(intermediate c) {
 	return mi(copysign)(mi(expm1)(mi(fabs)(c)),c);
 }
 static intermediate specfn_sign_shift(intermediate c) {
-	return (c/mi(2.)+mi(0.5))*(mi(254.)/255);
+	return (c/2+mi(0.5))*254/255;
 }
 static intermediate specfn_sign_unshift(intermediate c) {
-	return (c/(mi(254.)/255)-mi(0.5))*mi(2.);
+	return (c*255/254-mi(0.5))*2;
 }
 static intermediate specfn_sign_abs(intermediate c) {
 	return mi(fabs)(c);

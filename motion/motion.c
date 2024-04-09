@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
 	range bandpass = {0};
 	coeff boost[4] = {1,1,1,1};
 	coeff damp[4] = {0,0,0,0};
-	coeff quant = 0;
+	intermediate quant = 0;
 	int preserve_dc = 0, fftw_flags = FFTW_ESTIMATE, fftw_threads = 1;
 	int loglevel = AV_LOG_ERROR;
 	bool quiet = false;
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
 			case  5 : format = optarg; break;
 			case  6 : encoder = optarg; break;
 			case  7 : encopts = optarg; break;
-			case 'q': quant = strtod(optarg,NULL); break;
+			case 'q': quant = strtold(optarg,NULL); break;
 			case  8 : iformat = optarg; break;
 			case  9 : decopts = optarg; break;
 			case 10 : loglevel = strtol(optarg,NULL,10); break;
@@ -428,7 +428,7 @@ int main(int argc, char* argv[]) {
 		scalefactor[i] = (scaled[i].w*scaled[i].h*scaled[i].d)/(intermediate)(block[i].w*block[i].h*block[i].d);
 		normalization[i] = 1/mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d*8);
 		if(spec && spec != 1) c[i] = mi(127.5)/mi(log)(scaled[i].w*scaled[i].h*scaled[i].d*255*8+1);
-		quantizer[i] = (quant*mi(8.)*mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d));
+		quantizer[i] = (quant*8*mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d));
 	}
 
 	int padb = log10f(source->d)+1, pads = log10f(newres->d)+1;
@@ -555,11 +555,11 @@ int main(int argc, char* argv[]) {
 								pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : mi(lround)(pel);
 								if(dithering) {
 									intermediate dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-pblock[(z*minbuf[i].h+y)*minbuf[i].w+x]/(normalization[i]*normalization[i]*scalefactor[i]);
-									if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*mi(7.0)/mi(16.0);
+									if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*7/16;
 									if(y < scaled[i].h-1) {
-										if(x) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x-1] += dp*mi(3.0)/mi(16.0);
-										coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x] += dp*mi(5.0)/mi(16.0);
-										if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x+1] += dp/mi(16.0);
+										if(x) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x-1] += dp*3/16;
+										coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x] += dp*5/16;
+										if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x+1] += dp/16;
 									}
 								}
 							}
