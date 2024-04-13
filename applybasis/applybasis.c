@@ -201,8 +201,8 @@ int main(int argc, char* argv[]) {
 			} break;
 			case 'I': inverse = true; break;
 			case 'P': {
-				if     (!strcmp(optarg,"imag"))  realize = imag;
-				else if(!strcmp(optarg,"mag"))   realize = mag;
+				if     (!strcmp(optarg,"imaginary")) realize = imag;
+				else if(!strcmp(optarg,"magnitude")) realize = mag;
 				else if(!strcmp(optarg,"phase")) realize = phase;
 			} break;
 			case 'R': {

@@ -146,10 +146,10 @@ int main(int argc, char* argv[]) {
 			case 'I': inverse = true; break;
 			case 'n': natural = true; break;
 			case 'P': {
-				if     (!strcmp(optarg,"imag"))  realize = imag;
-				else if(!strcmp(optarg,"mag"))   realize = mag;
+				if     (!strcmp(optarg,"imaginary"))  realize = imag;
+				else if(!strcmp(optarg,"magnitude"))   realize = mag;
 				else if(!strcmp(optarg,"phase")) realize = phase;
-				else if(!strcmp(optarg,"cplx")) {
+				else if(!strcmp(optarg,"complex")) {
 					realize = cplx;
 					memcpy(padcolor,((coeff[3]){0.0625,0.1875,0.0625}),sizeof(*padcolor)*3);
 				}
