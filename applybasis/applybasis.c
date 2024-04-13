@@ -174,11 +174,9 @@ int main(int argc, char* argv[]) {
 		{"linear",no_argument,NULL,'g'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"i:o:d:f:IP:R:N:t:s:O:p:S:",gopts,NULL)) != -1)
+	while((opt = getopt_long(argc,argv,"d:f:IP:R:N:t:s:O:p:S:",gopts,NULL)) != -1)
 		switch(opt) {
 			case 0: break;
-			case 'i': infile = optarg; break;
-			case 'o': outfile = optarg; break;
 			case 'd':
 				outcoeffs = optarg;
 				orthogonal = true;
@@ -228,7 +226,17 @@ int main(int argc, char* argv[]) {
 			case 'g': linearlight = true; break;
 			default : usage();
 		}
-	if(!infile || !outfile)
+
+	argc -= optind;
+	argv += optind;
+
+	if(argc < 1 || argc > 2)
+		usage();
+
+	infile = argv[0];
+	if(argc > 1)
+		outfile = argv[1];
+	if(!outfile)
 		usage();
 
 	size_t inrange = 1;

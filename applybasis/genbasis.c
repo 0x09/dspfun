@@ -123,9 +123,8 @@ int main(int argc, char* argv[]) {
 		{"linear",no_argument,NULL,'g'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"o:f:InP:t:O:p:S:s:g",gopts,NULL)) != -1)
+	while((opt = getopt_long(argc,argv,"f:InP:t:O:p:S:s:g",gopts,NULL)) != -1)
 		switch(opt) {
-			case 'o': outfile = optarg; break;
 			case 'f': {
 				if(!strcasecmp(optarg,"idft")) function = idft;
 				else if(!strcasecmp(optarg,"wht")) function = wht;
@@ -163,6 +162,14 @@ int main(int argc, char* argv[]) {
 			case 'g': linear = true; break;
 			default : usage();
 		}
+
+	argc -= optind;
+	argv += optind;
+
+	if(argc > 1)
+		usage();
+	if(argc)
+		outfile = argv[0];
 	if(!outfile)
 		usage();
 
