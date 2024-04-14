@@ -9,7 +9,7 @@ Generate basis function plots in the style of [this one](https://upload.wikimedi
     Options:
       -h, --help             This help text.
       -f, --function <type>  Type of basis to generate. [default: DFT]
-                             Types: DFT, iDFT, DCT[1-4], DST[1-4], WHT.
+                             Types: DFT, iDFT, DCT[1-4], DST[1-4], WHT, DHT.
       -I, --inverse          Transpose the output.
       -n, --natural          Center the output around the DC. Commonly in DFT visualizations.
       -P, --plane <type>     How to represent complex values in the output image. [default: real]
@@ -44,7 +44,7 @@ Apply basis functions from various 2D transforms to an image file, progressively
     Options:
       -h, --help             This help text.
       -f, --function <type>  Type of basis to generate. [default: DFT]
-                             Types: DFT, iDFT, DCT[1-4], DST[1-4], WHT.
+                             Types: DFT, iDFT, DCT[1-4], DST[1-4], WHT, DHT.
       -I, --inverse          Transpose the output.
       -n, --natural          Center the output around the DC. Commonly in DFT visualizations.
       -P, --plane <type>     How to represent complex values in the output image. [default: real]

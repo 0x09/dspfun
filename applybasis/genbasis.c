@@ -90,6 +90,9 @@ complex_intermediate wht(long long k, long long n, unsigned long long N) {
 		       )&1LL);
 	return mi(pow)(-1,sig);
 }
+complex_intermediate dht(long long k, long long n, unsigned long long N) {
+	return mi(M_SQRT2) * mi(cos)(2*mi(M_PI)*n*k/N - mi(M_PI)/4);
+}
 
 typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } coords;
 typedef union { long long a[2]; struct { long long w, h; }; } offsets;
@@ -105,7 +108,7 @@ static void help() {
 	"Options:\n"
 	"  -h, --help             This help text.\n"
 	"  -f, --function <type>  Type of basis to generate. [default: DFT]\n"
-	"                         Types: DFT, iDFT, DCT[1-4], DST[1-4], WHT.\n"
+	"                         Types: DFT, iDFT, DCT[1-4], DST[1-4], WHT, DHT.\n"
 	"  -I, --inverse          Transpose the output.\n"
 	"  -n, --natural          Center the output around the DC. Commonly in DFT visualizations.\n"
 	"  -P, --plane <type>     How to represent complex values in the output image. [default: real]\n"
@@ -150,6 +153,7 @@ int main(int argc, char* argv[]) {
 			case 'f': {
 				if(!strcasecmp(optarg,"idft")) function = idft;
 				else if(!strcasecmp(optarg,"wht")) function = wht;
+				else if(!strcasecmp(optarg,"dht")) function = dht;
 				else if(!strncasecmp(optarg,"dct",3))
 					switch(optarg[3]) {
 						case '1': function = dct1; break;
