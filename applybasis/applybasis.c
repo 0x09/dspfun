@@ -246,7 +246,8 @@ int main(int argc, char* argv[]) {
 	MagickWandGenesis();
 	MagickWand* wand;
 
-	if(!strcmp(strrchr(infile,'.'),".coeff")) {
+	char* ext;
+	if((ext = strrchr(infile,'.')) && !strcmp(ext,".coeff")) {
 		orthogonal = true;
 		FILE* f = fopen(infile,"r");
 		fread(&insize,sizeof(insize),1,f);
