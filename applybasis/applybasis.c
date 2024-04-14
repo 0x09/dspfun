@@ -44,7 +44,7 @@ void gain(intermediate coeff[3], intermediate scale) {
 	linear(coeff,scale);
 	logscale(coeff,scale);
 }
-void mi(logleve)(intermediate coeff[3], intermediate scale) {
+void loglevel(intermediate coeff[3], intermediate scale) {
 	linear(coeff,scale);
 	logscale(coeff,1);
 }
