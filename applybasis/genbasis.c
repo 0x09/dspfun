@@ -95,11 +95,32 @@ typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } 
 typedef union { long long a[2]; struct { long long w, h; }; } offsets;
 
 static void usage() {
-	fprintf(stderr,
-	        "Usage: genbasis -o outfile -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT [-I|--inverse] [-n|--natural] [-P|--plane=(real),imag,mag,phase,cplx]\n"
-	        "             -s|--size WxH [-t|--terms WxH] [-O|--offset XxY] [-p|--padding p] [-S|--scale s] [-g|--linear]\n");
+	fprintf(stderr,"Usage: genbasis --size <WxH> [options] <outfile>\n");
+	exit(1);
+}
+static void help() {
+	puts(
+	"Usage: genbasis --size <WxH> [options] <outfile>\n"
+	"\n"
+	"Options:\n"
+	"  -h, --help             This help text.\n"
+	"  -f, --function <type>  Type of basis to generate. [default: DFT]\n"
+	"                         Types: DFT, iDFT, DCT[1-4], DST[1-4], WHT.\n"
+	"  -I, --inverse          Transpose the output.\n"
+	"  -n, --natural          Center the output around the DC. Commonly in DFT visualizations.\n"
+	"  -P, --plane <type>     How to represent complex values in the output image. [default: real]\n"
+	"                         Types: real, imaginary, magnitude, phase\n"
+	"                         Note: types other than \"real\" are only meaningful for the DFT.\n"
+	"  -s, --size <WxH>       Size of the basis functions.\n"
+	"  -t, --terms <WxH>      Number of basis functions to generate in each dimension. [default: equal to --size]\n"
+	"  -O, --offset <XxY>     Offset the terms by this amount [default: 0x0]\n"
+	"  -p, --padding <p>      Amount of padding to add in between terms. [default: 1]\n"
+	"  -S, --scale <int>      Integer point upscaling factor for basis functions. [default: 1]\n"
+	"  -g, --linear           Generate the basis functions in linear light and scale to sRGB for output.\n"
+	);
 	exit(0);
 }
+
 int main(int argc, char* argv[]) {
 	int opt;
 	const char* outfile = isatty(STDOUT_FILENO) ? "sixel:-" : NULL;
@@ -123,8 +144,9 @@ int main(int argc, char* argv[]) {
 		{"linear",no_argument,NULL,'g'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"f:InP:t:O:p:S:s:g",gopts,NULL)) != -1)
+	while((opt = getopt_long(argc,argv,"hf:InP:t:O:p:S:s:g",gopts,NULL)) != -1)
 		switch(opt) {
+			case 'h': help();
 			case 'f': {
 				if(!strcasecmp(optarg,"idft")) function = idft;
 				else if(!strcasecmp(optarg,"wht")) function = wht;

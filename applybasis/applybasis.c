@@ -139,13 +139,44 @@ typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } 
 typedef union { long long a[2]; struct { long long w, h; }; } offsets;
 
 static void usage() {
-	fprintf(stderr,
-	        "Usage: applybasis -i infile -o outfile [-d out.coeff]\n"
-	        "            -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT  [-I|--inverse]\n"
-	        "            [-P|--plane=(real),imag,mag,phase]  [-R|--rescale=(linear),log,gain,level[-...]]  [-N|--range=shift,(shift2),abs,invert,hue]\n"
-	        "            [-t|--terms WxH]  [-u|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]  [-g|--linear]\n");
+	fprintf(stderr,"Usage: applybasis [options] <infile> <outfile>\n");
+	exit(1);
+}
+static void help() {
+	puts(
+	"Usage: applybasis [options] <infile> <outfile>\n"
+	"\n"
+	"Options:\n"
+	"  -h, --help             This help text.\n"
+	"  -f, --function <type>  Type of basis to generate. [default: DFT]\n"
+	"                         Types: DFT, iDFT, DCT[1-4], DST[1-4], WHT.\n"
+	"  -I, --inverse          Transpose the output.\n"
+	"  -n, --natural          Center the output around the DC. Commonly in DFT visualizations.\n"
+	"  -P, --plane <type>     How to represent complex values in the output image. [default: real]\n"
+	"                         Types: real, imaginary, magnitude, phase\n"
+	"                         Note: types other than \"real\" are only meaningful for the DFT.\n"
+	"  -u, --sum <NxM>        Sum this many terms after applying the basis functions. [default: 1x1 (no summing)]\n"
+	"                         When NxM is the full input dimensions, the output is a fully transformed spectrum of the type specified with -f.\n"
+	"  -t, --terms <WxH>      Number of basis functions to generate in each dimension. [default: equal to the input image dimensions]\n"
+	"  -O, --offset <XxY>     Offset the terms by this amount [default: 0x0]\n"
+	"  -p, --padding <p>      Amount of padding to add in between terms. [default: 1]\n"
+	"  -S, --scale <int>      Integer point upscaling factor for basis functions. [default: 1]\n"
+	"  -g, --linear           Apply the basis functions in linear light and scale to sRGB for output.\n"
+	"  -R, --rescale <type>   How to scale summed values. [default: linear]\n"
+	"                         Types: linear, log, gain, level\n"
+	"                         Two types may be provided, e.g. linear-log. applybasis will interpolate between these as the number of summed terms increases.\n"
+	"  -N, --range <type>     How to visualize negative values. [default: shift2]\n"
+	"                         Types:\n"
+	"                           shift  - shift into 0,1 range (brightens output)\n"
+	"                           shift2 - shift into -1,1 range prior to applying basis\n"
+	"                           abs    - take the absolute value\n"
+	"                           invert - wrap around\n"
+	"                           hue    - apply a color rotation\n"
+	"  -d <file.coeff>        Optional file to store transformed coefficients. May be used later as an input together with the --inverse flag to invert the original transform.\n"
+	);
 	exit(0);
 }
+
 int main(int argc, char* argv[]) {
 	int opt;
 	char* infile = NULL,* outfile = NULL,* outcoeffs = NULL;
@@ -174,9 +205,10 @@ int main(int argc, char* argv[]) {
 		{"linear",no_argument,NULL,'g'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"d:f:IP:R:N:t:u:O:p:S:",gopts,NULL)) != -1)
+	while((opt = getopt_long(argc,argv,"hd:f:IP:R:N:t:u:O:p:S:",gopts,NULL)) != -1)
 		switch(opt) {
 			case 0: break;
+			case 'h': help();
 			case 'd':
 				outcoeffs = optarg;
 				orthogonal = true;

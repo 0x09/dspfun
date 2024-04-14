@@ -20,9 +20,20 @@ struct size { int w,h; };
 struct coef { int x,y; coeff w; };
 
 void usage() {
-	fprintf(stderr,"usage: draw -b WxH -f XxY:strength\n");
+	fprintf(stderr,"Usage: draw -b <WxH> [-f <XxY:strength> ...] <outfile>\n");
+	exit(1);
+}
+void help() {
+	puts(
+	"Usage: draw -b <WxH> [-f <XxY:strength> ...] <outfile>\n"
+	"\n"
+	"    Options:\n"
+	"  -b <WxH>           Size of the output image.\n"
+	"  -f <XxY:strength>  Frequency component position and value. My repeat.\n"
+	);
 	exit(0);
 }
+
 int main(int argc, char* argv[]) {
 	struct size bs = { 512, 512 };
 	struct coef* ba = NULL;
@@ -31,6 +42,7 @@ int main(int argc, char* argv[]) {
 	int opt;
 	while((opt = getopt(argc,argv,"b:f:h")) != -1) {
 		switch(opt) {
+			case 'h': help();
 			case 'b': sscanf(optarg,"%dx%d",&bs.w,&bs.h); break;
 			case 'f':
 				ba = realloc(ba,sizeof(struct coef)*(fns+1));
