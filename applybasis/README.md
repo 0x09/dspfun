@@ -35,7 +35,7 @@ Apply basis functions from various 2D transforms to an image file, progressively
     applybasis -i infile -o outfile [-d out.coeff]
                -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT  [-I|--inverse]
                [-P|--plane=(real),imag,mag,phase]  [-R|--rescale=(linear),log,gain,level[-...]]  [-N|--range=shift,(shift2),abs,invert,hue]
-               [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale] [-g|--linear]
+               [-t|--terms WxH]  [-u|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale] [-g|--linear]
 
 	range - How to visualize negative values:
 		shift - shift into 0-255 range (brightens image)
@@ -52,9 +52,9 @@ This tool shares several parameters with `genbasis`, documented above.
 
 Progressively-summed 16x16 DCT/iDCT of [an example image](https://0x09.net/i/g/flower.png).
 	
-	for i in 1 4 16; do applybasis -i /tmp/flower.png -fDCT2 -s${i}x${i} -S$i -o fdct_$i.png; done
+	for i in 1 4 16; do applybasis -i /tmp/flower.png -fDCT2 -u${i}x${i} -S$i -o fdct_$i.png; done
 	applybasis -i /tmp/flower.png -fDCT2 -s16x16 -S16 -d/tmp/out.coeff -o /dev/null
-	for i in 1 4 16; do applybasis -i /tmp/out.coeff -fDCT3 -I -s${i}x${i} -S$i -o idct_$i.png; done
+	for i in 1 4 16; do applybasis -i /tmp/out.coeff -fDCT3 -I -u${i}x${i} -S$i -o idct_$i.png; done
 
 Forward on top, inverse on bottom:
 

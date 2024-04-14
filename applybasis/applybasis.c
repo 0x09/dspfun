@@ -143,7 +143,7 @@ static void usage() {
 	        "Usage: applybasis -i infile -o outfile [-d out.coeff]\n"
 	        "            -f|--function=(DFT),iDFT,DCT[1-4],DST[1-4],WHT  [-I|--inverse]\n"
 	        "            [-P|--plane=(real),imag,mag,phase]  [-R|--rescale=(linear),log,gain,level[-...]]  [-N|--range=shift,(shift2),abs,invert,hue]\n"
-	        "            [-t|--terms WxH]  [-s|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]  [-g|--linear]\n");
+	        "            [-t|--terms WxH]  [-u|--sum NxM]  [-O|--offset XxY]  [-p|--padding p]  [-S|--scale scale]  [-g|--linear]\n");
 	exit(0);
 }
 int main(int argc, char* argv[]) {
@@ -167,14 +167,14 @@ int main(int argc, char* argv[]) {
 		{"rescale",required_argument,NULL,'R'},
 		{"range",required_argument,NULL,'N'},
 		{"terms",required_argument,NULL,'t'},
-		{"sum",required_argument,NULL,'s'},
+		{"sum",required_argument,NULL,'u'},
 		{"offset",required_argument,NULL,'O'},
 		{"padding",required_argument,NULL,'p'},
 		{"scale",required_argument,NULL,'S'},
 		{"linear",no_argument,NULL,'g'},
 		{}
 	};
-	while((opt = getopt_long(argc,argv,"d:f:IP:R:N:t:s:O:p:S:",gopts,NULL)) != -1)
+	while((opt = getopt_long(argc,argv,"d:f:IP:R:N:t:u:O:p:S:",gopts,NULL)) != -1)
 		switch(opt) {
 			case 0: break;
 			case 'd':
@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
 				else if(!strcmp(optarg,"hue"))    range = hue;
 			} break;
 			case 't': sscanf(optarg,"%llux%llu",&terms.w,&terms.h); break;
-			case 's': sscanf(optarg,"%llux%llu",&partsum.w,&partsum.h); break;
+			case 'u': sscanf(optarg,"%llux%llu",&partsum.w,&partsum.h); break;
 			case 'O': sscanf(optarg,"%lldx%lld",&offset.w,&offset.h); break;
 			case 'p': padding = strtoul(optarg,NULL,10); break;
 			case 'S': scale = strtoul(optarg,NULL,10); break;
