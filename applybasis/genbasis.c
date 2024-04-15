@@ -58,7 +58,7 @@ complex_intermediate idft(long long k, long long n, unsigned long long N) {
 	return mi(cexp)((2*I*mi(M_PI)*k*n)/N);
 }
 complex_intermediate dct1(long long k, long long n, unsigned long long N) {
-	return (n && N-1-n) ? mi(cos)((mi(M_PI)*(k*n))/(N-1)) : (mi(pow)(-1,k)+1)/2;
+	return (n && N-1-n) ? mi(cos)((mi(M_PI)*(k*n))/(N-1)) : (n ? mi(pow)(-1,k) : mi(1.))/2;
 }
 complex_intermediate dct2(long long k, long long n, unsigned long long N) {
 	return mi(cos)((mi(M_PI)*(k*(2*n+1)))/(2*N));
