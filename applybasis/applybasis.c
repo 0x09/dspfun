@@ -83,9 +83,10 @@ complex_intermediate idft(long long k, long long n, unsigned long long N, bool o
 	return mi(cexp)((2*I*mi(M_PI)*k*n)/N);
 }
 complex_intermediate dct1(long long k, long long n, unsigned long long N, bool ortho) {
+	intermediate coeff = (n && N-1-n) ? mi(cos)((mi(M_PI)*(k*n))/(N-1)) : (n ? mi(pow)(-1,k) : mi(1.))/2;
 	if(ortho)
-		return 0; //unimplemented
-	return (n && N-1-n) ? mi(cos)((mi(M_PI)*(k*n))/(N-1)) : (1+mi(pow)(-1,k))/2;
+		coeff *= mi(M_SQRT2);
+	return coeff;
 }
 complex_intermediate dct2(long long k, long long n, unsigned long long N, bool ortho) {
 	intermediate coeff = mi(cos)((mi(M_PI)*(k*(2*n+1)))/(2*N));
@@ -108,18 +109,20 @@ complex_intermediate dct4(long long k, long long n, unsigned long long N, bool o
 complex_intermediate dst1(long long k, long long n, unsigned long long N, bool ortho) {
 	intermediate coeff = mi(sin)((mi(M_PI)*((k+1)*(n+1)))/(N+1));
 	if(ortho)
-		coeff *= mi(M_SQRT2)*mi(sqrt)(N/(intermediate)(N+1));
+		coeff *= mi(M_SQRT2);
 	return coeff;
 }
 complex_intermediate dst2(long long k, long long n, unsigned long long N, bool ortho) {
+	intermediate coeff = mi(sin)((mi(M_PI)*((k+1)*(2*n+1)))/(2*N));
 	if(ortho)
-		return 0; //unimplemented
-	return mi(sin)((mi(M_PI)*((k+1)*(2*n+1)))/(2*N));
+		coeff *= (N-1-k) ? mi(M_SQRT2) : 1;
+	return coeff;
 }
 complex_intermediate dst3(long long k, long long n, unsigned long long N, bool ortho) {
+	intermediate coeff = (N-1-n) ? mi(sin)((mi(M_PI)*((2*k+1)*(n+1)))/(2*N)) : mi(pow)(-1,k)/2;
 	if(ortho)
-		return 0; //unimplemented
-	return (N-1-n) ? mi(sin)((mi(M_PI)*((2*k+1)*(n+1)))/(2*N)) : mi(pow)(-1,k)/2;
+		coeff *= (N-1-n) ? mi(M_SQRT2) : 2;
+	return coeff;
 }
 complex_intermediate dst4(long long k, long long n, unsigned long long N, bool ortho) {
 	intermediate coeff = mi(sin)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
@@ -348,7 +351,14 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
-	unsigned long long coeff_scale = partsum.w*partsum.h*inrange;
+	unsigned long long coeff_scale = inrange;
+	// special case for dct/dst 1 as their logical size differs from the transform length
+	if(function == dct1)
+		coeff_scale *= (partsum.w-1)*(partsum.h-1);
+	else if(function == dst1)
+		coeff_scale *= (partsum.w+1)*(partsum.h+1);
+	else
+		coeff_scale *= partsum.w*partsum.h;
 
 	#define INDEX(d) ((size.d*bi.d+i.d)*scale+padding*bi.d+padding)
 	for(k->h = 0; k->h < K->h; k->h++)
