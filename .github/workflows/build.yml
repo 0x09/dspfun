@@ -1,0 +1,27 @@
+name: Build
+on:
+  push:
+  pull_request:
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo add-apt-repository -y ppa:ubuntuhandbook1/ffmpeg7
+          sudo apt-get update
+          sudo apt-get install -y libfftw3-dev libmagickwand-6.q16-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev
+      - name: Build
+        run: make
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          brew update
+          brew upgrade --overwrite python #avoids brew link issues during ffmpeg install
+          brew install fftw imagemagick ffmpeg
+      - name: Build
+        run: make
