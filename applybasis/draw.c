@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <png.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
