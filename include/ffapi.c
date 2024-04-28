@@ -417,7 +417,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	 return out;
 error:
 	av_dict_free(&opts);
-	avcodec_close(out->codec);
+	avcodec_free_context(&out->codec);
 	avformat_free_context(out->fmt);
 	free(out);
 	return NULL;
@@ -528,7 +528,7 @@ int ffapi_close(FFContext* ctx) {
 		ret = write_end(ctx);
 		av_write_trailer(ctx->fmt);
 	}
-	avcodec_close(ctx->codec);
+	avcodec_free_context(&ctx->codec);
 	avcodec_free_context(&ctx->codec);
 	if(ctx->sws) {
 		ffapi_free_frame(ctx->swsframe);
