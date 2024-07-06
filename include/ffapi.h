@@ -11,6 +11,7 @@
 #include <libavformat/avformat.h>
 #include <libavutil/pixdesc.h>
 #include <libavutil/parseutils.h>
+#include <libavutil/intreadwrite.h>
 #include <assert.h>
 #include <stdbool.h>
 
@@ -49,7 +50,6 @@ size_t    ffapi_seek_frame (FFContext*, size_t offset, void (*progress)(size_t))
 int       ffapi_write_frame(FFContext*, AVFrame*);
 int       ffapi_close(FFContext*);
 
-// 8 bit only for now
 #define FFA_PEL(frame,comp,x,y) frame->data[comp.plane][y*frame->linesize[comp.plane]+x*comp.step+comp.offset]
 static inline void ffapi_setpel_direct(AVFrame* frame, size_t x, size_t y, AVComponentDescriptor comp, unsigned char val) {
 	assert(comp.depth == 8);
@@ -71,6 +71,17 @@ static inline void ffapi_setpell_direct(AVFrame* frame, size_t x, size_t y, AVCo
 		      float:(ffapi_setpell_direct)(AVFrame,x,y,comp,lrintf(val)),\
 		    default: (ffapi_setpel_direct)(AVFrame,x,y,comp,       val)\
 	)
+
+static inline void ffapi_setpelf(FFContext* ctx, AVFrame* frame, size_t x, size_t y, int c, float val) {
+	AVComponentDescriptor comp = ctx->pixdesc->comp[c];
+	assert(comp.depth == 32 && (ctx->pixdesc->flags & AV_PIX_FMT_FLAG_FLOAT));
+	uint32_t valu = (union { float f; uint32_t u; }){val}.u;
+	uint8_t* data = &FFA_PEL(frame,comp,x,y);
+	if(ctx->pixdesc->flags & AV_PIX_FMT_FLAG_BE)
+		AV_WB32(data,valu);
+	else
+		AV_WL32(data,valu);
+}
 
 #define ffapi_setpel(FFContext,AVFrame,x,y,c,val) ffapi_setpel_direct(AVFrame,x,y,FFContext->pixdesc->comp[c],val)
 #define ffapi_getpel(FFContext,AVFrame,x,y,c) ffapi_getpel_direct(AVFrame,x,y,FFContext->pixdesc->comp[c])

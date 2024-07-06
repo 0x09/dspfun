@@ -251,13 +251,10 @@ int main(int argc, char* argv[]) {
 	}
 	size_t width = MagickGetImageWidth(wand), height = MagickGetImageHeight(wand), channels = 3;
 
-	unsigned char blackpixel[channels];
-	memset(blackpixel,0,channels);
-
 	av_log_set_level(loglevel);
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props,"");
-	color_props.pix_fmt = AV_PIX_FMT_RGB24;
+	color_props.pix_fmt = AV_PIX_FMT_GBRPF32LE;
 	color_props.color_range = AVCOL_RANGE_JPEG;
 	int imagecolorspace = MagickGetImageColorspace(wand);
 	if(imagecolorspace == RGBColorspace)
@@ -375,8 +372,8 @@ int main(int argc, char* argv[]) {
 				if(visualize) {
 					intermediate normalization = spec_normalization_2d(x,y);
 					for(size_t z = 0; z < channels; z++) {
-						intermediate c = (spec ? spec_scale(sp,coeffs[(y*width+x)*channels+z]*normalization) : 1.0)*255;
-						ffapi_setpel(ffctx,frame,x+width,y,z,c);
+						intermediate c = spec ? spec_scale(sp,coeffs[(y*width+x)*channels+z]*normalization) : 1.0;
+						ffapi_setpelf(ffctx,frame,x+width,y,z,c);
 					}
 				}
 			}
@@ -390,7 +387,7 @@ int main(int argc, char* argv[]) {
 					intermediate pel = sum[(y*width+x)*channels+z];
 					if(trc_encode)
 						pel = trc_encode(pel);
-					ffapi_setpel(ffctx, frame, x, y, z, pel*255);
+					ffapi_setpelf(ffctx, frame, x, y, z, pel);
 				}
 	}
 
@@ -410,10 +407,10 @@ int main(int argc, char* argv[]) {
 			if(visualize) {
 				intermediate normalization = spec_normalization_2d(x,y);
 				for(size_t z = 0; z < channels; z++) {
-					intermediate c = (spec ? spec_scale(sp,coeffs[(y*width+x)*channels+z]*normalization) : 1.0)*255;
-					ffapi_setpel(ffctx,frame,x+width,y,z,c);
+					intermediate c = spec ? spec_scale(sp,coeffs[(y*width+x)*channels+z]*normalization) : 1.0;
+					ffapi_setpelf(ffctx,frame,x+width,y,z,c);
 					if(intermediates)
-						ffapi_setpel(ffctx,frame,x+width,y+height,z,c);
+						ffapi_setpelf(ffctx,frame,x+width,y+height,z,c);
 				}
 			}
 		}
@@ -432,7 +429,7 @@ int main(int argc, char* argv[]) {
 					intermediate pel = sum[(y*width+x)*channels+z];
 					if(trc_encode)
 						pel = trc_encode(pel);
-					ffapi_setpel(ffctx, frame, x, y, z, pel*255);
+					ffapi_setpelf(ffctx, frame, x, y, z, pel);
 				}
 
 		if(intermediates) {
@@ -463,7 +460,7 @@ int main(int argc, char* argv[]) {
 						intermediate pel = (((image[(y*width+x)*channels+z]+coeffs[z])-min[z])/(max[z]-min[z]));
 						if(trc_encode)
 							pel = trc_encode(pel);
-						ffapi_setpel(ffctx, frame, x, y+height, z, pel*255);
+						ffapi_setpelf(ffctx, frame, x, y+height, z, pel);
 					}
 		}
 
@@ -474,7 +471,8 @@ int main(int argc, char* argv[]) {
 		// just clear intermediate coords instead of wiping the entire frame
 		if(intermediates && visualize)
 			for(size_t ci = 0; ci < ncoords; ci++)
-				ffapi_setpixel(ffctx, frame, coords[ci][1]+width, coords[ci][0]+height, blackpixel);
+				for(size_t z = 0; z < channels; z++)
+					ffapi_setpelf(ffctx, frame, coords[ci][1]+width, coords[ci][0]+height, z, 0);
 	}
 	if(!quiet)
 		fprintf(stderr,"\n");
