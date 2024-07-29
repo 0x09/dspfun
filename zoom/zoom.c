@@ -188,9 +188,9 @@ int main(int argc, char* argv[]) {
 	size_t cwidth  = min(width,  round(width  * scale_num/scale_den)),
 	       cheight = min(height, round(height * scale_num/scale_den));
 
-	coeff* basis[2];
-	basis[0] = generate_scaled_basis(scaling_type,scale_num,scale_den,vx,vw,cwidth,width),
-	basis[1] = width == height && vx == vy ? basis[0] : generate_scaled_basis(scaling_type,scale_num,scale_den,vy,vh,cheight,height);
+	coeff* xbasis,* ybasis;
+	xbasis = generate_scaled_basis(scaling_type,scale_num,scale_den,vx,vw,cwidth,width),
+	ybasis = width == height && vx == vy ? xbasis : generate_scaled_basis(scaling_type,scale_num,scale_den,vy,vh,cheight,height);
 
 	coeff* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
 	intermediate* tmp = malloc(sizeof(*tmp)*cheight);
@@ -200,12 +200,12 @@ int main(int argc, char* argv[]) {
 			for(size_t row = 0; row < cheight; row++) {
 				tmp[row] = ((intermediate)coeffs[row*width*3+z])/2;
 				for(size_t u = 1; u < cwidth; u++)
-					tmp[row] += coeffs[(row*width+u)*3+z] * basis[0][i*(cwidth-1)+u-1];
+					tmp[row] += coeffs[(row*width+u)*3+z] * xbasis[i*(cwidth-1)+u-1];
 			}
 			for(size_t j = 0; j < vh; j++) {
 				intermediate s = tmp[0]/2;
 				for(size_t v = 1; v < cheight; v++)
-					s += tmp[v] * basis[1][j*(cheight-1)+v-1];
+					s += tmp[v] * ybasis[j*(cheight-1)+v-1];
 				icoeffs[(j*vw+i)*3+z] = s / (width*height);
 			}
 		}
@@ -213,9 +213,9 @@ int main(int argc, char* argv[]) {
 
 	free(tmp);
 	fftw(free)(coeffs);
-	if(basis[1] != basis[0])
-		free(basis[1]);
-	free(basis[0]);
+	if(ybasis != xbasis)
+		free(ybasis);
+	free(xbasis);
 
 	if(showsamples == POINT)
 		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
