@@ -196,18 +196,17 @@ int main(int argc, char* argv[]) {
 	intermediate* tmp = malloc(sizeof(*tmp)*cheight);
 
 	for(int z = 0; z < 3; z++) {
-		for(int i = 0; i < vw; i++) {
-			for(int row = 0; row < cheight; row++) {
-				tmp[row] = coeffs[row*width*3+z]/2;
-				for(int u = 1; u < cwidth; u++)
+		for(size_t i = 0; i < vw; i++) {
+			for(size_t row = 0; row < cheight; row++) {
+				tmp[row] = ((intermediate)coeffs[row*width*3+z])/2;
+				for(size_t u = 1; u < cwidth; u++)
 					tmp[row] += coeffs[(row*width+u)*3+z] * basis[0][i*(cwidth-1)+u-1];
 			}
-			for(int j = 0; j < vh; j++) {
-				intermediate s = tmp[0]/mi(2.);
-				for(int v = 1; v < cheight; v++)
+			for(size_t j = 0; j < vh; j++) {
+				intermediate s = tmp[0]/2;
+				for(size_t v = 1; v < cheight; v++)
 					s += tmp[v] * basis[1][j*(cheight-1)+v-1];
-				s /= width*height;
-				icoeffs[(j*vw+i)*3+z] = s;
+				icoeffs[(j*vw+i)*3+z] = s / (width*height);
 			}
 		}
 	}
