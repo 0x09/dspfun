@@ -67,7 +67,7 @@ static void help(const char* self) {
 		"Usage: %s [options] <input> <output>\n"
 		"\n"
 		"  -h, --help  This help text.\n"
-		"  -s <scale>  Rational or decimal scale factor.\n"
+		"  -s <scale>  Rational or decimal scale factor. May be a single value or XxY to specify horizontal/veritcal scaling factors.\n"
 		"  -p <pos>    Floating point offset in image, in the form XxY (e.g. 100.0x100.0). Coordinates are in terms of the scaled output unless -P is set\n"
 		"  -v <size>   Output view size in WxH.\n"
 		"  -c          Anchor view to center of image\n"
@@ -92,8 +92,8 @@ int main(int argc, char* argv[]) {
 	size_t vw = 0, vh = 0;
 	bool centered = false, input_coords = false, gamma = false;
 	int showsamples = 0;
-	intermediate scale_num = 1;
-	unsigned long long scale_den = 1;
+	intermediate xscale_num = 1, yscale_num = 1;
+	unsigned long long xscale_den = 1, yscale_den = 1;
 	int scaling_type = INTERPOLATED;
 	int c;
 	const struct option opts[] = {
@@ -107,7 +107,20 @@ int main(int argc, char* argv[]) {
 		switch(c) {
 			case  0 : break;
 			case 'h': help(argv[0]);
-			case 's': sscanf(optarg,"%" INTERMEDIATE_SPECIFIER "/%llu",&scale_num,&scale_den); break;
+			case 's': {
+				int n;
+				if(sscanf(optarg,"%" INTERMEDIATE_SPECIFIER "%n/%llu%n",&xscale_num,&n,&xscale_den,&n) <= 0)
+					usage(argv[0]);
+				optarg += n;
+				if(!*optarg) {
+					yscale_num = xscale_num;
+					yscale_den = xscale_den;
+					break;
+				}
+				if(sscanf(optarg,"x%" INTERMEDIATE_SPECIFIER "/%llu",&yscale_num,&yscale_den) <= 0)
+					usage(argv[0]);
+				break;
+			}
 			case 'v': sscanf(optarg,"%zux%zu",&vw,&vh); break;
 			case 'p': sscanf(optarg,"%" INTERMEDIATE_SPECIFIER "x%" INTERMEDIATE_SPECIFIER,&vx,&vy); break;
 			case 'c': centered = true; break;
@@ -138,8 +151,8 @@ int main(int argc, char* argv[]) {
 	if(argc < 1)
 		usage(argv[0]);
 
-	intermediate scale = scale_num / scale_den;
-	if(showsamples && scale < 1) {
+	intermediate xscale = xscale_num / xscale_den, yscale = yscale_num / yscale_den;
+	if(showsamples && (xscale < 1 || yscale < 1)) {
 		fprintf(stderr,"warning: downscaling requested, --showsamples will be disabled\n");
 		showsamples = NONE;
 	}
@@ -172,25 +185,28 @@ int main(int argc, char* argv[]) {
 	fftw(cleanup)();
 
 	if(!vw)
-		vw = width*scale_num/scale_den;
+		vw = width*xscale_num/xscale_den;
 	if(!vh)
-		vh = height*scale_num/scale_den;
+		vh = height*yscale_num/yscale_den;
 
 	if(input_coords || centered) {
-		vx *= scale_num/scale_den;
-		vy *= scale_num/scale_den;
+		vx *= xscale_num/xscale_den;
+		vy *= yscale_num/yscale_den;
 		if(centered) {
 			vx -= vw/2;
 			vy -= vh/2;
 		}
 	}
 
-	size_t cwidth  = min(width,  round(width  * scale_num/scale_den)),
-	       cheight = min(height, round(height * scale_num/scale_den));
+	size_t cwidth  = min(width,  round(width  * xscale_num/xscale_den)),
+	       cheight = min(height, round(height * yscale_num/yscale_den));
 
 	coeff* xbasis,* ybasis;
-	xbasis = generate_scaled_basis(scaling_type,scale_num,scale_den,vx,vw,cwidth,width),
-	ybasis = width == height && vx == vy ? xbasis : generate_scaled_basis(scaling_type,scale_num,scale_den,vy,vh,cheight,height);
+	xbasis = generate_scaled_basis(scaling_type,xscale_num,xscale_den,vx,vw,cwidth,width);
+	if(width == height && vx == vy && xscale_num == yscale_num && xscale_den == yscale_den)
+		ybasis = xbasis;
+	else
+		ybasis = generate_scaled_basis(scaling_type,yscale_num,yscale_den,vy,vh,cheight,height);
 
 	coeff* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
 	intermediate* tmp = malloc(sizeof(*tmp)*cheight);
@@ -218,15 +234,15 @@ int main(int argc, char* argv[]) {
 	free(xbasis);
 
 	if(showsamples == POINT)
-		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
-			for(size_t x = scale-(size_t)vx%(int)scale; x < vw; x+=scale)
+		for(size_t y = yscale-(size_t)vy%(int)yscale; y < vh; y+=yscale)
+			for(size_t x = xscale-(size_t)vx%(int)xscale; x < vw; x+=xscale)
 				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
 	else if(showsamples == GRID) {
-		for(size_t y = scale-(size_t)vy%(int)scale; y < vh; y+=scale)
+		for(size_t y = yscale-(size_t)vy%(int)yscale; y < vh; y+=yscale)
 			for(size_t x = 0; x < vw; x++)
 				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
 		for(size_t y = 0; y < vh; y++)
-			for(size_t x = scale-(size_t)vx%(int)scale; x < vw; x+=scale)
+			for(size_t x = xscale-(size_t)vx%(int)xscale; x < vw; x+=xscale)
 				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
 	}
 
