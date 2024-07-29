@@ -59,7 +59,7 @@ static coeff* generate_scaled_basis(enum scaling_type scaling_type, intermediate
 }
 
 static void usage(const char* self) {
-	fprintf(stderr,"Usage: %s [(-s <scale> | -r <res>) -p <pos> -v <size> --basis <type> --showsamples[=<type>] -c -g -P] <input> <output>\n", self);
+	fprintf(stderr,"Usage: %s [(-s <scale> | -r <res>) -p <pos> -v <size> --basis <type> --showsamples[=<type>] -c -g -P -%%] <input> <output>\n", self);
 	exit(1);
 }
 static void help(const char* self) {
@@ -73,6 +73,7 @@ static void help(const char* self) {
 		"  -v <size>   Output view size in WxH.\n"
 		"  -c          Anchor view to center of image\n"
 		"  -P          Position coordinates with -p are relative to the input rather than the scaled output\n"
+		"  -%%          Position coordinates with -p are a percent value rather than a number of samples\n"
 		"  -g          Scale in linear RGB\n"
 		"\n"
 		"  --showsamples[=<type>]  Show where integer coordinates in the input are located in the scaled image when upscaling.\n"
@@ -91,7 +92,7 @@ static void help(const char* self) {
 int main(int argc, char* argv[]) {
 	intermediate vx = 0, vy = 0;
 	size_t vw = 0, vh = 0;
-	bool centered = false, input_coords = false, gamma = false;
+	bool centered = false, input_coords = false, pct_coords = false, gamma = false;
 	int showsamples = 0;
 	intermediate xscale_num = 1, yscale_num = 1;
 	intermediate logical_width = 0, logical_height = 0;
@@ -105,7 +106,7 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"hs:v:p:cgaPr:",opts,NULL)) != -1) {
+	while((c = getopt_long(argc,argv,"hs:v:p:cgaPr:%",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
 			case 'h': help(argv[0]);
@@ -128,6 +129,7 @@ int main(int argc, char* argv[]) {
 			case 'p': sscanf(optarg,"%" INTERMEDIATE_SPECIFIER "x%" INTERMEDIATE_SPECIFIER,&vx,&vy); break;
 			case 'c': centered = true; break;
 			case 'P': input_coords = true; break;
+			case '%': pct_coords = true; break;
 			case 'g': gamma = true; break;
 			case 1: {
 				showsamples = POINT;
@@ -201,7 +203,11 @@ int main(int argc, char* argv[]) {
 	if(!vh)
 		vh = height*yscale_num/yscale_den;
 
-	if(input_coords || centered) {
+	if(pct_coords) {
+		vx *= vw/100;
+		vy *= vy/100;
+	}
+	else if(input_coords || centered) {
 		vx *= xscale_num/xscale_den;
 		vy *= yscale_num/yscale_den;
 		if(centered) {
