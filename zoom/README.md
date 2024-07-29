@@ -8,6 +8,7 @@ It's meant to offer a look at how these behave when sampled in between and outsi
     
       -h, --help  This help text.
       -s <scale>  Rational or decimal scale factor. May be a single value or XxY to specify horizontal/veritcal scaling factors.
+      -r <res>    Logical resolution in the form WxH. May be fractional. Takes precedence over -s.
       -p <pos>    Floating point offset in image, in the form XxY (e.g. 100.0x100.0). Coordinates are in terms of the scaled output unless -P is set
       -v <size>   Output view size in WxH.
       -c          Anchor view to center of image

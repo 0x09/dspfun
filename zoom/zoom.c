@@ -59,7 +59,7 @@ static coeff* generate_scaled_basis(enum scaling_type scaling_type, intermediate
 }
 
 static void usage(const char* self) {
-	fprintf(stderr,"Usage: %s [-s <scale> -p <pos> -v <size> --basis <type> --showsamples[=<type>] -c -g -P] <input> <output>\n", self);
+	fprintf(stderr,"Usage: %s [(-s <scale> | -r <res>) -p <pos> -v <size> --basis <type> --showsamples[=<type>] -c -g -P] <input> <output>\n", self);
 	exit(1);
 }
 static void help(const char* self) {
@@ -68,6 +68,7 @@ static void help(const char* self) {
 		"\n"
 		"  -h, --help  This help text.\n"
 		"  -s <scale>  Rational or decimal scale factor. May be a single value or XxY to specify horizontal/veritcal scaling factors.\n"
+		"  -r <res>    Logical resolution in the form WxH. May be fractional. Takes precedence over -s.\n"
 		"  -p <pos>    Floating point offset in image, in the form XxY (e.g. 100.0x100.0). Coordinates are in terms of the scaled output unless -P is set\n"
 		"  -v <size>   Output view size in WxH.\n"
 		"  -c          Anchor view to center of image\n"
@@ -93,6 +94,7 @@ int main(int argc, char* argv[]) {
 	bool centered = false, input_coords = false, gamma = false;
 	int showsamples = 0;
 	intermediate xscale_num = 1, yscale_num = 1;
+	intermediate logical_width = 0, logical_height = 0;
 	unsigned long long xscale_den = 1, yscale_den = 1;
 	int scaling_type = INTERPOLATED;
 	int c;
@@ -103,7 +105,7 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"hs:v:p:cgaP",opts,NULL)) != -1) {
+	while((c = getopt_long(argc,argv,"hs:v:p:cgaPr:",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
 			case 'h': help(argv[0]);
@@ -121,6 +123,7 @@ int main(int argc, char* argv[]) {
 					usage(argv[0]);
 				break;
 			}
+			case 'r': sscanf(optarg,"%" INTERMEDIATE_SPECIFIER "x%" INTERMEDIATE_SPECIFIER,&logical_width,&logical_height); break;
 			case 'v': sscanf(optarg,"%zux%zu",&vw,&vh); break;
 			case 'p': sscanf(optarg,"%" INTERMEDIATE_SPECIFIER "x%" INTERMEDIATE_SPECIFIER,&vx,&vy); break;
 			case 'c': centered = true; break;
@@ -151,12 +154,6 @@ int main(int argc, char* argv[]) {
 	if(argc < 1)
 		usage(argv[0]);
 
-	intermediate xscale = xscale_num / xscale_den, yscale = yscale_num / yscale_den;
-	if(showsamples && (xscale < 1 || yscale < 1)) {
-		fprintf(stderr,"warning: downscaling requested, --showsamples will be disabled\n");
-		showsamples = NONE;
-	}
-
 	const char* infile = argv[optind],* outfile = NULL;
 	if(argc > 1)
 		outfile = argv[optind+1];
@@ -183,6 +180,21 @@ int main(int argc, char* argv[]) {
 	fftw(execute)(p);
 	fftw(destroy_plan)(p);
 	fftw(cleanup)();
+
+	if(logical_width) {
+		xscale_num = logical_width;
+		xscale_den = width;
+	}
+	if(logical_height) {
+		yscale_num = logical_height;
+		yscale_den = height;
+	}
+
+	intermediate xscale = xscale_num / xscale_den, yscale = yscale_num / yscale_den;
+	if(showsamples && (xscale < 1 || yscale < 1)) {
+		fprintf(stderr,"warning: downscaling requested, --showsamples will be disabled\n");
+		showsamples = NONE;
+	}
 
 	if(!vw)
 		vw = width*xscale_num/xscale_den;
