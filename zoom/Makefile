@@ -6,7 +6,8 @@ CC ?= cc
 CFLAGS := -DCOEFF_PRECISION=$(COEFF_PRECISION) -DINTERMEDIATE_PRECISION=$(INTERMEDIATE_PRECISION) -std=c11 -Ofast -I../include -DMAGICKWAND_VERSION=$(shell pkg-config --modversion MagickWand | cut -d. -f1) $(CFLAGS)
 LIBS := $(shell pkg-config --cflags --libs MagickWand $(fftw)) -lm
 
-DEPS =../include/precision.h
+vpath %.h ../include
+DEPS = precision.h magickwand.h longmath.h
 TOOLS = zoom
 
 all: $(TOOLS)
