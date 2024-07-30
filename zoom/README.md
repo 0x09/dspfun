@@ -25,6 +25,13 @@ It's meant to offer a look at how these behave when sampled in between and outsi
                         native: even around half of a sample of the input before scaling
                         centered: the first and last samples of the input correspond to the first and last samples of the output
 
+      ffmpeg options:
+         --ff-format <avformat>  output format
+         --ff-encoder <avcodec>  output codec
+         --ff-rate <rate>        output framerate
+         --ff-opts <optstring>   output av options string (k=v:...)
+         --ff-loglevel <-8..64>  av loglevel
+
 # Example
 Interpolate [Kodak parrot's](https://r0k.us/graphics/kodak/kodak/kodim23.png) eye 20x
 

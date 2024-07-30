@@ -12,10 +12,13 @@
 #include <unistd.h>
 
 #include <fftw3.h>
+#include <libavutil/csp.h>
+#include <libavutil/pixdesc.h>
 
 #include "magickwand.h"
 #include "longmath.h"
 #include "precision.h"
+#include "ffapi.h"
 
 enum scaling_type {
 	INTERPOLATED = 0,
@@ -91,6 +94,13 @@ static void help(const char* self) {
 		"                    interpolated: even around half of a sample of the scaled output\n"
 		"                    native: even around half of a sample of the input before scaling\n"
 		"                    centered: the first and last samples of the input correspond to the first and last samples of the output\n"
+		"\n"
+		"ffmpeg options:\n"
+		"   --ff-format <avformat>  output format\n"
+		"   --ff-encoder <avcodec>  output codec\n"
+		"   --ff-rate <rate>        output framerate\n"
+		"   --ff-opts <optstring>   output av options string (k=v:...)\n"
+		"   --ff-loglevel <-8..64>  av loglevel\n"
 		"\n", self
 	);
 	exit(0);
@@ -105,11 +115,23 @@ int main(int argc, char* argv[]) {
 	intermediate logical_width = 0, logical_height = 0;
 	unsigned long long xscale_den = 1, yscale_den = 1;
 	int scaling_type = INTERPOLATED;
+
+	AVRational fps = {60,1};
+	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
+	int loglevel = 0;
+
 	int c;
 	const struct option opts[] = {
 		{"help",no_argument,NULL,'h'},
 		{"showsamples",optional_argument,NULL,1},
 		{"basis",required_argument,NULL,2},
+
+		// ffapi opts
+		{"ff-opts",required_argument,NULL,3},
+		{"ff-format",required_argument,NULL,4},
+		{"ff-encoder",required_argument,NULL,5},
+		{"ff-loglevel",required_argument,NULL,6},
+		{"ff-rate",required_argument,NULL,7},
 		{0}
 	};
 
@@ -155,6 +177,11 @@ int main(int argc, char* argv[]) {
 				else if(strcmp(optarg,"interpolated"))
 					usage(argv[0]);
 			}; break;
+			case 3: oopt = optarg; break;
+			case 4: ofmt = optarg; break;
+			case 5: enc  = optarg; break;
+			case 6: loglevel = strtol(optarg, NULL, 10); break;
+			case 7: av_parse_video_rate(&fps, optarg); break;
 			default: usage(argv[0]);
 		}
 	}
@@ -166,9 +193,9 @@ int main(int argc, char* argv[]) {
 	const char* infile = argv[optind],* outfile = NULL;
 	if(argc > 1)
 		outfile = argv[optind+1];
-	else if(isatty(STDOUT_FILENO))
-		outfile = "sixel:-";
 	else usage(argv[0]);
+
+	av_log_set_level(loglevel);
 
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
@@ -177,13 +204,27 @@ int main(int argc, char* argv[]) {
 		MagickWandTerminus();
 		return 1;
 	}
+
+	FFColorProperties color_props;
+	ffapi_parse_color_props(&color_props,NULL);
+	ColorspaceType imagecolorspace = MagickGetImageColorspace(wand);
 	if(gamma)
 		MagickTransformImageColorspace(wand,RGBColorspace);
+	else if(imagecolorspace == RGBColorspace)
+		gamma = true;
+	if(gamma || imagecolorspace == sRGBColorspace) {
+		color_props.color_trc = AVCOL_TRC_IEC61966_2_1;
+		color_props.color_space = AVCOL_SPC_RGB;
+		color_props.color_primaries = AVCOL_PRI_BT709;
+	}
+	color_props.pix_fmt = AV_PIX_FMT_GBRPF32LE;
+	color_props.color_range = AVCOL_RANGE_JPEG;
 
 	size_t width = MagickGetImageWidth(wand), height = MagickGetImageHeight(wand);
 	coeff* coeffs = fftw(alloc_real)(width*height*3);
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",TypePixel,coeffs);
 	DestroyMagickWand(wand);
+	MagickWandTerminus();
 
 	fftw(plan) p = fftw(plan_many_r2r)(2,(int[]){height,width},3,coeffs,NULL,3,1,coeffs,NULL,3,1,(fftw_r2r_kind[]){FFTW_REDFT10,FFTW_REDFT10},FFTW_ESTIMATE);
 	fftw(execute)(p);
@@ -219,6 +260,16 @@ int main(int argc, char* argv[]) {
 	if(!vh)
 		vh = height*yscale_num/yscale_den;
 	size_t maxvectors = vh > vw ? vh : vw;
+
+	FFContext* ffctx = ffapi_open_output(outfile, oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, vw, vh, fps);
+	if(!ffctx) {
+		fprintf(stderr,"Error opening output context\n");
+		return 1;
+	}
+
+	av_csp_trc_function trc_encode = gamma ? av_csp_trc_func_from_id(ffctx->codec->color_trc) : NULL;
+
+	AVFrame* frame = ffapi_alloc_frame(ffctx);
 
 	if(pct_coords) {
 		vx *= vw/100;
@@ -282,17 +333,20 @@ int main(int argc, char* argv[]) {
 				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
 	}
 
-	wand = NewMagickWand();
-	MagickConstituteImage(wand,vw,vh,"RGB",TypePixel,icoeffs);
-	free(icoeffs);
+	for(size_t y = 0; y < vh; y++)
+		for(size_t x = 0; x < vw; x++)
+			for(int z = 0; z < 3; z++) {
+				coeff pel = icoeffs[(y*vw+x)*3+z];
+				if(trc_encode)
+					pel = trc_encode(pel);
+				ffapi_setpelf(ffctx, frame, x, y, z, pel);
+			}
 
-	if(gamma) {
-		MagickSetImageColorspace(wand,RGBColorspace);
-		MagickTransformImageColorspace(wand,sRGBColorspace);
-	}
-	MagickWriteImage(wand,outfile);
-	DestroyMagickWand(wand);
-	MagickWandTerminus();
+	ffapi_write_frame(ffctx, frame);
+
+	free(icoeffs);
+	ffapi_free_frame(frame);
+	ffapi_close(ffctx);
 
 	return 0;
 }
