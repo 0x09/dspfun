@@ -34,13 +34,13 @@ enum sample_display {
 
 #define min(x,y) ((x) < (y) ? (x) : (y))
 
-static size_t generate_scaled_basis(coeff** basis, enum scaling_type scaling_type, intermediate scale_num, intermediate scale_den, intermediate offset, size_t nvectors, size_t sampling_len) {
+static size_t generate_scaled_basis(coeff** out_basis, enum scaling_type scaling_type, intermediate scale_num, intermediate scale_den, intermediate offset, size_t nvectors, size_t sampling_len) {
 	if(sampling_len*scale_num/scale_den < 1) {
 		scale_num = 1;
 		scale_den = sampling_len;
 	}
 	size_t ncomponents = min(sampling_len,round(sampling_len*scale_num/scale_den));
-	*basis = malloc(nvectors*(ncomponents-1)*sizeof(*basis));
+	coeff* basis = realloc(*out_basis,nvectors*(ncomponents-1)*sizeof(*basis));
 	if(!basis)
 		return 0;
 
@@ -61,11 +61,11 @@ static size_t generate_scaled_basis(coeff** basis, enum scaling_type scaling_typ
 					N = sampling_len;
 					break;
 			}
-			(*basis)[b*(ncomponents-1)+n-1] = mi(cos)(mi(M_PI) * (k+mi(0.5)) * n / N);
+			basis[b*(ncomponents-1)+n-1] = mi(cos)(mi(M_PI) * (k+mi(0.5)) * n / N);
 		}
 
+	*out_basis = basis;
 	return ncomponents;
-
 }
 
 static void usage(const char* self) {
@@ -85,6 +85,7 @@ static void help(const char* self) {
 		"  -P          Position coordinates with -p are relative to the input rather than the scaled output\n"
 		"  -%%          Position coordinates with -p are a percent value rather than a number of samples\n"
 		"  -g          Scale in linear RGB\n"
+		"  -q          Don't output progress\n"
 		"\n"
 		"  --showsamples[=<type>]  Show where integer coordinates in the input are located in the scaled image when upscaling.\n"
 		"                          type: point (default), grid.\n"
@@ -109,12 +110,13 @@ static void help(const char* self) {
 int main(int argc, char* argv[]) {
 	intermediate vx = 0, vy = 0;
 	size_t vw = 0, vh = 0;
-	bool centered = false, input_coords = false, pct_coords = false, gamma = false;
+	bool centered = false, input_coords = false, pct_coords = false, gamma = false, quiet = false;
 	int showsamples = 0;
 	intermediate xscale_num = 1, yscale_num = 1;
 	intermediate logical_width = 0, logical_height = 0;
 	unsigned long long xscale_den = 1, yscale_den = 1;
 	int scaling_type = INTERPOLATED;
+	size_t nframes = 1;
 
 	AVRational fps = {60,1};
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
@@ -135,7 +137,7 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"hs:v:p:cgaPr:%",opts,NULL)) != -1) {
+	while((c = getopt_long(argc,argv,"hs:v:p:cgaPr:%n:q",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
 			case 'h': help(argv[0]);
@@ -160,6 +162,8 @@ int main(int argc, char* argv[]) {
 			case 'P': input_coords = true; break;
 			case '%': pct_coords = true; break;
 			case 'g': gamma = true; break;
+			case 'n': nframes = strtoull(optarg,NULL,10); break;
+			case 'q': quiet = true; break;
 			case 1: {
 				showsamples = POINT;
 				if(optarg) {
@@ -249,27 +253,11 @@ int main(int argc, char* argv[]) {
 		yscale_den = height;
 	}
 
-	intermediate xscale = xscale_num / xscale_den, yscale = yscale_num / yscale_den;
-	if(showsamples && (xscale < 1 || yscale < 1)) {
-		fprintf(stderr,"warning: downscaling requested, --showsamples will be disabled\n");
-		showsamples = NONE;
-	}
-
 	if(!vw)
 		vw = width*xscale_num/xscale_den;
 	if(!vh)
 		vh = height*yscale_num/yscale_den;
 	size_t maxvectors = vh > vw ? vh : vw;
-
-	FFContext* ffctx = ffapi_open_output(outfile, oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, vw, vh, fps);
-	if(!ffctx) {
-		fprintf(stderr,"Error opening output context\n");
-		return 1;
-	}
-
-	av_csp_trc_function trc_encode = gamma ? av_csp_trc_func_from_id(ffctx->codec->color_trc) : NULL;
-
-	AVFrame* frame = ffapi_alloc_frame(ffctx);
 
 	if(pct_coords) {
 		vx *= vw/100;
@@ -284,65 +272,88 @@ int main(int argc, char* argv[]) {
 		vy = (height*yscale_num/yscale_den-vh)/2;
 	}
 
-	coeff* xbasis,* ybasis;
-	bool reuse_basis = width == height && vx == vy && xscale_num == yscale_num && xscale_den == yscale_den;
-	size_t cwidth = generate_scaled_basis(&xbasis,scaling_type,xscale_num,xscale_den,vx,(reuse_basis ? maxvectors : vw),width);
-	size_t cheight;
-	if(reuse_basis) {
-		ybasis = xbasis;
-		cheight = cwidth;
+	FFContext* ffctx = ffapi_open_output(outfile, oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, vw, vh, fps);
+	if(!ffctx) {
+		fprintf(stderr,"Error opening output context\n");
+		return 1;
 	}
-	else
-		cheight = generate_scaled_basis(&ybasis,scaling_type,yscale_num,yscale_den,vy,vh,height);
+
+	av_csp_trc_function trc_encode = gamma ? av_csp_trc_func_from_id(ffctx->codec->color_trc) : NULL;
+
+	AVFrame* frame = ffapi_alloc_frame(ffctx);
 
 	coeff* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
-	intermediate* tmp = malloc(sizeof(*tmp)*cheight);
+	coeff* xbasis = NULL,* ybuf = NULL;
+	intermediate* tmp = NULL;
 
-	for(int z = 0; z < 3; z++) {
-		for(size_t i = 0; i < vw; i++) {
-			for(size_t row = 0; row < cheight; row++) {
-				tmp[row] = ((intermediate)coeffs[row*width*3+z])/2;
-				for(size_t u = 1; u < cwidth; u++)
-					tmp[row] += coeffs[(row*width+u)*3+z] * xbasis[i*(cwidth-1)+u-1];
-			}
-			for(size_t j = 0; j < vh; j++) {
-				intermediate s = tmp[0]/2;
-				for(size_t v = 1; v < cheight; v++)
-					s += tmp[v] * ybasis[j*(cheight-1)+v-1];
-				icoeffs[(j*vw+i)*3+z] = s / (width*height);
+	for(size_t d = 0; d < nframes; d++) {
+		bool reuse_basis = width == height && vx == vy && xscale_num == yscale_num && xscale_den == yscale_den;
+		size_t cwidth = generate_scaled_basis(&xbasis,scaling_type,xscale_num,xscale_den,vx,(reuse_basis ? maxvectors : vw),width);
+		size_t cheight;
+		coeff* ybasis;
+		if(reuse_basis) {
+			cheight = cwidth;
+			ybasis = xbasis;
+		}
+		else {
+			cheight = generate_scaled_basis(&ybuf,scaling_type,yscale_num,yscale_den,vy,vh,height);
+			ybasis = ybuf;
+		}
+		tmp = realloc(tmp,sizeof(*tmp)*cheight);
+
+		for(int z = 0; z < 3; z++) {
+			for(size_t i = 0; i < vw; i++) {
+				for(size_t row = 0; row < cheight; row++) {
+					tmp[row] = ((intermediate)coeffs[row*width*3+z])/2;
+					for(size_t u = 1; u < cwidth; u++)
+						tmp[row] += coeffs[(row*width+u)*3+z] * xbasis[i*(cwidth-1)+u-1];
+				}
+				for(size_t j = 0; j < vh; j++) {
+					intermediate s = tmp[0]/2;
+					for(size_t v = 1; v < cheight; v++)
+						s += tmp[v] * ybasis[j*(cheight-1)+v-1];
+					icoeffs[(j*vw+i)*3+z] = s / (width*height);
+				}
 			}
 		}
+
+		intermediate xscale = xscale_num / xscale_den, yscale = yscale_num / yscale_den;
+		if(xscale > 1 && yscale > 1) {
+			if(showsamples == POINT)
+				for(size_t y = yscale-(size_t)vy%(int)yscale; y < vh; y+=yscale)
+					for(size_t x = xscale-(size_t)vx%(int)xscale; x < vw; x+=xscale)
+						memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
+			else if(showsamples == GRID) {
+				for(size_t y = yscale-(size_t)vy%(int)yscale; y < vh; y+=yscale)
+					for(size_t x = 0; x < vw; x++)
+						memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
+				for(size_t y = 0; y < vh; y++)
+					for(size_t x = xscale-(size_t)vx%(int)xscale; x < vw; x+=xscale)
+						memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
+			}
+		}
+
+		for(size_t y = 0; y < vh; y++)
+			for(size_t x = 0; x < vw; x++)
+				for(int z = 0; z < 3; z++) {
+					coeff pel = icoeffs[(y*vw+x)*3+z];
+					if(trc_encode)
+						pel = trc_encode(pel);
+					ffapi_setpelf(ffctx, frame, x, y, z, pel);
+				}
+
+		ffapi_write_frame(ffctx, frame);
+		if(!quiet)
+			fprintf(stderr, "\r%zu/%zu         ",d,nframes);
 	}
+
+	if(!quiet)
+		fprintf(stderr, "\r%zu/%zu         \n",nframes,nframes);
 
 	free(tmp);
 	fftw(free)(coeffs);
-	if(ybasis != xbasis)
-		free(ybasis);
 	free(xbasis);
-
-	if(showsamples == POINT)
-		for(size_t y = yscale-(size_t)vy%(int)yscale; y < vh; y+=yscale)
-			for(size_t x = xscale-(size_t)vx%(int)xscale; x < vw; x+=xscale)
-				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
-	else if(showsamples == GRID) {
-		for(size_t y = yscale-(size_t)vy%(int)yscale; y < vh; y+=yscale)
-			for(size_t x = 0; x < vw; x++)
-				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
-		for(size_t y = 0; y < vh; y++)
-			for(size_t x = xscale-(size_t)vx%(int)xscale; x < vw; x+=xscale)
-				memcpy(icoeffs+(y*vh+x)*3,((coeff[]){0,1,0}),3*sizeof(*icoeffs));
-	}
-
-	for(size_t y = 0; y < vh; y++)
-		for(size_t x = 0; x < vw; x++)
-			for(int z = 0; z < 3; z++) {
-				coeff pel = icoeffs[(y*vw+x)*3+z];
-				if(trc_encode)
-					pel = trc_encode(pel);
-				ffapi_setpelf(ffctx, frame, x, y, z, pel);
-			}
-
-	ffapi_write_frame(ffctx, frame);
+	free(ybuf);
 
 	free(icoeffs);
 	ffapi_free_frame(frame);

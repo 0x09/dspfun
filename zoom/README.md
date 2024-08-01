@@ -15,6 +15,7 @@ It's meant to offer a look at how these behave when sampled in between and outsi
       -P          Position coordinates with -p are relative to the input rather than the scaled output
       -%          Position coordinates with -p are a percent value rather than a number of samples
       -g          Scale in linear RGB
+	  -q          Don't output progress
     
       --showsamples[=<type>]  Show where integer coordinates in the input are located in the scaled image when upscaling.
                               type: point (default), grid.
