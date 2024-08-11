@@ -211,6 +211,7 @@ int main(int argc, char* argv[]) {
 		vw = width*xscale_num/xscale_den;
 	if(!vh)
 		vh = height*yscale_num/yscale_den;
+	size_t maxvectors = vh > vw ? vh : vw;
 
 	if(pct_coords) {
 		vx *= vw/100;
@@ -229,8 +230,9 @@ int main(int argc, char* argv[]) {
 	       cheight = min(height, round(height * yscale_num/yscale_den));
 
 	coeff* xbasis,* ybasis;
-	xbasis = generate_scaled_basis(scaling_type,xscale_num,xscale_den,vx,vw,cwidth,width);
-	if(width == height && vx == vy && xscale_num == yscale_num && xscale_den == yscale_den)
+	bool reuse_basis = width == height && vx == vy && xscale_num == yscale_num && xscale_den == yscale_den;
+	xbasis = generate_scaled_basis(scaling_type,xscale_num,xscale_den,vx,(reuse_basis ? maxvectors : vw),cwidth,width);
+	if(reuse_basis)
 		ybasis = xbasis;
 	else
 		ybasis = generate_scaled_basis(scaling_type,yscale_num,yscale_den,vy,vh,cheight,height);
