@@ -192,6 +192,15 @@ int main(int argc, char* argv[]) {
 		yscale_den = height;
 	}
 
+	if(width*xscale_num/xscale_den < 1) {
+		xscale_num = 1;
+		xscale_den = width;
+	}
+	if(height*yscale_num/yscale_den < 1) {
+		yscale_num = 1;
+		yscale_den = height;
+	}
+
 	intermediate xscale = xscale_num / xscale_den, yscale = yscale_num / yscale_den;
 	if(showsamples && (xscale < 1 || yscale < 1)) {
 		fprintf(stderr,"warning: downscaling requested, --showsamples will be disabled\n");
