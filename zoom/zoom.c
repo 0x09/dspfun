@@ -31,10 +31,15 @@ enum sample_display {
 
 #define min(x,y) ((x) < (y) ? (x) : (y))
 
-static coeff* generate_scaled_basis(enum scaling_type scaling_type, intermediate scale_num, intermediate scale_den, intermediate offset, size_t nvectors, size_t ncomponents, size_t sampling_len) {
-	coeff* basis = malloc(nvectors*(ncomponents-1)*sizeof(*basis));
+static size_t generate_scaled_basis(coeff** basis, enum scaling_type scaling_type, intermediate scale_num, intermediate scale_den, intermediate offset, size_t nvectors, size_t sampling_len) {
+	if(sampling_len*scale_num/scale_den < 1) {
+		scale_num = 1;
+		scale_den = sampling_len;
+	}
+	size_t ncomponents = min(sampling_len,round(sampling_len*scale_num/scale_den));
+	*basis = malloc(nvectors*(ncomponents-1)*sizeof(*basis));
 	if(!basis)
-		return NULL;
+		return 0;
 
 	for(size_t b = 0; b < nvectors; b++)
 		for(size_t n = 1; n < ncomponents; n++) {
@@ -53,9 +58,11 @@ static coeff* generate_scaled_basis(enum scaling_type scaling_type, intermediate
 					N = sampling_len;
 					break;
 			}
-			basis[b*(ncomponents-1)+n-1] = mi(cos)(mi(M_PI) * (k+mi(0.5)) * n / N);
+			(*basis)[b*(ncomponents-1)+n-1] = mi(cos)(mi(M_PI) * (k+mi(0.5)) * n / N);
 		}
-	return basis;
+
+	return ncomponents;
+
 }
 
 static void usage(const char* self) {
@@ -226,16 +233,16 @@ int main(int argc, char* argv[]) {
 		vy = (height*yscale_num/yscale_den-vh)/2;
 	}
 
-	size_t cwidth  = min(width,  round(width  * xscale_num/xscale_den)),
-	       cheight = min(height, round(height * yscale_num/yscale_den));
-
 	coeff* xbasis,* ybasis;
 	bool reuse_basis = width == height && vx == vy && xscale_num == yscale_num && xscale_den == yscale_den;
-	xbasis = generate_scaled_basis(scaling_type,xscale_num,xscale_den,vx,(reuse_basis ? maxvectors : vw),cwidth,width);
-	if(reuse_basis)
+	size_t cwidth = generate_scaled_basis(&xbasis,scaling_type,xscale_num,xscale_den,vx,(reuse_basis ? maxvectors : vw),width);
+	size_t cheight;
+	if(reuse_basis) {
 		ybasis = xbasis;
+		cheight = cwidth;
+	}
 	else
-		ybasis = generate_scaled_basis(scaling_type,yscale_num,yscale_den,vy,vh,cheight,height);
+		cheight = generate_scaled_basis(&ybasis,scaling_type,yscale_num,yscale_den,vy,vh,height);
 
 	coeff* icoeffs = malloc(vw*vh*3*sizeof(*icoeffs));
 	intermediate* tmp = malloc(sizeof(*tmp)*cheight);
