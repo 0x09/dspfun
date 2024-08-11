@@ -207,13 +207,13 @@ int main(int argc, char* argv[]) {
 		vx *= vw/100;
 		vy *= vy/100;
 	}
-	else if(input_coords || centered) {
+	else if(input_coords) {
 		vx *= xscale_num/xscale_den;
 		vy *= yscale_num/yscale_den;
-		if(centered) {
-			vx -= vw/2;
-			vy -= vh/2;
-		}
+	}
+	else if(centered) {
+		vx = (width*xscale_num/xscale_den-vw)/2;
+		vy = (height*yscale_num/yscale_den-vh)/2;
 	}
 
 	size_t cwidth  = min(width,  round(width  * xscale_num/xscale_den)),
