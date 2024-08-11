@@ -14,6 +14,7 @@
 #include <fftw3.h>
 #include <libavutil/csp.h>
 #include <libavutil/pixdesc.h>
+#include <libavutil/eval.h>
 
 #include "magickwand.h"
 #include "longmath.h"
@@ -69,7 +70,7 @@ static size_t generate_scaled_basis(coeff** out_basis, enum scaling_type scaling
 }
 
 static void usage(const char* self) {
-	fprintf(stderr,"Usage: %s [(-s <scale> | -r <res>) -p <pos> -v <size> --basis <type> --showsamples[=<type>] -c -g -P -%%] <input> <output>\n", self);
+	fprintf(stderr,"Usage: %s [(-s <scale> | -r <res>) -p <pos> -v <size> --basis <type> --showsamples[=<type>] -c -g -P -%% -n -x -y -S -X -Y] <input> <output>\n", self);
 	exit(1);
 }
 static void help(const char* self) {
@@ -95,6 +96,14 @@ static void help(const char* self) {
 		"                    interpolated: even around half of a sample of the scaled output\n"
 		"                    native: even around half of a sample of the input before scaling\n"
 		"                    centered: the first and last samples of the input correspond to the first and last samples of the output\n"
+		"\n"
+		"animation options:\n"
+		"  -n <frames>  Number of output frames [default: 1]\n"
+		"  -x <expr>    Expression animating the x coordinate\n"
+		"  -y <expr>    Expression animating the y coordinate\n"
+		"  -S <expr>    Expression animating the overall scale factor\n"
+		"  -X <expr>    Expression animating the horizontal scale factor (if different from -S)\n"
+		"  -Y <expr>    Expression animating the vertical scale factor (if different from -S)\n"
 		"\n"
 		"ffmpeg options:\n"
 		"   --ff-format <avformat>  output format\n"
@@ -122,6 +131,8 @@ int main(int argc, char* argv[]) {
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = 0;
 
+	const char* exprstrs[7] = {0};
+
 	int c;
 	const struct option opts[] = {
 		{"help",no_argument,NULL,'h'},
@@ -137,7 +148,7 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((c = getopt_long(argc,argv,"hs:v:p:cgaPr:%n:q",opts,NULL)) != -1) {
+	while((c = getopt_long(argc,argv,"hs:v:p:cgaPr:%n:qx:y:S:X:Y:",opts,NULL)) != -1) {
 		switch(c) {
 			case  0 : break;
 			case 'h': help(argv[0]);
@@ -164,6 +175,11 @@ int main(int argc, char* argv[]) {
 			case 'g': gamma = true; break;
 			case 'n': nframes = strtoull(optarg,NULL,10); break;
 			case 'q': quiet = true; break;
+			case 'x': exprstrs[0] = optarg; break;
+			case 'y': exprstrs[1] = optarg; break;
+			case 'S': exprstrs[2] = optarg; break;
+			case 'X': exprstrs[3] = optarg; break;
+			case 'Y': exprstrs[4] = optarg; break;
 			case 1: {
 				showsamples = POINT;
 				if(optarg) {
@@ -190,6 +206,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	quiet |= nframes == 1;
 	argc -= optind;
 	if(argc < 1)
 		usage(argv[0]);
@@ -200,6 +217,13 @@ int main(int argc, char* argv[]) {
 	else usage(argv[0]);
 
 	av_log_set_level(loglevel);
+
+	AVExpr* xexpr = NULL,* yexpr = NULL,* scaleexpr = NULL,* xscaleexpr = NULL,* yscaleexpr = NULL;
+	AVExpr** exprs[] = {&xexpr,&yexpr,&scaleexpr,&xscaleexpr,&yscaleexpr};
+	const char* exprnames[] = {"i","n","x","y","xs","ys","w","h","vw","vh",NULL};
+	for(int i = 0; i < sizeof(exprstrs)/sizeof(*exprstrs); i++)
+		if(exprstrs[i] && av_expr_parse(exprs[i],exprstrs[i],exprnames,NULL,NULL,NULL,NULL,0,NULL) < 0)
+			return 1;
 
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
@@ -287,6 +311,32 @@ int main(int argc, char* argv[]) {
 	intermediate* tmp = NULL;
 
 	for(size_t d = 0; d < nframes; d++) {
+		double exprvars[] = {d,nframes,vx,vy,xscale_num/xscale_den,yscale_num/yscale_den,width,height,vw,vh,0};
+		if(scaleexpr) {
+			xscale_num = yscale_num = av_expr_eval(scaleexpr,exprvars,NULL);
+			xscale_den = yscale_den = 1;
+		}
+		if(xscaleexpr) {
+			xscale_num = av_expr_eval(xscaleexpr,exprvars,NULL);
+			xscale_den = 1;
+		}
+		if(yscaleexpr) {
+			yscale_num = av_expr_eval(yscaleexpr,exprvars,NULL);
+			yscale_den = 1;
+		}
+		// provide x/yexprs with the updated scale factor for this frame
+		exprvars[4] = xscale_num/xscale_den;
+		exprvars[5] = yscale_num/yscale_den;
+		if(xexpr)
+			vx = av_expr_eval(xexpr,exprvars,NULL);
+		if(yexpr)
+			vy = av_expr_eval(yexpr,exprvars,NULL);
+
+		if(!(isfinite(vx) && isfinite(vy) && isfinite(xscale_num/xscale_den) && isfinite(yscale_num/yscale_den))) {
+			fprintf(stderr,"Skipping non-finite expression result at frame %zu\n",d);
+			continue;
+		}
+
 		bool reuse_basis = width == height && vx == vy && xscale_num == yscale_num && xscale_den == yscale_den;
 		size_t cwidth = generate_scaled_basis(&xbasis,scaling_type,xscale_num,xscale_den,vx,(reuse_basis ? maxvectors : vw),width);
 		size_t cheight;
@@ -354,6 +404,9 @@ int main(int argc, char* argv[]) {
 	fftw(free)(coeffs);
 	free(xbasis);
 	free(ybuf);
+
+	for(int i = 0; i < sizeof(exprstrs)/sizeof(*exprstrs); i++)
+		av_expr_free(*exprs[i]);
 
 	free(icoeffs);
 	ffapi_free_frame(frame);
