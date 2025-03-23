@@ -12,6 +12,32 @@
 #include <unistd.h>
 #include <getopt.h>
 
+void usage() {
+	fprintf(stderr,"Usage: rotate [options] [-]xyz <infile> <outfile>\n");
+	exit(1);
+}
+void help() {
+	puts(
+		"Usage: rotate [options] [-]xyz <infile> <outfile>\n"
+		"\n"
+		"  [-]xyz  how to rearrange the input dimensions, with -/+ to indicate direction.\n"
+		"	       e.g. \"zyx\" swaps the x and z axis while \"x-yz\" results in a vertical flip\n"
+		"\n"
+		"  -h                  this help text\n"
+		"  -s <start:nframes>  starting frame number and total number of frames of input to use\n"
+		"  -r <rational>       output framerate or \"same\" to match input duration [default: input rate]\n"
+		"\n"
+		"  -o  input av options string\n"
+		"  -O  output av options string\n"
+		"  -f  input format\n"
+		"  -F  output format\n"
+		"  -c  intermediate colorspace options\n"
+		"  -e  encoder\n"
+		"  -l  loglevel\n"
+	);
+	exit(0);
+}
+
 int main(int argc, char* argv[]) {
 	AVRational fps = {0};
 	bool samedur = false;
@@ -32,21 +58,12 @@ int main(int argc, char* argv[]) {
 					samedur = true;
 				else av_parse_video_rate(&fps,optarg);
 			}; break;
+			case 'h': help();
 		}
 	argv += optind;
 	argc -= optind;
-	if(!argc) {
-		fprintf(stderr,
-"usage: rot <ffapi args> -r framerate -s start:frames [-]xyz in out\n"
-"[-]xyz: new dimensional arrangement, with -/+ to indicate direction\n"
-"ffapi args: -o/O   input/output dictionary options\n"
-"            -f/F   input/output format\n"
-"            -c     intermediate colorspace options\n"
-"            -e     encoder\n"
-"            -l     loglevel\n"
-);
-		return 0;
-	}
+	if(argc < 3)
+		usage();
 
 	int map[3];
 	bool invert[3] = {0};
