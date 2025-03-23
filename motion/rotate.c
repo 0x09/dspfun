@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 	if(argc < 3)
 		usage();
 
-	int map[3];
+	int map[3] = {-1,-1,-1};
 	bool invert[3] = {0};
 	for(int i = 0; i < 3; i++) {
 		if(argv[0][i] == '-') {
@@ -74,8 +74,13 @@ int main(int argc, char* argv[]) {
 		}
 		else if(argv[0][i] == '+')
 			argv[0]++;
+		if(!argv[0][i])
+			break;
 		map[i] = argv[0][i]-'x';
 	}
+	for(int i = 0; i < 3; i++)
+		if(map[i] < 0 || map[i] > 2)
+			usage();
 
 	av_log_set_level(loglevel);
 	AVRational r;
