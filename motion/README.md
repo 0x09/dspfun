@@ -27,6 +27,7 @@ As a precaution the output rate can be limited to a very low or even fractional 
 	  --spectrogram[=<type>]  Output a spectrogram visualization, optionally specifying the type as an integer.
 	                          type: 0: absolute value spectrum (default), 1: shifted spectrum, -1: input is a shifted spectrum to invert
 	  -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.
+	  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero [default: 0-1].
 	  -d, --dither            Apply 2D Floyd-Steinberg dithering to the high-precision transform products.
 	  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p.
 	                          type: dc (default), grey.

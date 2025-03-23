@@ -73,7 +73,7 @@ int parse_fftw_flag(const char* arg) {
 static void usage() {
 	fprintf(stderr,"Usage: motion [options] <infile> [outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
-	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
+	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [--threshold] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
 	               "[--fftw-planning-method method] [--fftw-wisdom-file file] [--fftw-threads nthreads]\n"
 	               "[-r|--framerate] [--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]\n"
 	               "[-Q|--quiet]\n");
@@ -96,6 +96,7 @@ static void help() {
 	"  --spectrogram[=<type>]  Output a spectrogram visualization, optionally specifying the type as an integer.\n"
 	"                          type: 0: absolute value spectrum (default), 1: shifted spectrum, -1: input is a shifted spectrum to invert\n"
 	"  -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.\n"
+	"  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero [default: 0-1].\n"
 	"  -d, --dither            Apply 2D Floyd-Steinberg dithering to the high-precision transform products.\n"
 	"  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p.\n"
 	"                          type: dc (default), grey.\n"
@@ -139,6 +140,7 @@ int main(int argc, char* argv[]) {
 	int preserve_dc = 0, fftw_flags = FFTW_ESTIMATE, fftw_threads = 1;
 	int loglevel = AV_LOG_ERROR;
 	bool quiet = false;
+	coeff threshold_min = 0, threshold_max = 0;
 	const struct option gopts[] = {
 		{"size",required_argument,NULL,'s'},
 		{"blocksize",required_argument,NULL,'b'},
@@ -167,6 +169,7 @@ int main(int argc, char* argv[]) {
 		{"fftw-threads",required_argument,NULL,15},
 		{"quiet",required_argument,NULL,'Q'},
 		{"help",required_argument,NULL,'h'},
+		{"threshold",required_argument,NULL,16},
 		{0}
 	};
 	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Qh",gopts,&longoptind)) != -1)
@@ -203,6 +206,7 @@ int main(int argc, char* argv[]) {
 					fprintf(stderr, "invalid number of threads %d\n", fftw_threads);
 					exit(1);
 				}; break;
+			case 16: sscanf(optarg,"%" COEFF_SPECIFIER "-%" COEFF_SPECIFIER, &threshold_min, &threshold_max); break;
 			case  0 : if(gopts[longoptind].flag != NULL) break;
 			case 'Q': quiet = true; break;
 			case 'h': help();
@@ -429,11 +433,14 @@ int main(int argc, char* argv[]) {
 	intermediate normalization[components];
 	intermediate c[components];
 	coeff quantizer[components];
+	coeff threshold[components][2];
 	for(int i = 0; i < components; i++) {
 		scalefactor[i] = (scaled[i].w*scaled[i].h*scaled[i].d)/(intermediate)(block[i].w*block[i].h*block[i].d);
 		normalization[i] = 1/mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d*8);
 		if(spec && spec != 1) c[i] = mi(127.5)/mi(log)(scaled[i].w*scaled[i].h*scaled[i].d*255*8+1);
 		quantizer[i] = (quant*8*mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d));
+		threshold[i][0] = threshold_min*255/normalization[i]/normalization[i];
+		threshold[i][1] = threshold_max*255/normalization[i]/normalization[i];
 	}
 
 	int padb = log10f(source->d)+1, pads = log10f(newres->d)+1;
@@ -525,9 +532,18 @@ int main(int argc, char* argv[]) {
 							for(long long x = bandpass.begin[i].w; x < bandpass.end[i].w; x++)
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= boost[i];
 
+				if(threshold_max)
+					for(int z = 0; z < active[i].d; z++)
+						for(int y = 0; y < active[i].h; y++)
+							for(int x = 0; x < active[i].w; x++) {
+								coeff c = mc(fabs)(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]);
+								if(c < threshold[i][0] || c > threshold[i][1])
+									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = 0;
+							}
+
 				if(preserve_dc) {
 					bool dcstop = bandpass.begin[i].d || bandpass.begin[i].h || bandpass.begin[i].w;
-					if(expr || dcstop || boost[i] != 1) {
+					if(expr || dcstop || boost[i] != 1 || threshold_max) {
 						if(preserve_dc < 2)
 							coeffs[0] = dc;
 						else
