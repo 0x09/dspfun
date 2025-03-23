@@ -88,7 +88,13 @@ int main(int argc, char* argv[]) {
 	unsigned long widths[4], heights[4], nframes;
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, cprops);
+
 	FFContext* in = ffapi_open_input(argv[1],iopt,ifmt,&color_props,&components,&widths,&heights,&nframes,&r,frames == 0);
+	if(!in) {
+		fprintf(stderr,"error opening input file %s\n",argv[1]);
+		return 1;
+	}
+
 	ffapi_seek_frame(in,offset,NULL);
 	unsigned long len[] = {*widths, *heights, nframes - offset};
 
@@ -109,7 +115,10 @@ int main(int argc, char* argv[]) {
 	}
 
 	FFContext* out = ffapi_open_output(argv[2],oopt,ofmt,enc,AV_CODEC_ID_FFV1,&color_props,len[map[0]],len[map[1]],fps);
-	if(!out) { puts("out error"); return 1; }
+	if(!out) {
+		fprintf(stderr,"error opening output file %s\n",argv[2]);
+		return 1;
+	}
 
 	AVFrame* iframe = ffapi_alloc_frame(in);
 	if(!iframe) { fprintf(stderr,"inframe error\n"); return 1; }
