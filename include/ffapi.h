@@ -33,9 +33,13 @@ typedef struct FFContext {
 	AVFrame* swsframe;
 } FFContext;
 
+typedef bool (ffapi_pix_fmt_filter)(const AVPixFmtDescriptor*);
+// pix fmts supported by ffapi_getpel
+ffapi_pix_fmt_filter ffapi_pixfmts_8bit_pel;
+
 void       ffapi_parse_color_props(FFColorProperties* c, const char* props);
 FFContext* ffapi_open_input (const char* file, const char* options,
-                             const char* format, FFColorProperties* color_props,
+                             const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter*,
                              unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], unsigned long* frames,
                              AVRational* rate, bool calc_frames);
 FFContext* ffapi_open_output(const char* file, const char* options,

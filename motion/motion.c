@@ -14,6 +14,10 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
+static bool pixfmts_8bit_rgb(const AVPixFmtDescriptor* desc) {
+	return (desc->flags & AV_PIX_FMT_FLAG_RGB) && ffapi_pixfmts_8bit_pel(desc);
+}
+
 static void seek_progress(size_t seek) {
 	fprintf(stderr,"\rseek: %zu",seek);
 }
@@ -221,14 +225,15 @@ int main(int argc, char* argv[]) {
 	AVRational r_frame_rate;
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, colorspace);
+	ffapi_pix_fmt_filter* pix_fmt_filter = ffapi_pixfmts_8bit_pel;
 	if(spec > 0) {
 		if(color_props.pix_fmt == AV_PIX_FMT_NONE)
-			color_props.pix_fmt = AV_PIX_FMT_RGB24;
+			pix_fmt_filter = pixfmts_8bit_rgb;
 		if(color_props.color_range == AVCOL_RANGE_UNSPECIFIED)
 			color_props.color_range = AVCOL_RANGE_JPEG;
 	}
 	unsigned long w[4], h[4], components;
-	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!(outfile && maxframes));
+	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!(outfile && maxframes));
 	if(!in) {
 		fprintf(stderr, "Error opening \"%s\"\n", infile);
 		return 1;

@@ -12,6 +12,10 @@
 #include <unistd.h>
 #include <getopt.h>
 
+static bool pix_fmt_filter(const AVPixFmtDescriptor* desc) {
+	return ffapi_pixfmts_8bit_pel(desc) && !(desc->log2_chroma_w || desc->log2_chroma_h);
+}
+
 void usage() {
 	fprintf(stderr,"Usage: rotate [options] [-]xyz <infile> <outfile>\n");
 	exit(1);
@@ -91,7 +95,7 @@ int main(int argc, char* argv[]) {
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, cprops);
 
-	FFContext* in = ffapi_open_input(argv[1],iopt,ifmt,&color_props,&components,&widths,&heights,&nframes,&r,frames == 0);
+	FFContext* in = ffapi_open_input(argv[1],iopt,ifmt,&color_props,pix_fmt_filter,&components,&widths,&heights,&nframes,&r,frames == 0);
 	if(!in) {
 		fprintf(stderr,"error opening input file %s\n",argv[1]);
 		return 1;
@@ -104,11 +108,6 @@ int main(int argc, char* argv[]) {
 		len[2] = FFMIN(frames,len[2]);
 	else if(frames)
 		len[2] = frames;
-
-	if((in->pixdesc->flags & AV_PIX_FMT_FLAG_PLANAR) || in->pixdesc->log2_chroma_w || in->pixdesc->log2_chroma_h) {
-		fprintf(stderr,"Unsupported planar or subsampled pixel format (%s), use -c pixel_format=rgb24/gray8/etc\n",in->pixdesc->name);
-		return 1;
-	}
 
 	if(fps.num == 0 && fps.den == 0) {
 		if(samedur)

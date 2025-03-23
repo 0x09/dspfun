@@ -133,8 +133,15 @@ bool ffapi_validate_color_props(const FFColorProperties* c) {
 	return ret;
 }
 
+bool ffapi_pixfmts_8bit_pel(const AVPixFmtDescriptor* desc) {
+	for(int c = 0; c < desc->nb_components; c++)
+		if(desc->comp[c].depth != 8)
+			return false;
+	return desc->nb_components && !(desc->flags & (AV_PIX_FMT_FLAG_HWACCEL|AV_PIX_FMT_FLAG_BITSTREAM));
+}
+
 FFContext* ffapi_open_input(const char* file, const char* options,
-                         const char* format, FFColorProperties* color_props,
+                         const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter* pix_fmt_filter,
                          unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], unsigned long* frames, AVRational* rate, bool calc_frames) {
 
 	if(!ffapi_validate_color_props(color_props))
@@ -189,9 +196,23 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 			else if(calc_frames) {
 				*frames = ffapi_seek_frame(in,SIZE_MAX,NULL);
 				ffapi_close(in);
-				return ffapi_open_input(file,options,format,color_props,components,widths,heights,NULL,rate,false);
+				return ffapi_open_input(file,options,format,color_props,pix_fmt_filter,components,widths,heights,NULL,rate,false);
 			}
 		}
+	}
+
+	enum AVPixelFormat* supported_pix_fmts = NULL;
+	if(pix_fmt_filter) {
+		size_t nb_pix_fmts = 1;
+		for(const AVPixFmtDescriptor* desc = av_pix_fmt_desc_next(NULL); desc; desc = av_pix_fmt_desc_next(desc))
+			nb_pix_fmts++;
+		if(!(supported_pix_fmts = malloc(nb_pix_fmts*sizeof(*supported_pix_fmts))))
+			goto error;
+		size_t di = 0;
+		for(const AVPixFmtDescriptor* desc = av_pix_fmt_desc_next(NULL); desc; desc = av_pix_fmt_desc_next(desc))
+			if(pix_fmt_filter(desc))
+				supported_pix_fmts[di++] = av_pix_fmt_desc_get_id(desc);
+		supported_pix_fmts[di] = AV_PIX_FMT_NONE;
 	}
 
 	FFColorProperties color_props_copy = ffapi_default_color_properties;
@@ -208,7 +229,18 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	if(color_props->chroma_location == AVCHROMA_LOC_UNSPECIFIED)
 		color_props->chroma_location = avc->chroma_sample_location;
 	if(color_props->pix_fmt == AV_PIX_FMT_NONE)
-		color_props->pix_fmt = avc->pix_fmt;
+		color_props->pix_fmt = supported_pix_fmts ? avcodec_find_best_pix_fmt_of_list(supported_pix_fmts,avc->pix_fmt,0,NULL) : avc->pix_fmt;
+	else if(supported_pix_fmts) {
+		enum AVPixelFormat* fmt = supported_pix_fmts;
+		while(*fmt != color_props->pix_fmt && *fmt != AV_PIX_FMT_NONE)
+			fmt++;
+		if(*fmt == AV_PIX_FMT_NONE) {
+			av_log(NULL,AV_LOG_INFO,"requested intermediate pixel_format %s not supported by application\n",av_get_pix_fmt_name(color_props->pix_fmt));
+			free(supported_pix_fmts);
+			goto error;
+		}
+	}
+	free(supported_pix_fmts);
 
 	if(
 		color_props->pix_fmt != avc->pix_fmt ||

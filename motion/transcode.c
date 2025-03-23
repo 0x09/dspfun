@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
 	unsigned long widths[4], heights[4], nframes;
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, cprops);
-	FFContext* in = ffapi_open_input(argv[0], iopt, ifmt, &color_props, &components, &widths, &heights, &nframes, (fps.den == 0 ? &fps : NULL), frames == 0);
+	FFContext* in = ffapi_open_input(argv[0], iopt, ifmt, &color_props, ffapi_pixfmts_8bit_pel, &components, &widths, &heights, &nframes, (fps.den == 0 ? &fps : NULL), frames == 0);
 	if(!in) { fprintf(stderr, "Error opening input context\n"); return 1; }
 
 	FFContext* out = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, *widths, *heights, fps);
