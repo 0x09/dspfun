@@ -26,6 +26,7 @@ void help() {
 		"  -h                  this help text\n"
 		"  -s <start:nframes>  starting frame number and total number of frames of input to use\n"
 		"  -r <rational>       output framerate or \"same\" to match input duration [default: input rate]\n"
+		"  -q                  don't print progress\n"
 		"\n"
 		"  -o  input av options string\n"
 		"  -O  output av options string\n"
@@ -40,13 +41,13 @@ void help() {
 
 int main(int argc, char* argv[]) {
 	AVRational fps = {0};
-	bool samedur = false;
+	bool samedur = false, quiet = false;
 	size_t frames = 0, offset = 0;
 	const char* iopt = NULL,* ifmt = NULL,* cprops = NULL;
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = AV_LOG_ERROR;
 	int c;
-	while((c = getopt(argc,argv,":o:O:f:F:c:e:l:r:s:")) > 0)
+	while((c = getopt(argc,argv,":o:O:f:F:c:e:l:r:s:hq")) > 0)
 		switch(c) {
 			case 'o': iopt = optarg; break; case 'O': oopt = optarg; break;
 			case 'f': ifmt = optarg; break; case 'F': ofmt = optarg; break;
@@ -58,6 +59,7 @@ int main(int argc, char* argv[]) {
 					samedur = true;
 				else av_parse_video_rate(&fps,optarg);
 			}; break;
+			case 'q': quiet = true; break;
 			case 'h': help();
 		}
 	argv += optind;
@@ -131,9 +133,11 @@ int main(int argc, char* argv[]) {
 		for(int y = 0; y < len[1]; y++)
 			for(int x = 0; x < len[0]; x++)
 				ffapi_getpixel(in,iframe,x,y,buf[(z*len[1]+y)*len[0]+x]);
-		fprintf(stderr,"\r%d",z);
+		if(!quiet)
+			fprintf(stderr,"\r%d",z);
 	}
-	fprintf(stderr,"\n");
+	if(!quiet)
+		fprintf(stderr,"\n");
 	ffapi_free_frame(iframe);
 	ffapi_close(in);
 
@@ -144,10 +148,12 @@ int main(int argc, char* argv[]) {
 			for(axis[map[0]] = 0; axis[map[0]] < len[map[0]]; axis[map[0]]++)
 				ffapi_setpixel(out,oframe,axis[map[0]],axis[map[1]],buf[(INV(2)*len[1]+INV(1))*len[0]+INV(0)]);
 		ffapi_write_frame(out,oframe);
-		fprintf(stderr,"\r%lu",axis[map[2]]);
+		if(!quiet)
+			fprintf(stderr,"\r%lu",axis[map[2]]);
 	}
 
-	fputc('\n',stderr);
+	if(!quiet)
+		fputc('\n',stderr);
 	ffapi_free_frame(oframe);
 	ffapi_close(out);
 }

@@ -96,6 +96,7 @@ This tool takes an input image or video and swaps its axes in 3 dimensions based
       -h                  this help text
       -s <start:nframes>  starting frame number and total number of frames of input to use
       -r <rational>       output framerate or "same" to match input duration [default: input rate]
+      -q                  don't print progress
     
       -o  input av options string
       -O  output av options string
