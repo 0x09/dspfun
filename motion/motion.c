@@ -18,6 +18,11 @@ static bool pixfmts_8bit_rgb(const AVPixFmtDescriptor* desc) {
 	return (desc->flags & AV_PIX_FMT_FLAG_RGB) && ffapi_pixfmts_8bit_pel(desc);
 }
 
+static int sortcoeffs(const void* left, const void* right) {
+	coeff cmp = mc(fabs)(**(coeff**)right) - mc(fabs)(**(coeff**)left);
+	return cmp < 0 ? -1 : (cmp > 0 ? 1 : 0);
+}
+
 static void seek_progress(size_t seek) {
 	fprintf(stderr,"\rseek: %zu",seek);
 }
@@ -73,7 +78,7 @@ int parse_fftw_flag(const char* arg) {
 static void usage() {
 	fprintf(stderr,"Usage: motion [options] <infile> [outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
-	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [--threshold] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
+	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [--threshold] [--coeff-limit limit] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
 	               "[--fftw-planning-method method] [--fftw-wisdom-file file] [--fftw-threads nthreads]\n"
 	               "[-r|--framerate] [--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]\n"
 	               "[-Q|--quiet]\n");
@@ -97,6 +102,7 @@ static void help() {
 	"                          type: 0: absolute value spectrum (default), 1: shifted spectrum, -1: input is a shifted spectrum to invert\n"
 	"  -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.\n"
 	"  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero [default: 0-1].\n"
+	"  --coeff-limit <limit>   Limit output to only the top N frequency coefficients per block.\n"
 	"  -d, --dither            Apply 2D Floyd-Steinberg dithering to the high-precision transform products.\n"
 	"  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p.\n"
 	"                          type: dc (default), grey.\n"
@@ -141,6 +147,7 @@ int main(int argc, char* argv[]) {
 	int loglevel = AV_LOG_ERROR;
 	bool quiet = false;
 	coeff threshold_min = 0, threshold_max = 0;
+	size_t coeff_limit = 0;
 	const struct option gopts[] = {
 		{"size",required_argument,NULL,'s'},
 		{"blocksize",required_argument,NULL,'b'},
@@ -170,6 +177,7 @@ int main(int argc, char* argv[]) {
 		{"quiet",required_argument,NULL,'Q'},
 		{"help",required_argument,NULL,'h'},
 		{"threshold",required_argument,NULL,16},
+		{"coeff-limit",required_argument,NULL,17},
 		{0}
 	};
 	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Qh",gopts,&longoptind)) != -1)
@@ -207,6 +215,7 @@ int main(int argc, char* argv[]) {
 					exit(1);
 				}; break;
 			case 16: sscanf(optarg,"%" COEFF_SPECIFIER "-%" COEFF_SPECIFIER, &threshold_min, &threshold_max); break;
+			case 17: coeff_limit = strtoull(optarg,NULL,10); break;
 			case  0 : if(gopts[longoptind].flag != NULL) break;
 			case 'Q': quiet = true; break;
 			case 'h': help();
@@ -443,6 +452,15 @@ int main(int argc, char* argv[]) {
 		threshold[i][1] = threshold_max*255/normalization[i]/normalization[i];
 	}
 
+	coeff** topcoeffs;
+	coeff* topcoefftmp;
+	coeff_limit = MIN(coeff_limit,mincomponent);
+	size_t sortbuf_len = MIN(coeff_limit*3,mincomponent-coeff_limit);
+	if(coeff_limit) {
+		topcoeffs = malloc(sizeof(*topcoeffs)*(coeff_limit+sortbuf_len));
+		topcoefftmp = malloc(sizeof(*topcoefftmp)*coeff_limit);
+	}
+
 	int padb = log10f(source->d)+1, pads = log10f(newres->d)+1;
 	if(!quiet)
 		fprintf(stderr,"read: %*d wrote: %*d",padb,0,pads,0);
@@ -480,6 +498,24 @@ int main(int argc, char* argv[]) {
 						}
 				if(spec >= 0) fftw(execute)(planforward[i]);
 				coeff dc = coeffs[0];
+
+				if(coeff_limit) {
+					size_t j;
+					for(j = 0; j < coeff_limit; j++)
+						topcoeffs[j] = coeffs+j;
+					coeff** sortbuf = topcoeffs + coeff_limit;
+					for(; j < mincomponent; j += sortbuf_len) {
+						size_t k;
+						for(k = 0; k < MIN(sortbuf_len, mincomponent-j); k++)
+							sortbuf[k] = coeffs+j+k;
+						qsort(topcoeffs,coeff_limit+k,sizeof(*topcoeffs),sortcoeffs);
+					}
+					for(j = 0; j < coeff_limit; j++)
+						topcoefftmp[j] = *topcoeffs[j];
+					memset(coeffs,0,sizeof(*coeffs)*mincomponent);
+					for(j = 0; j < coeff_limit; j++)
+						*topcoeffs[j] = topcoefftmp[j];
+				}
 
 				if(expr)
 					for(int z = 0; z < active[i].d; z++)
@@ -626,6 +662,11 @@ int main(int argc, char* argv[]) {
 	ffapi_close(in);
 
 	fftw(cleanup_threads)();
+
+	if(coeff_limit) {
+		free(topcoefftmp);
+		free(topcoeffs);
+	}
 
 	return 0;
 }
