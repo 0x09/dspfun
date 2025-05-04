@@ -557,7 +557,6 @@ int ffapi_close(FFContext* ctx) {
 		av_write_trailer(ctx->fmt);
 	}
 	avcodec_free_context(&ctx->codec);
-	avcodec_free_context(&ctx->codec);
 	if(ctx->sws) {
 		ffapi_free_frame(ctx->swsframe);
 		sws_freeContext(ctx->sws);
