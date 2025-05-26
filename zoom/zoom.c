@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = 0;
 
-	const char* exprstrs[7] = {0};
+	const char* exprstrs[5] = {0};
 
 	int c;
 	const struct option opts[] = {
