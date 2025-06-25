@@ -7,18 +7,34 @@
 
 int main(int argc, char* argv[]) {
 	int ret = 0;
-	const char optflags[] = "pm:";
-	struct specopts opts = spec_args(argc,argv,optflags);
-	if(opts.help) {
-		fprintf(stderr,"Usage: %s %s -p -m <signmap> <infile> <outfile>\n",argv[0],opts.help);
-		return 0;
-	}
 	bool preserve_dc = false;
 	int opt;
 	const char* signmap = NULL;
-	/* fixme: doesn't work on OS X */
-	while((opt = getopt(argc,argv,optflags)) > 0)
-		switch(opt) { case 'p': preserve_dc = true; break; case 'm': signmap=optarg; break; }
+
+	struct specopts opts = spec_opt_defaults;
+	while((opt = getopt(argc,argv,SPEC_OPT_FLAGS "pm:")) > 0) {
+		switch(opt) {
+			case 'p': preserve_dc = true; break;
+			case 'm': signmap = optarg; break;
+			default: {
+				int err = spec_opt_proc(&opts,opt,optarg);
+				if(err) {
+					fprintf(stderr,"Usage: %s -p -m <signmap> ",argv[0]);
+					spec_usage();
+					fprintf(stderr," <infile> <outfile>\n");
+					return 1;
+				}
+			}
+		}
+	}
+
+	argc -= optind;
+	argv += optind;
+	opts.input = opts.output = "-";
+	if(argc > 0) opts.input  = argv[0];
+	if(argc > 1) opts.output = argv[1];
+	else if(isatty(STDOUT_FILENO))
+		opts.output = "sixel:-";
 
 	size_t l, w, h, d;
 	size_t i, y, z;

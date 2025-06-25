@@ -80,43 +80,32 @@ struct specopts {
 
 assoc_gen(specparams)
 
-static inline struct specopts spec_args(int argc, char* argv[], const char* ignore) {
-	struct specopts opts={.csp="RGB", .gain = 1 };
-	static const char spec_optflags[] = "gc:t:s:hT:S:G:R:";
-	char optflags[strlen(spec_optflags)+strlen(ignore)+1];
-	strcat(strcpy(optflags,spec_optflags),ignore);
-	int c;
-	while((c = getopt(argc,argv,optflags)) > 0)
-		switch(c) {
-			case 'g': opts.gamma = true; break;
-			case 'c': opts.csp = optarg; break;
-			case 't': opts.params = *(struct specparams*)assoc_val(specparams,optarg); break;
-			case 'R': opts.params.rangetype = enum_val(rangetype,optarg); break;
-			case 'T': opts.params.scaletype = enum_val(scaletype,optarg); break;
-			case 'S': opts.params.signtype = enum_val(signtype,optarg); break;
-			case 'G':
-				if(!(opts.params.gaintype = enum_val(gaintype,optarg))) {
-					opts.params.gaintype = gaintype_custom;
-					opts.gain = strtold(optarg,NULL);
-				}
-				break;
-			case 'h':
-				asprintf(&opts.help,"-g -c csp -t (%s) -R (%s) -T (%s) -S (%s) -G (%s(float)) ",
-				         enum_keys(spectype),enum_keys(rangetype),enum_keys(scaletype),enum_keys(signtype),enum_keys(gaintype));
-			break; //let the OS get it
-		}
-	argc -= optind;
-	argv += optind;
-	opts.input = opts.output = "-";
-	if(argc > 0) opts.input  = argv[0];
-	if(argc > 1) opts.output = argv[1];
-	else if(isatty(STDOUT_FILENO))
-		opts.output = "sixel:-";
+#define SPEC_OPT_FLAGS "gc:t:s:T:S:G:R:"
 
-	opterr = 0;
-	//optreset = optind = 1;
-	optind = 1;
-	return opts;
+const static struct specopts spec_opt_defaults = { .csp="RGB", .gain = 1 };
+
+static void spec_usage(void) {
+	fprintf(stderr,"-g -c csp -t (%s) -R (%s) -T (%s) -S (%s) -G (%s(float)) ",
+	        enum_keys(spectype),enum_keys(rangetype),enum_keys(scaletype),enum_keys(signtype),enum_keys(gaintype));
+}
+
+static int spec_opt_proc(struct specopts* opts, int c, const char* arg) {
+	switch(c) {
+		case 'g': opts->gamma = true; break;
+		case 'c': opts->csp = arg; break;
+		case 't': opts->params = *(struct specparams*)assoc_val(specparams,arg); break;
+		case 'R': opts->params.rangetype = enum_val(rangetype,arg); break;
+		case 'T': opts->params.scaletype = enum_val(scaletype,arg); break;
+		case 'S': opts->params.signtype = enum_val(signtype,arg); break;
+		case 'G':
+			if(!(opts->params.gaintype = enum_val(gaintype,arg))) {
+				opts->params.gaintype = gaintype_custom;
+				opts->gain = strtold(arg,NULL);
+			}
+			break;
+		default: return 1;
+	}
+	return 0;
 }
 
 #include <limits.h>

@@ -6,11 +6,25 @@
 #include "spec.h"
 
 int main(int argc, char* argv[]) {
-	struct specopts opts = spec_args(argc,argv,"");
-	if(opts.help) {
-		fprintf(stderr,"Usage: %s %s <infile> <outfile>\n",argv[0],opts.help);
-		return 0;
+	struct specopts opts = spec_opt_defaults;
+	int c;
+	while((c = getopt(argc,argv,SPEC_OPT_FLAGS)) > 0) {
+		int err = spec_opt_proc(&opts,c,optarg);
+		if(err) {
+			fprintf(stderr,"Usage: %s ",argv[0]);
+			spec_usage();
+			fprintf(stderr," <infile> <outfile>\n");
+			return 1;
+		}
 	}
+
+	argc -= optind;
+	argv += optind;
+	opts.input = opts.output = "-";
+	if(argc > 0) opts.input  = argv[0];
+	if(argc > 1) opts.output = argv[1];
+	else if(isatty(STDOUT_FILENO))
+		opts.output = "sixel:-";
 
 	size_t l, w, h, d;
 	size_t i, y, z;
