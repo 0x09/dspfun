@@ -84,9 +84,31 @@ assoc_gen(specparams)
 
 const static struct specopts spec_opt_defaults = { .csp="RGB", .gain = 1 };
 
-static void spec_usage(void) {
-	fprintf(stderr,"-g -c csp -t (%s) -R (%s) -T (%s) -S (%s) -G (%s(float)) ",
+static void spec_usage(FILE* out) {
+	fprintf(out,"-g -c csp -t (%s) -R (%s) -T (%s) -S (%s) -G (%s(float)) ",
 	        enum_keys(spectype),enum_keys(rangetype),enum_keys(scaletype),enum_keys(signtype),enum_keys(gaintype));
+}
+
+static void spec_help(void) {
+	printf(
+	"  -g             Generate in linear light\n"
+	"  -c <channels>  Color channels to use. [default: RGB]\n"
+	"  -t <template>  Spectrogram template. [default: abs]\n"
+	"                 values: %s\n"
+	"  -R <range>     Range to scale coffieicnts to. [default: one]\n"
+	"                 values: %s\n"
+	"  -T <scale>     How to scale coefficients. [default: log]\n"
+	"                 values: %s\n"
+	"  -S <sign>      How to represent signed values. [default: abs]\n"
+	"                 values: %s\n"
+	"  -G <gain>      Multiplier for scaling. [default: native]\n"
+	"                 values: %s\n",
+		enum_keys(spectype),
+		enum_keys(rangetype),
+		enum_keys(scaletype),
+		enum_keys(signtype),
+		enum_keys(gaintype)
+	);
 }
 
 static int spec_opt_proc(struct specopts* opts, int c, const char* arg) {

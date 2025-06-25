@@ -12,15 +12,25 @@ int main(int argc, char* argv[]) {
 	const char* signmap = NULL;
 
 	struct specopts opts = spec_opt_defaults;
-	while((opt = getopt(argc,argv,SPEC_OPT_FLAGS "pm:")) > 0) {
+	while((opt = getopt(argc,argv,SPEC_OPT_FLAGS "pm:h")) > 0) {
 		switch(opt) {
 			case 'p': preserve_dc = true; break;
 			case 'm': signmap = optarg; break;
+			case 'h':
+				printf("Usage: %s -p -m <signmap> ",argv[0]);
+				spec_usage(stdout);
+				printf(" <infile> <outfile>\n");
+				printf("options\n"
+				"  -p            Apply the DC coeffient from the original image if available.\n"
+				"  -m <signmap>  Path to a file generated with `spec -t sign`\n");
+				printf("spec options\n");
+				spec_help();
+				return 0;
 			default: {
 				int err = spec_opt_proc(&opts,opt,optarg);
 				if(err) {
 					fprintf(stderr,"Usage: %s -p -m <signmap> ",argv[0]);
-					spec_usage();
+					spec_usage(stderr);
 					fprintf(stderr," <infile> <outfile>\n");
 					return 1;
 				}
