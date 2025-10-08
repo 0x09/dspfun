@@ -87,6 +87,15 @@ static inline void ffapi_setpelf(FFContext* ctx, AVFrame* frame, size_t x, size_
 		AV_WL32(data,valu);
 }
 
+static inline float ffapi_getpelf(FFContext* ctx, AVFrame* frame, size_t x, size_t y, int c) {
+	AVComponentDescriptor comp = ctx->pixdesc->comp[c];
+	assert(comp.depth == 32 && (ctx->pixdesc->flags & AV_PIX_FMT_FLAG_FLOAT));
+	uint8_t* data = &FFA_PEL(frame,comp,x,y);
+	return (union { uint32_t u; float f; }) {
+		.u = ctx->pixdesc->flags & AV_PIX_FMT_FLAG_BE ? AV_RB32(data) : AV_RL32(data)
+	}.f;
+}
+
 #define ffapi_setpel(FFContext,AVFrame,x,y,c,val) ffapi_setpel_direct(AVFrame,x,y,FFContext->pixdesc->comp[c],val)
 #define ffapi_getpel(FFContext,AVFrame,x,y,c) ffapi_getpel_direct(AVFrame,x,y,FFContext->pixdesc->comp[c])
 #define ffapi_setpixel(FFContext,AVFrame,x,y,val)\

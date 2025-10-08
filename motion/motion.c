@@ -14,8 +14,15 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
-static bool pixfmts_8bit_rgb(const AVPixFmtDescriptor* desc) {
-	return (desc->flags & AV_PIX_FMT_FLAG_RGB) && ffapi_pixfmts_8bit_pel(desc);
+bool ffapi_pixfmts_8bit_or_float_pel(const AVPixFmtDescriptor* desc) {
+	for(int c = 0; c < desc->nb_components; c++)
+		if(desc->comp[c].depth != 8 && !((desc->flags & AV_PIX_FMT_FLAG_FLOAT) && desc->comp[c].depth == 32))
+			return false;
+	return desc->nb_components && !(desc->flags & (AV_PIX_FMT_FLAG_HWACCEL|AV_PIX_FMT_FLAG_BITSTREAM));
+}
+
+static bool pixfmts_8bit_or_float_rgb(const AVPixFmtDescriptor* desc) {
+	return (desc->flags & AV_PIX_FMT_FLAG_RGB) && ffapi_pixfmts_8bit_or_float_pel(desc);
 }
 
 static int sortcoeffs(const void* left, const void* right) {
@@ -238,10 +245,10 @@ int main(int argc, char* argv[]) {
 	AVRational r_frame_rate;
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, colorspace);
-	ffapi_pix_fmt_filter* pix_fmt_filter = ffapi_pixfmts_8bit_pel;
+	ffapi_pix_fmt_filter* pix_fmt_filter = ffapi_pixfmts_8bit_or_float_pel;
 	if(spec > 0) {
 		if(color_props.pix_fmt == AV_PIX_FMT_NONE)
-			pix_fmt_filter = pixfmts_8bit_rgb;
+			pix_fmt_filter = pixfmts_8bit_or_float_rgb;
 		if(color_props.color_range == AVCOL_RANGE_UNSPECIFIED)
 			color_props.color_range = AVCOL_RANGE_JPEG;
 	}
@@ -390,11 +397,16 @@ int main(int argc, char* argv[]) {
 		if(minbuf[i].w*minbuf[i].h*minbuf[i].d > mincomponent) mincomponent = minbuf[i].w*minbuf[i].h*minbuf[i].d;
 	}
 	coeff* coeffs = fftw(alloc_real)(mincomponent);
-	unsigned char** pixels[components];
+	
+	bool float_pixels = in->pixdesc->flags & AV_PIX_FMT_FLAG_FLOAT;
+	void** pixels[components];
 	for(int i = 0; i < components; i++) {
-		pixels[i] = malloc(sizeof(char*)*nblocks[i].w*nblocks[i].h);
+		pixels[i] = malloc(sizeof(*pixels)*nblocks[i].w*nblocks[i].h);
 		for(int b = 0; b < nblocks[i].h * nblocks[i].w; b++)
-			pixels[i][b] = malloc(minbuf[i].w*minbuf[i].h*minbuf[i].d);
+			if(float_pixels)
+				pixels[i][b] = malloc(sizeof(float)*minbuf[i].w*minbuf[i].h*minbuf[i].d);
+			else
+				pixels[i][b] = malloc(minbuf[i].w*minbuf[i].h*minbuf[i].d);
 	}
 
 	if(fftw_wisdom_file)
@@ -477,7 +489,10 @@ int main(int argc, char* argv[]) {
 					for(int bx = 0; bx < nblocks[i].w; bx++)
 						for(int y = 0; y < block[i].h; y++)
 							for(int x = 0; x < block[i].w; x++)
-								pixels[i][by*nblocks[i].w+bx][(z*minbuf[i].h+y)*minbuf[i].w+x] = ffapi_getpel_direct(readframe,bx*block[i].w+x,by*block[i].h+y,comp);
+								if(float_pixels)
+									((float*)pixels[i][by*nblocks[i].w+bx])[(z*minbuf[i].h+y)*minbuf[i].w+x] = ffapi_getpelf(in,readframe,bx*block[i].w+x,by*block[i].h+y,i);
+								else
+									((unsigned char*)pixels[i][by*nblocks[i].w+bx])[(z*minbuf[i].h+y)*minbuf[i].w+x] = ffapi_getpel_direct(readframe,bx*block[i].w+x,by*block[i].h+y,comp);
 			}
 			if(!quiet)
 				fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,bz*block->d+z+1,pads,bz*scaled->d);
@@ -485,12 +500,16 @@ int main(int argc, char* argv[]) {
 		for(int i = 0; i < components; i++) {
 			if(bz >= nblocks[i].d) continue;
 			for(int b = 0; b < nblocks[i].h * nblocks[i].w; b++) {
-				unsigned char* pblock = pixels[i][b];
+				void* pblock = pixels[i][b];
 				memset(coeffs,0,sizeof(coeff)*mincomponent);
 				for(int z = 0; z < block[i].d; z++)
 					for(int y = 0; y < block[i].h; y++)
 						for(int x = 0; x < block[i].w; x++) {
-							unsigned char pel = pblock[(z*minbuf[i].h+y)*minbuf[i].w+x];
+							intermediate pel;
+							if(float_pixels)
+								pel = ((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x]*255;
+							else
+								pel = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
 							if(spec < 0)
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(copysign)((mi(pow)(mi(M_E),mi(fabs)((pel-mi(127.5))/c[i]))-1),pel-mi(127.5));
 							else
@@ -602,16 +621,29 @@ int main(int argc, char* argv[]) {
 							intermediate pel = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] * scalefactor[i];
 							if(spec > 0) {
 								if(spec == 1)
-									pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(lround)(c[i]*mi(log)(mi(fabs)(pel*normalization[i])+1));
+									pel = c[i]*mi(log)(mi(fabs)(pel*normalization[i])+1);
 								else
-									pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(lround)(c[i]*mi(copysign)(mi(log)(mi(fabs)(pel)+1),pel)+mi(127.5));
+									pel = c[i]*mi(copysign)(mi(log)(mi(fabs)(pel)+1),pel)+mi(127.5);
+								if(float_pixels)
+									((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
+								else
+									((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(lround)(pel);
 							}
 							else {
 								pel *= normalization[i]*normalization[i];
 								pel = mi(fabs)(pel);
-								pblock[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : mi(lround)(pel);
+								if(float_pixels)
+									((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
+								else
+									((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : mi(lround)(pel);
 								if(dithering) {
-									intermediate dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-pblock[(z*minbuf[i].h+y)*minbuf[i].w+x]/(normalization[i]*normalization[i]*scalefactor[i]);
+									intermediate p;
+									if(float_pixels)
+										p = ((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x]*255;
+									else
+										p = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
+
+									intermediate dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-p/(normalization[i]*normalization[i]*scalefactor[i]);
 									if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*7/16;
 									if(y < scaled[i].h-1) {
 										if(x) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x-1] += dp*3/16;
@@ -631,7 +663,10 @@ int main(int argc, char* argv[]) {
 					for(int bx = 0; bx < nblocks[i].w; bx++)
 						for(int y = 0; y < scaled[i].h; y++)
 							for(int x = 0; x < scaled[i].w; x++)
-								ffapi_setpel_direct(writeframe,bx*scaled[i].w+x,by*scaled[i].h+y,comp,pixels[i][by*nblocks[i].w+bx][(z*minbuf[i].h+y)*minbuf[i].w+x]);
+								if(float_pixels)
+									ffapi_setpelf(out,writeframe,bx*scaled[i].w+x,by*scaled[i].h+y,i,((float*)pixels[i][by*nblocks[i].w+bx])[(z*minbuf[i].h+y)*minbuf[i].w+x]);
+								else
+									ffapi_setpel_direct(writeframe,bx*scaled[i].w+x,by*scaled[i].h+y,comp,((unsigned char*)pixels[i][by*nblocks[i].w+bx])[(z*minbuf[i].h+y)*minbuf[i].w+x]);
 			}
 			ffapi_write_frame(out,writeframe);
 			if(!quiet)
