@@ -356,7 +356,13 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	avc->width  = width;
 	avc->height = height;
 	avc->time_base = out->st->time_base = av_inv_q(out->st->r_frame_rate = out->st->avg_frame_rate = rate);
-	avc->color_range = in_color_props->color_range;
+
+	const enum AVColorRange* codec_color_ranges = NULL;
+	avcodec_get_supported_config(NULL,enc,AV_CODEC_CONFIG_COLOR_RANGE,0,(const void**)&codec_color_ranges,NULL);
+	if(!codec_color_ranges || in_color_props->color_range == AVCOL_RANGE_UNSPECIFIED || codec_color_ranges[0] == in_color_props->color_range || codec_color_ranges[1] == in_color_props->color_range)
+		avc->color_range = in_color_props->color_range;
+	else
+		avc->color_range = codec_color_ranges[0];
 	avc->color_primaries = in_color_props->color_primaries;
 	avc->color_trc = in_color_props->color_trc;
 	avc->colorspace = in_color_props->color_space;
