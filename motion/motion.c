@@ -246,18 +246,19 @@ int main(int argc, char* argv[]) {
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, colorspace);
 	ffapi_pix_fmt_filter* pix_fmt_filter = ffapi_pixfmts_8bit_or_float_pel;
-	if(spec > 0) {
-		if(color_props.pix_fmt == AV_PIX_FMT_NONE)
-			pix_fmt_filter = pixfmts_8bit_or_float_rgb;
-		if(color_props.color_range == AVCOL_RANGE_UNSPECIFIED)
-			color_props.color_range = AVCOL_RANGE_JPEG;
-	}
+	if(spec > 0 && color_props.pix_fmt == AV_PIX_FMT_NONE)
+		pix_fmt_filter = pixfmts_8bit_or_float_rgb;
+
 	unsigned long w[4], h[4], components;
 	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!(outfile && maxframes));
 	if(!in) {
 		fprintf(stderr, "Error opening \"%s\"\n", infile);
 		return 1;
 	}
+
+	if(spec > 0)
+		color_props.color_range = AVCOL_RANGE_JPEG;
+
 	source->w = *w; //compute subsampling separately
 	source->h = *h;
 	AVPixFmtDescriptor pixdesc = *(in->pixdesc);
