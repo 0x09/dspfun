@@ -350,7 +350,9 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	AVCodecContext* avc = out->codec = avcodec_alloc_context3(enc);
 	out->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(in_color_props->pix_fmt);
 
-	avc->pix_fmt = enc->pix_fmts ? avcodec_find_best_pix_fmt_of_list(enc->pix_fmts,in_color_props->pix_fmt,0,NULL) : in_color_props->pix_fmt;
+	const enum AVPixelFormat* codec_pix_fmts = NULL;
+	avcodec_get_supported_config(NULL,enc,AV_CODEC_CONFIG_PIX_FORMAT,0,(const void**)&codec_pix_fmts,NULL);
+	avc->pix_fmt = codec_pix_fmts ? avcodec_find_best_pix_fmt_of_list(codec_pix_fmts,in_color_props->pix_fmt,0,NULL) : in_color_props->pix_fmt;
 	avc->width  = width;
 	avc->height = height;
 	avc->time_base = out->st->time_base = av_inv_q(out->st->r_frame_rate = out->st->avg_frame_rate = rate);
