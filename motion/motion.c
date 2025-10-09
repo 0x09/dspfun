@@ -15,10 +15,7 @@
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
 bool ffapi_pixfmts_8bit_or_float_pel(const AVPixFmtDescriptor* desc) {
-	for(int c = 0; c < desc->nb_components; c++)
-		if(desc->comp[c].depth != 8 && !((desc->flags & AV_PIX_FMT_FLAG_FLOAT) && desc->comp[c].depth == 32))
-			return false;
-	return desc->nb_components && !(desc->flags & (AV_PIX_FMT_FLAG_HWACCEL|AV_PIX_FMT_FLAG_BITSTREAM));
+	return ffapi_pixfmts_8bit_pel(desc) || ffapi_pixfmts_32_bit_float_pel(desc);
 }
 
 static bool pixfmts_8bit_or_float_rgb(const AVPixFmtDescriptor* desc) {

@@ -34,8 +34,8 @@ typedef struct FFContext {
 } FFContext;
 
 typedef bool (ffapi_pix_fmt_filter)(const AVPixFmtDescriptor*);
-// pix fmts supported by ffapi_getpel
-ffapi_pix_fmt_filter ffapi_pixfmts_8bit_pel;
+// pix fmts supported by ffapi_getpel(f)
+ffapi_pix_fmt_filter ffapi_pixfmts_8bit_pel, ffapi_pixfmts_32_bit_float_pel;
 
 void       ffapi_parse_color_props(FFColorProperties* c, const char* props);
 FFContext* ffapi_open_input (const char* file, const char* options,

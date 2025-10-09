@@ -140,6 +140,13 @@ bool ffapi_pixfmts_8bit_pel(const AVPixFmtDescriptor* desc) {
 	return desc->nb_components && !(desc->flags & (AV_PIX_FMT_FLAG_HWACCEL|AV_PIX_FMT_FLAG_BITSTREAM));
 }
 
+bool ffapi_pixfmts_32_bit_float_pel(const AVPixFmtDescriptor* desc) {
+	for(int c = 0; c < desc->nb_components; c++)
+		if(!((desc->flags & AV_PIX_FMT_FLAG_FLOAT) && desc->comp[c].depth == 32))
+			return false;
+	return desc->nb_components;
+}
+
 FFContext* ffapi_open_input(const char* file, const char* options,
                          const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter* pix_fmt_filter,
                          unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], unsigned long* frames, AVRational* rate, bool calc_frames) {
