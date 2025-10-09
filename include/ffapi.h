@@ -55,12 +55,12 @@ int       ffapi_write_frame(FFContext*, AVFrame*);
 int       ffapi_close(FFContext*);
 
 #define FFA_PEL(frame,comp,x,y) frame->data[comp.plane][y*frame->linesize[comp.plane]+x*comp.step+comp.offset]
+
+// 8-bit pel accessors
 static inline void ffapi_setpel_direct(AVFrame* frame, size_t x, size_t y, AVComponentDescriptor comp, unsigned char val) {
-	assert(comp.depth == 8);
 	FFA_PEL(frame,comp,x,y) = val;
 }
 static inline unsigned char ffapi_getpel_direct(AVFrame* frame, size_t x, size_t y, AVComponentDescriptor comp) {
-	assert(comp.depth == 8);
 	return FFA_PEL(frame,comp,x,y);
 }
 
@@ -76,9 +76,9 @@ static inline void ffapi_setpell_direct(AVFrame* frame, size_t x, size_t y, AVCo
 		    default: (ffapi_setpel_direct)(AVFrame,x,y,comp,       val)\
 	)
 
+// float pel accessors
 static inline void ffapi_setpelf(FFContext* ctx, AVFrame* frame, size_t x, size_t y, int c, float val) {
 	AVComponentDescriptor comp = ctx->pixdesc->comp[c];
-	assert(comp.depth == 32 && (ctx->pixdesc->flags & AV_PIX_FMT_FLAG_FLOAT));
 	uint32_t valu = (union { float f; uint32_t u; }){val}.u;
 	uint8_t* data = &FFA_PEL(frame,comp,x,y);
 	if(ctx->pixdesc->flags & AV_PIX_FMT_FLAG_BE)
@@ -89,7 +89,6 @@ static inline void ffapi_setpelf(FFContext* ctx, AVFrame* frame, size_t x, size_
 
 static inline float ffapi_getpelf(FFContext* ctx, AVFrame* frame, size_t x, size_t y, int c) {
 	AVComponentDescriptor comp = ctx->pixdesc->comp[c];
-	assert(comp.depth == 32 && (ctx->pixdesc->flags & AV_PIX_FMT_FLAG_FLOAT));
 	uint8_t* data = &FFA_PEL(frame,comp,x,y);
 	return (union { uint32_t u; float f; }) {
 		.u = ctx->pixdesc->flags & AV_PIX_FMT_FLAG_BE ? AV_RB32(data) : AV_RL32(data)
