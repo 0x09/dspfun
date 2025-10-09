@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew upgrade --overwrite python #avoids brew link issues during ffmpeg install
+          brew upgrade
           brew install fftw imagemagick ffmpeg
       - name: Build
         run: make
