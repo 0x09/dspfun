@@ -122,6 +122,8 @@ void ffapi_parse_color_props(FFColorProperties* c, const char* props) {
 } while(0)
 
 bool ffapi_validate_color_props(const FFColorProperties* c) {
+	if(!c)
+		return false;
 	bool ret = true;
 	if(c->pix_fmt != AV_PIX_FMT_NONE)
 		validate_color_prop(c,ret,pix_fmt,"pixel_format",av_pix_fmt_desc_get);
