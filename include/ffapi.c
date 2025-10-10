@@ -151,7 +151,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
                          const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter* pix_fmt_filter,
                          unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], unsigned long* frames, AVRational* rate, bool calc_frames) {
 
-	if(!ffapi_validate_color_props(color_props))
+	if(color_props && !ffapi_validate_color_props(color_props))
 		return NULL;
 
 	FFContext* in = calloc(1,sizeof(*in));
