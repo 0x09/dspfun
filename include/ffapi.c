@@ -465,7 +465,6 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		out->swsframe->width  = avc->width;
 		out->swsframe->height = avc->height;
 		out->swsframe->format = avc->pix_fmt;
-		av_frame_get_buffer(out->swsframe,1);
 	}
 
 
@@ -484,7 +483,7 @@ AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 		frame->width  = ctx->st->codecpar->width;
 		frame->height = ctx->st->codecpar->height;
 		frame->format = av_pix_fmt_desc_get_id(ctx->pixdesc);
-		if(av_frame_get_buffer(frame,1))
+		if(ctx->fmt->oformat && av_frame_get_buffer(frame,1))
 			return NULL;
 	}
 	return frame;
@@ -534,7 +533,7 @@ int ffapi_read_frame(FFContext* in, AVFrame* frame) {
 	}
 	if(!err) {
 		if(in->sws)
-			sws_scale(in->sws,(const uint8_t* const*)in->swsframe->data,in->swsframe->linesize,0,in->st->codecpar->height,frame->data,frame->linesize);
+			sws_scale_frame(in->sws,frame,in->swsframe);
 		frame->pts = readframe->best_effort_timestamp;
 	}
 	av_packet_free(&packet);
@@ -558,7 +557,7 @@ static int flush_frame(FFContext* out) {
 
 int ffapi_write_frame(FFContext* out, AVFrame* frame) {
 	AVFrame* writeframe = out->swsframe;
-	if(out->sws) sws_scale(out->sws,(const uint8_t* const*)frame->data,frame->linesize,0,out->st->codecpar->height,out->swsframe->data,out->swsframe->linesize);
+	if(out->sws) sws_scale_frame(out->sws,out->swsframe,frame);
 	else writeframe = frame;
 	AVCodecContext* codec = out->codec;
 	writeframe->pts = codec->frame_num; //for now timebase == 1/rate
