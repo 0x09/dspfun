@@ -296,6 +296,8 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		in->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(color_props->pix_fmt);
 	}
 
+	in->color_props = *color_props;
+
 	if(components)
 		*components = in->pixdesc->nb_components;
 	for(int i = 0; i < in->pixdesc->nb_components; i++) {
@@ -465,8 +467,14 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		out->swsframe->width  = avc->width;
 		out->swsframe->height = avc->height;
 		out->swsframe->format = avc->pix_fmt;
+		out->swsframe->color_range = avc->color_range;
+		out->swsframe->color_primaries = avc->color_primaries;
+		out->swsframe->color_trc = avc->color_trc;
+		out->swsframe->colorspace = avc->colorspace;
+		out->swsframe->chroma_location = avc->chroma_sample_location;
 	}
 
+	out->color_props = *in_color_props;
 
 	 return out;
 error:
@@ -483,6 +491,11 @@ AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 		frame->width  = ctx->st->codecpar->width;
 		frame->height = ctx->st->codecpar->height;
 		frame->format = av_pix_fmt_desc_get_id(ctx->pixdesc);
+		frame->color_range = ctx->color_props.color_range;
+		frame->color_primaries = ctx->color_props.color_primaries;
+		frame->color_trc = ctx->color_props.color_trc;
+		frame->colorspace = ctx->color_props.color_space;
+		frame->chroma_location = ctx->color_props.chroma_location;
 		if(ctx->fmt->oformat && av_frame_get_buffer(frame,1))
 			return NULL;
 	}

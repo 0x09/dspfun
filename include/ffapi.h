@@ -31,6 +31,7 @@ typedef struct FFContext {
 	AVPixFmtDescriptor* pixdesc;
 	struct SwsContext* sws;
 	AVFrame* swsframe;
+	struct FFColorProperties color_props;
 } FFContext;
 
 typedef bool (ffapi_pix_fmt_filter)(const AVPixFmtDescriptor*);
