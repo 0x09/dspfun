@@ -517,7 +517,9 @@ int ffapi_read_frame(FFContext* in, AVFrame* frame) {
 	while((err = avcodec_receive_frame(in->codec, readframe)) == AVERROR(EAGAIN)) {
 		while(!(err = av_read_frame(in->fmt,packet)) && packet->stream_index != in->st->index)
 			av_packet_unref(packet);
-		if(!err) {
+		if(err)
+			avcodec_send_packet(in->codec, NULL);
+		else {
 			avcodec_send_packet(in->codec, packet);
 			av_packet_unref(packet);
 		}
