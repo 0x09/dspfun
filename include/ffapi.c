@@ -201,6 +201,12 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 			if(!strcmp(in->fmt->iformat->name,"image2") || !strcmp(in->fmt->iformat->name,"png_pipe"))
 				*frames = 1;
 			else if(calc_frames) {
+				if(!strncmp(file,"pipe:",5) || (!stat(file,&st) && S_ISFIFO(st.st_mode))) {
+					av_log(NULL,AV_LOG_ERROR,"Can't calculate frame count on pipe input\n");
+					ffapi_close(in);
+					return NULL;
+				}
+
 				*frames = ffapi_seek_frame(in,SIZE_MAX,NULL);
 				ffapi_close(in);
 				return ffapi_open_input(file,options,format,color_props,pix_fmt_filter,components,widths,heights,NULL,rate,false);
