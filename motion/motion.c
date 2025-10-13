@@ -456,7 +456,7 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i < components; i++) {
 		scalefactor[i] = (scaled[i].w*scaled[i].h*scaled[i].d)/(intermediate)(block[i].w*block[i].h*block[i].d);
 		normalization[i] = 1/mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d*8);
-		if(spec && spec != 1) c[i] = mi(127.5)/mi(log)(scaled[i].w*scaled[i].h*scaled[i].d*255*8+1);
+		if(spec && spec != 1) c[i] = mi(127.5)/mi(log)(scaled[i].w*scaled[i].h*scaled[i].d*normalization[i]*255*8+1);
 		quantizer[i] = (quant*8*mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d));
 		threshold[i][0] = threshold_min*255/normalization[i]/normalization[i];
 		threshold[i][1] = threshold_max*255/normalization[i]/normalization[i];
@@ -509,7 +509,7 @@ int main(int argc, char* argv[]) {
 							else
 								pel = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
 							if(spec < 0)
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(copysign)((mi(pow)(mi(M_E),mi(fabs)((pel-mi(127.5))/c[i]))-1),pel-mi(127.5));
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(copysign)((mi(pow)(mi(M_E),mi(fabs)((pel-mi(127.5))/c[i]))-1),pel-mi(127.5))/normalization[i];
 							else
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel;
 						}
@@ -621,7 +621,7 @@ int main(int argc, char* argv[]) {
 								if(spec == 1)
 									pel = c[i]*mi(log)(mi(fabs)(pel*normalization[i])+1);
 								else
-									pel = c[i]*mi(copysign)(mi(log)(mi(fabs)(pel)+1),pel)+mi(127.5);
+									pel = c[i]*mi(copysign)(mi(log)(mi(fabs)(pel*normalization[i])+1),pel)+mi(127.5);
 								if(float_pixels)
 									((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
 								else
