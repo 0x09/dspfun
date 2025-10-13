@@ -25,7 +25,7 @@
 enum_gen(spectype)
 enum_gen(ispectype)
 
-bool ffapi_pixfmts_8bit_or_float_pel(const AVPixFmtDescriptor* desc) {
+static bool ffapi_pixfmts_8bit_or_float_pel(const AVPixFmtDescriptor* desc) {
 	return ffapi_pixfmts_8bit_pel(desc) || ffapi_pixfmts_32_bit_float_pel(desc);
 }
 
