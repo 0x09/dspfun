@@ -17,10 +17,14 @@
 
 #define spectype(X,T)\
 	X(T,abs)\
-	X(T,shift)
+	X(T,shift)\
+	X(T,flat)\
+	X(T,copy)
 
 #define ispectype(X,T)\
-	X(T,shift)
+	X(T,shift)\
+	X(T,flat)\
+	X(T,copy)
 
 enum_gen(spectype)
 enum_gen(ispectype)
@@ -31,6 +35,10 @@ static bool ffapi_pixfmts_8bit_or_float_pel(const AVPixFmtDescriptor* desc) {
 
 static bool pixfmts_8bit_or_float_rgb(const AVPixFmtDescriptor* desc) {
 	return (desc->flags & AV_PIX_FMT_FLAG_RGB) && ffapi_pixfmts_8bit_or_float_pel(desc);
+}
+
+static bool pixfmts_float_rgb(const AVPixFmtDescriptor* desc) {
+	return (desc->flags & AV_PIX_FMT_FLAG_RGB) && ffapi_pixfmts_32_bit_float_pel(desc);
 }
 
 static int sortcoeffs(const void* left, const void* right) {
@@ -275,8 +283,12 @@ int main(int argc, char* argv[]) {
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, colorspace);
 	ffapi_pix_fmt_filter* pix_fmt_filter = ffapi_pixfmts_8bit_or_float_pel;
-	if(spec && color_props.pix_fmt == AV_PIX_FMT_NONE)
-		pix_fmt_filter = pixfmts_8bit_or_float_rgb;
+	if(spec && color_props.pix_fmt == AV_PIX_FMT_NONE) {
+		if(spec == spectype_flat || spec == spectype_copy)
+			pix_fmt_filter = pixfmts_float_rgb;
+		else
+			pix_fmt_filter = pixfmts_8bit_or_float_rgb;
+	}
 
 	unsigned long w[4], h[4], components;
 	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!(outfile && maxframes));
@@ -544,6 +556,10 @@ int main(int argc, char* argv[]) {
 								pel = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
 							if(ispec == ispectype_shift)
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(copysign)((mi(expm1)(mi(fabs)((pel-mi(127.5))/ic[i]))),pel-mi(127.5))/normalization[i];
+							else if(ispec == ispectype_flat)
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = (pel-mi(127.5))*2/normalization[i]/normalization[i];
+							else if(ispec == ispectype_copy)
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/normalization[i]/normalization[i];
 							else
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel;
 						}
@@ -654,8 +670,13 @@ int main(int argc, char* argv[]) {
 							if(spec) {
 								if(spec == spectype_abs)
 									pel = c[i]*mi(log1p)(mi(fabs)(pel*normalization[i]));
-								else
+								else if(spec == spectype_shift)
 									pel = c[i]*mi(copysign)(mi(log1p)(mi(fabs)(pel*normalization[i])),pel)+mi(127.5);
+								else if(spec == spectype_flat)
+									pel = pel*normalization[i]*normalization[i]/2+mi(127.5);
+								else if(spec == spectype_copy)
+									pel *=  normalization[i]*normalization[i];
+
 								if(float_pixels)
 									((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
 								else

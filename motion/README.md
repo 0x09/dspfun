@@ -24,12 +24,12 @@ As a precaution the output rate can be limited to a very low or even fractional 
 	  -p, --bandpass <range>  Beginning and end coordinates of brick-wall bandpass in the form X1xY1xZ1-X2xY2xZ2. [default: 0x0x0 through blocksize]
 	  -B, --boost <float>     Multiplier for the pass band. [default: 1]
 	  -D, --damp <float>      Multiplier for the stop band. [default: 0]
-
+      
 	  --spectrogram[=<type>]   Output a spectrogram visualization, optionally specifying the type. [default: abs]
-	                           type: abs|shift
+	                           type: abs|shift|flat|copy
 	  --ispectrogram[=<type>]  Invert an input spectrogram. [default: shift]
-	                           type: shift
-
+	                           type: shift|flat|copy
+      
 	  -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.
 	  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero [default: 0-1].
 	  --coeff-limit <limit>   Limit output to only the top N frequency coefficients per block.
