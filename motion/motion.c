@@ -663,7 +663,6 @@ int main(int argc, char* argv[]) {
 							}
 							else {
 								pel *= normalization[i]*normalization[i];
-								pel = mi(fabs)(pel);
 								if(float_pixels)
 									((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
 								else
