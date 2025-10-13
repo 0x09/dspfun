@@ -10,9 +10,20 @@
 
 #include "ffapi.h"
 #include "precision.h"
+#include "keyed_enum.h"
 
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
+
+#define spectype(X,T)\
+	X(T,abs)\
+	X(T,shift)
+
+#define ispectype(X,T)\
+	X(T,shift)
+
+enum_gen(spectype)
+enum_gen(ispectype)
 
 bool ffapi_pixfmts_8bit_or_float_pel(const AVPixFmtDescriptor* desc) {
 	return ffapi_pixfmts_8bit_pel(desc) || ffapi_pixfmts_32_bit_float_pel(desc);
@@ -82,7 +93,7 @@ int parse_fftw_flag(const char* arg) {
 static void usage() {
 	fprintf(stderr,"Usage: motion [options] <infile> [outfile]\n"
 	               "[-s|--size WxHxD] [-b|--blocksize WxHxD] [-p|--bandpass X1xY1xZ1-X2xY2xZ2]\n"
-	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [-q|--quant quant] [--threshold] [--coeff-limit limit] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
+	               "[-B|--boost float] [-D|--damp float]  [--spectrogram=type] [--ispectrogram=type] [-q|--quant quant] [--threshold] [--coeff-limit limit] [--quant-float params] [-d|--dither] [--preserve-dc=type] [--eval expression]\n"
 	               "[--fftw-planning-method method] [--fftw-wisdom-file file] [--fftw-threads nthreads]\n"
 	               "[-r|--framerate] [--keep-rate] [--samesize-chroma] [--frames lim] [--offset pos] [--csp|c colorspace options] [--iformat|--format fmt] [--codec codec] [--encopts|--decopts opts] [--loglevel int]\n"
 	               "[-Q|--quiet]\n");
@@ -90,7 +101,7 @@ static void usage() {
 }
 
 static void help() {
-	puts("Usage: motion [options] <infile> [outfile]\n"
+	printf("Usage: motion [options] <infile> [outfile]\n"
 	"\n"
 	"  <outfile>               Output file or pipe, or \"ffplay:\" for ffplay output. If no output file is given motion prints the input dimensions and exits.\n"
 	"\n"
@@ -102,8 +113,12 @@ static void help() {
 	"  -p, --bandpass <range>  Beginning and end coordinates of brick-wall bandpass in the form X1xY1xZ1-X2xY2xZ2. [default: 0x0x0 through blocksize]\n"
 	"  -B, --boost <float>     Multiplier for the pass band. [default: 1]\n"
 	"  -D, --damp <float>      Multiplier for the stop band. [default: 0]\n"
-	"  --spectrogram[=<type>]  Output a spectrogram visualization, optionally specifying the type as an integer.\n"
-	"                          type: 0: absolute value spectrum (default), 1: shifted spectrum, -1: input is a shifted spectrum to invert\n"
+	"\n"
+	"  --spectrogram[=<type>]   Output a spectrogram visualization, optionally specifying the type. [default: abs]\n"
+	"                           type: %s\n"
+	"  --ispectrogram[=<type>]  Invert an input spectrogram. [default: shift]\n"
+	"                           type: %s\n"
+	"\n"
 	"  -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.\n"
 	"  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero [default: 0-1].\n"
 	"  --coeff-limit <limit>   Limit output to only the top N frequency coefficients per block.\n"
@@ -131,7 +146,10 @@ static void help() {
 	"  --codec <enc>           FFmpeg output encoder name [default: ffv1 or selected by FFmpeg based on output format]\n"
 	"  --encopts <optstring>   Option string containing FFmpeg encoder options for the output file.\n"
 	"  --decopts <optstring>   Option string containing FFmpeg decoder options for the input file.\n"
-	"  --loglevel <int>        Integer FFmpeg log level [default: 16 (AV_LOG_ERROR)]\n");
+	"  --loglevel <int>        Integer FFmpeg log level [default: 16 (AV_LOG_ERROR)]\n",
+	enum_keys(spectype),
+	enum_keys(ispectype)
+	);
 	exit(0);
 }
 
@@ -141,7 +159,9 @@ int main(int argc, char* argv[]) {
 	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL,* exprstr = NULL,* fftw_wisdom_file = NULL;
 	coords block = {0,0,1}, scaled = {0};
 	unsigned long long int offset = 0, maxframes = 0;
-	int samerate = false, samesize = false, spec = 0, dithering = false;
+	int samerate = false, samesize = false, dithering = false;
+	enum spectype spec = spectype_none;
+	enum ispectype ispec = ispectype_none;
 	AVRational out_rate = {0};
 	range bandpass = {0};
 	coeff boost[4] = {1,1,1,1};
@@ -182,6 +202,7 @@ int main(int argc, char* argv[]) {
 		{"help",required_argument,NULL,'h'},
 		{"threshold",required_argument,NULL,16},
 		{"coeff-limit",required_argument,NULL,17},
+		{"ispectrogram",optional_argument,NULL,18},
 		{0}
 	};
 	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Qh",gopts,&longoptind)) != -1)
@@ -195,9 +216,20 @@ int main(int argc, char* argv[]) {
 			case 'r': av_parse_video_rate(&out_rate,optarg); break;
 			case  2 : offset = strtoull(optarg,NULL,10); break;
 			case  3 : maxframes = strtoull(optarg,NULL,10); break;
-			case  4 : spec = 1;
-			          if(optarg) spec = strtol(optarg,NULL,10);
-			          break;
+			case  4 :
+				spec = spectype_abs;
+				if(optarg && !(spec = enum_val(spectype,optarg))) {
+					fprintf(stderr,"invalid spectrogram type '%s', use one of: %s\n",optarg,enum_keys(spectype));
+					exit(1);
+				}
+				break;
+			case  18:
+				ispec = ispectype_shift;
+				if(optarg && !(ispec = enum_val(ispectype,optarg))) {
+					fprintf(stderr,"invalid ispectrogram type '%s', use one of: %s\n",optarg,enum_keys(ispectype));
+					exit(1);
+				}
+				break;
 			case  5 : format = optarg; break;
 			case  6 : encoder = optarg; break;
 			case  7 : encopts = optarg; break;
@@ -243,7 +275,7 @@ int main(int argc, char* argv[]) {
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, colorspace);
 	ffapi_pix_fmt_filter* pix_fmt_filter = ffapi_pixfmts_8bit_or_float_pel;
-	if(spec > 0 && color_props.pix_fmt == AV_PIX_FMT_NONE)
+	if(spec && color_props.pix_fmt == AV_PIX_FMT_NONE)
 		pix_fmt_filter = pixfmts_8bit_or_float_rgb;
 
 	unsigned long w[4], h[4], components;
@@ -253,7 +285,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	if(spec > 0)
+	if(spec)
 		color_props.color_range = AVCOL_RANGE_JPEG;
 
 	source->w = *w; //compute subsampling separately
@@ -415,7 +447,7 @@ int main(int argc, char* argv[]) {
 	fftw(plan) planforward[components];
 	fftw(plan) planinverse[components];
 	for(int i = 0; i < components; i++) {
-		if(spec >= 0) {
+		if(!ispec) {
 			planforward[i] = NULL;
 			for(int j = 0; j < i; j++)
 				if(match_planes(block[i],block[j]) && match_planes(minbuf[i],minbuf[j])) {
@@ -429,7 +461,7 @@ int main(int argc, char* argv[]) {
 						coeffs,(const int[3]){minbuf[i].d,minbuf[i].h,minbuf[i].w},1,0,
 						(const fftw_r2r_kind[3]){FFTW_REDFT10,FFTW_REDFT10,FFTW_REDFT10},fftw_flags);
 		}
-		if(spec <= 0) {
+		if(!spec) {
 			planinverse[i] = NULL;
 			for(int j = 0; j < i; j++)
 				if(match_planes(scaled[i],scaled[j]) && match_planes(minbuf[i],minbuf[j])) {
@@ -451,12 +483,14 @@ int main(int argc, char* argv[]) {
 	intermediate scalefactor[components];
 	intermediate normalization[components];
 	intermediate c[components];
+	intermediate ic[components];
 	coeff quantizer[components];
 	coeff threshold[components][2];
 	for(int i = 0; i < components; i++) {
 		scalefactor[i] = (scaled[i].w*scaled[i].h*scaled[i].d)/(intermediate)(block[i].w*block[i].h*block[i].d);
 		normalization[i] = 1/mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d*8);
-		if(spec && spec != 1) c[i] = mi(127.5)/mi(log1p)(scaled[i].w*scaled[i].h*scaled[i].d*normalization[i]*255*8);
+		if(spec == spectype_shift) c[i] = mi(127.5)/mi(log1p)(scaled[i].w*scaled[i].h*scaled[i].d*normalization[i]*255*8);
+		if(ispec == ispectype_shift) ic[i] = mi(127.5)/mi(log1p)(scaled[i].w*scaled[i].h*scaled[i].d*normalization[i]*255*8);
 		quantizer[i] = (quant*8*mi(sqrt)(scaled[i].w*scaled[i].h*scaled[i].d));
 		threshold[i][0] = threshold_min*255/normalization[i]/normalization[i];
 		threshold[i][1] = threshold_max*255/normalization[i]/normalization[i];
@@ -508,12 +542,12 @@ int main(int argc, char* argv[]) {
 								pel = ((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x]*255;
 							else
 								pel = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
-							if(spec < 0)
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(copysign)((mi(expm1)(mi(fabs)((pel-mi(127.5))/c[i]))),pel-mi(127.5))/normalization[i];
+							if(ispec == ispectype_shift)
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(copysign)((mi(expm1)(mi(fabs)((pel-mi(127.5))/ic[i]))),pel-mi(127.5))/normalization[i];
 							else
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel;
 						}
-				if(spec >= 0) fftw(execute)(planforward[i]);
+				if(!ispec) fftw(execute)(planforward[i]);
 				coeff dc = coeffs[0];
 
 				if(coeff_limit) {
@@ -611,14 +645,14 @@ int main(int argc, char* argv[]) {
 								intermediate q = quantizer[i] * (z?mi(1.):mi(M_SQRT2)) * (y?mi(1.):mi(M_SQRT2)) * (x?mi(1.):mi(M_SQRT2));
 								coeffs_coded += !!(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(round)(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] / q)*q);
 							}
-				if(spec <= 0) fftw(execute)(planinverse[i]);
-				else if(spec == 1) c[i] = 255/mi(log1p)(mi(fabs)(dc * scalefactor[i] * normalization[i]));
+				if(!spec) fftw(execute)(planinverse[i]);
+				else if(spec == spectype_abs) c[i] = 255/mi(log1p)(mi(fabs)(dc * scalefactor[i] * normalization[i]));
 				for(int z = 0; z < scaled[i].d; z++)
 					for(int y = 0; y < scaled[i].h; y++)
 						for(int x = 0; x < scaled[i].w; x++) {
 							intermediate pel = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] * scalefactor[i];
-							if(spec > 0) {
-								if(spec == 1)
+							if(spec) {
+								if(spec == spectype_abs)
 									pel = c[i]*mi(log1p)(mi(fabs)(pel*normalization[i]));
 								else
 									pel = c[i]*mi(copysign)(mi(log1p)(mi(fabs)(pel*normalization[i])),pel)+mi(127.5);
