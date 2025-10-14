@@ -1,8 +1,8 @@
 spec - Generate invertible DCT frequency spectrums for viewing and editing.
 
 # Usage
-	spec -h -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float))  <infile> <outfile>
-	ispec -h -p -m <signmap> -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float))  <infile> <outfile>
+	spec -h -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float)) <infile> <outfile>
+	ispec -h -p -m <signmap> -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float)) <infile> <outfile>
 
 ## Spectrogram types
 

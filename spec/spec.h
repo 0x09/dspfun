@@ -85,7 +85,7 @@ assoc_gen(specparams)
 const static struct specopts spec_opt_defaults = { .csp="RGB", .gain = 1 };
 
 static void spec_usage(FILE* out) {
-	fprintf(out,"-g -c csp -t (%s) -R (%s) -T (%s) -S (%s) -G (%s(float)) ",
+	fprintf(out,"-g -c csp -t (%s) -R (%s) -T (%s) -S (%s) -G (%s(float))",
 	        enum_keys(spectype),enum_keys(rangetype),enum_keys(scaletype),enum_keys(signtype),enum_keys(gaintype));
 }
 
