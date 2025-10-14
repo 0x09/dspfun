@@ -688,13 +688,8 @@ int main(int argc, char* argv[]) {
 									((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
 								else
 									((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : mi(lround)(pel);
-								if(dithering) {
-									intermediate p;
-									if(float_pixels)
-										p = ((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x]*255;
-									else
-										p = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
-
+								if(dithering && !float_pixels) {
+									unsigned char p = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
 									intermediate dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-p/(normalization[i]*normalization[i]*scalefactor[i]);
 									if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*7/16;
 									if(y < scaled[i].h-1) {
