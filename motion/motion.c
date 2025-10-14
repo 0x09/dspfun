@@ -439,7 +439,7 @@ int main(int argc, char* argv[]) {
 		if(minbuf[i].w*minbuf[i].h*minbuf[i].d > mincomponent) mincomponent = minbuf[i].w*minbuf[i].h*minbuf[i].d;
 	}
 	coeff* coeffs = fftw(alloc_real)(mincomponent);
-	
+
 	bool float_pixels = in->pixdesc->flags & AV_PIX_FMT_FLAG_FLOAT;
 	void** pixels[components];
 	for(int i = 0; i < components; i++) {
@@ -449,6 +449,11 @@ int main(int argc, char* argv[]) {
 				pixels[i][b] = malloc(sizeof(float)*minbuf[i].w*minbuf[i].h*minbuf[i].d);
 			else
 				pixels[i][b] = malloc(minbuf[i].w*minbuf[i].h*minbuf[i].d);
+	}
+
+	if(dithering && (spec || float_pixels)) {
+		fprintf(stderr,"Warning: dithering cannot be used with spectrogram or float output, disabling.\n");
+		dithering = false;
 	}
 
 	if(fftw_wisdom_file)
@@ -683,7 +688,7 @@ int main(int argc, char* argv[]) {
 							else
 								((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : mi(lround)(pel);
 
-							if(dithering && !float_pixels && !spec) {
+							if(dithering) {
 								unsigned char p = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
 								intermediate dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-p/(normalization[i]*normalization[i]*scalefactor[i]);
 								if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*7/16;
