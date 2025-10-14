@@ -115,14 +115,40 @@ static int spec_opt_proc(struct specopts* opts, int c, const char* arg) {
 	switch(c) {
 		case 'g': opts->gamma = true; break;
 		case 'c': opts->csp = arg; break;
-		case 't': opts->params = *(struct specparams*)assoc_val(specparams,arg); break;
-		case 'R': opts->params.rangetype = enum_val(rangetype,arg); break;
-		case 'T': opts->params.scaletype = enum_val(scaletype,arg); break;
-		case 'S': opts->params.signtype = enum_val(signtype,arg); break;
+		case 't':
+			if(!enum_val(spectype,arg)) {
+				fprintf(stderr,"Invalid spectrogram type '%s', use one of: %s\n",arg,enum_keys(spectype));
+				return 1;
+			}
+			opts->params = *(struct specparams*)assoc_val(specparams,arg);
+			break;
+		case 'R':
+			if(!(opts->params.rangetype = enum_val(rangetype,arg))) {
+				fprintf(stderr,"Invalid range type '%s', use one of: %s\n",arg,enum_keys(rangetype));
+				return 1;
+			}
+			break;
+		case 'T':
+			if(!(opts->params.scaletype = enum_val(scaletype,arg))) {
+				fprintf(stderr,"Invalid scale type '%s', use one of: %s\n",arg,enum_keys(scaletype));
+				return 1;
+			}
+			break;
+		case 'S':
+			if(!(opts->params.signtype = enum_val(signtype,arg))) {
+				fprintf(stderr,"Invalid sign type '%s', use one of: %s\n",arg,enum_keys(signtype));
+				return 1;
+			}
+			break;
 		case 'G':
 			if(!(opts->params.gaintype = enum_val(gaintype,arg))) {
 				opts->params.gaintype = gaintype_custom;
-				opts->gain = strtold(arg,NULL);
+				char* endptr;
+				opts->gain = strtold(arg,&endptr);
+				if(endptr == arg) {
+					fprintf(stderr,"Invalid gain type '%s', use a numeric value or one of: %s\n",arg,enum_keys(gaintype));
+					return 1;
+				}
 			}
 			break;
 		default: return 1;
