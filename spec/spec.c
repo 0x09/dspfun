@@ -11,16 +11,18 @@ int main(int argc, char* argv[]) {
 	while((c = getopt(argc,argv,SPEC_OPT_FLAGS "h")) > 0) {
 		switch(c) {
 			case 'h':
-				printf("Usage: %s ",argv[0]);
+				printf("Usage: %s -h ",argv[0]);
 				spec_usage(stdout);
 				printf(" <infile> <outfile>\n");
-				printf("spec options\n");
+				printf("options:\n"
+				"  -h  This help text.\n\n");
+				printf("spectrogram options:\n");
 				spec_help();
 				return 0;
 			default: {
 				int err = spec_opt_proc(&opts,c,optarg);
 				if(err) {
-					fprintf(stderr,"Usage: %s ",argv[0]);
+					fprintf(stderr,"Usage: %s -h ",argv[0]);
 					spec_usage(stderr);
 					fprintf(stderr," <infile> <outfile>\n");
 					return 1;

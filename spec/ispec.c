@@ -17,19 +17,20 @@ int main(int argc, char* argv[]) {
 			case 'p': preserve_dc = true; break;
 			case 'm': signmap = optarg; break;
 			case 'h':
-				printf("Usage: %s -p -m <signmap> ",argv[0]);
+				printf("Usage: %s -h -p -m <signmap> ",argv[0]);
 				spec_usage(stdout);
 				printf(" <infile> <outfile>\n");
-				printf("options\n"
+				printf("options:\n"
+				"  -h            This help text.\n"
 				"  -p            Apply the DC coeffient from the original image if available.\n"
-				"  -m <signmap>  Path to a file generated with `spec -t sign`\n");
-				printf("spec options\n");
+				"  -m <signmap>  Path to a file generated with `spec -t sign`\n\n");
+				printf("spectrogram options:\n");
 				spec_help();
 				return 0;
 			default: {
 				int err = spec_opt_proc(&opts,opt,optarg);
 				if(err) {
-					fprintf(stderr,"Usage: %s -p -m <signmap> ",argv[0]);
+					fprintf(stderr,"Usage: %s -h -p -m <signmap> ",argv[0]);
 					spec_usage(stderr);
 					fprintf(stderr," <infile> <outfile>\n");
 					return 1;
