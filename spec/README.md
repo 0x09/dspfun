@@ -1,8 +1,45 @@
 spec - Generate invertible DCT frequency spectrums for viewing and editing.
 
 # Usage
-	spec -h -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float)) <infile> <outfile>
-	ispec -h -p -m <signmap> -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float)) <infile> <outfile>
+## spec
+    Usage: spec -h -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float)) <infile> <outfile>
+    options:
+      -h  This help text.
+    
+    spectrogram options:
+      -g             Generate in linear light
+      -c <channels>  Color channels to use. [default: RGB]
+      -t <template>  Spectrogram template. [default: abs]
+                     values: abs, shift, flat, sign, copy
+      -R <range>     Range to scale coffieicnts to. [default: one]
+                     values: one, dc, dcs
+      -T <scale>     How to scale coefficients. [default: log]
+                     values: linear, log
+      -S <sign>      How to represent signed values. [default: abs]
+                     values: abs, shift, saturate, retain
+      -G <gain>      Multiplier for scaling. [default: native]
+                     values: native, reference, custom
+
+## ispec
+    Usage: ispec -h -p -m <signmap> -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float)) <infile> <outfile>
+    options:
+      -h            This help text.
+      -p            Apply the DC coeffient from the original image if available.
+      -m <signmap>  Path to a file generated with `spec -t sign`
+    
+    spectrogram options:
+      -g             Generate in linear light
+      -c <channels>  Color channels to use. [default: RGB]
+      -t <template>  Spectrogram template. [default: abs]
+                     values: abs, shift, flat, sign, copy
+      -R <range>     Range to scale coffieicnts to. [default: one]
+                     values: one, dc, dcs
+      -T <scale>     How to scale coefficients. [default: log]
+                     values: linear, log
+      -S <sign>      How to represent signed values. [default: abs]
+                     values: abs, shift, saturate, retain
+      -G <gain>      Multiplier for scaling. [default: native]
+                     values: native, reference, custom
 
 ## Spectrogram types
 
@@ -13,11 +50,6 @@ Presets (-t):
 * flat - Linear-scaled shifted spectrum for editing with higher-bitdepth editors. (`-Rone -Tlinear -Sshift -G1`)
 * sign - Sign map. Can be provided to ispec to invert an `abs` spectrum. (`-Rone -Tlinear -Ssat -G1`)
 * copy - The unmodified spectrum in the range -1 through 1 for formats that support this. (`-Rone -Tlinear -Sretain -G1`)
-
-## Other options
--c: Color planes to operate on (R/G/B)
-
--g: Operate in linear RGB colorspace.
 
 # Examples
 
