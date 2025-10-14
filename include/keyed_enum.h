@@ -9,7 +9,7 @@
 #include <string.h>
 
 #define enum_gen_enum_elem(type,value) type##_##value,
-#define enum_gen_key_elem(type,value) "|" #value
+#define enum_gen_key_elem(type,value) ", " #value
 #define enum_gen_table_elem(type,value) #value,
 #define enum_gen_count_elem(type,value) 1+
 
@@ -19,7 +19,7 @@
 		type(enum_gen_enum_elem,type)\
 	};
 
-#define enum_keys(type) (enum##_##type##_##keys+1)
+#define enum_keys(type) (enum##_##type##_##keys+2)
 #define enum_gen_keys(type)\
 	const static char enum##_##type##_##keys[] = type(enum_gen_key_elem,type);
 

@@ -26,9 +26,9 @@ As a precaution the output rate can be limited to a very low or even fractional 
 	  -D, --damp <float>      Multiplier for the stop band. [default: 0]
       
 	  --spectrogram[=<type>]   Output a spectrogram visualization, optionally specifying the type. [default: abs]
-	                           type: abs|shift|flat|copy
+	                           type: abs, shift, flat, copy
 	  --ispectrogram[=<type>]  Invert an input spectrogram. [default: shift]
-	                           type: shift|flat|copy
+	                           type: shift, flat, copy
       
 	  -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.
 	  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero [default: 0-1].
