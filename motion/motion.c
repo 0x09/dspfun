@@ -554,15 +554,17 @@ int main(int argc, char* argv[]) {
 								pel = ((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x]*255;
 							else
 								pel = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
-							if(ispec == ispectype_shift)
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(copysign)((mi(expm1)(mi(fabs)((pel-mi(127.5))/ic[i]))),pel-mi(127.5))/normalization[i];
-							else if(ispec == ispectype_flat)
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = (pel-mi(127.5))*2/normalization[i]/normalization[i];
-							else if(ispec == ispectype_copy)
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/normalization[i]/normalization[i];
-							else
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel;
+
+							switch(ispec) {
+								case ispectype_shift: pel = mi(copysign)((mi(expm1)(mi(fabs)((pel-mi(127.5))/ic[i]))),pel-mi(127.5))/normalization[i]; break;
+								case ispectype_flat:  pel = (pel-mi(127.5))*2/normalization[i]/normalization[i]; break;
+								case ispectype_copy:  pel = pel/normalization[i]/normalization[i]; break;
+								case ispectype_none: break;
+							}
+
+							coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel;
 						}
+
 				if(!ispec) fftw(execute)(planforward[i]);
 				coeff dc = coeffs[0];
 
@@ -666,37 +668,29 @@ int main(int argc, char* argv[]) {
 				for(int z = 0; z < scaled[i].d; z++)
 					for(int y = 0; y < scaled[i].h; y++)
 						for(int x = 0; x < scaled[i].w; x++) {
-							intermediate pel = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] * scalefactor[i];
-							if(spec) {
-								if(spec == spectype_abs)
-									pel = c[i]*mi(log1p)(mi(fabs)(pel*normalization[i]));
-								else if(spec == spectype_shift)
-									pel = c[i]*mi(copysign)(mi(log1p)(mi(fabs)(pel*normalization[i])),pel)+mi(127.5);
-								else if(spec == spectype_flat)
-									pel = pel*normalization[i]*normalization[i]/2+mi(127.5);
-								else if(spec == spectype_copy)
-									pel *=  normalization[i]*normalization[i];
+							intermediate pel = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] * scalefactor[i] * normalization[i];
 
-								if(float_pixels)
-									((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
-								else
-									((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(lround)(pel);
+							switch(spec) {
+								case spectype_abs:   pel = c[i]*mi(log1p)(mi(fabs)(pel)); break;
+								case spectype_shift: pel = c[i]*mi(copysign)(mi(log1p)(mi(fabs)(pel)),pel)+mi(127.5); break;
+								case spectype_flat:  pel = pel*normalization[i]/2+mi(127.5); break;
+								case spectype_copy:
+								case spectype_none:  pel *= normalization[i]; break;
 							}
-							else {
-								pel *= normalization[i]*normalization[i];
-								if(float_pixels)
-									((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
-								else
-									((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : mi(lround)(pel);
-								if(dithering && !float_pixels) {
-									unsigned char p = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
-									intermediate dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-p/(normalization[i]*normalization[i]*scalefactor[i]);
-									if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*7/16;
-									if(y < scaled[i].h-1) {
-										if(x) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x-1] += dp*3/16;
-										coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x] += dp*5/16;
-										if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x+1] += dp/16;
-									}
+
+							if(float_pixels)
+								((float*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel/255;
+							else
+								((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel > 255 ? 255 : pel < 0 ? 0 : mi(lround)(pel);
+
+							if(dithering && !float_pixels && !spec) {
+								unsigned char p = ((unsigned char*)pblock)[(z*minbuf[i].h+y)*minbuf[i].w+x];
+								intermediate dp = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]-p/(normalization[i]*normalization[i]*scalefactor[i]);
+								if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x+1] += dp*7/16;
+								if(y < scaled[i].h-1) {
+									if(x) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x-1] += dp*3/16;
+									coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x] += dp*5/16;
+									if(x < scaled[i].w-1) coeffs[(z*minbuf[i].h+y+1)*minbuf[i].w+x+1] += dp/16;
 								}
 							}
 						}
