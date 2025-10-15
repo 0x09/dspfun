@@ -466,7 +466,7 @@ int main(int argc, char* argv[]) {
 
 		ffapi_write_frame(ffctx, frame);
 		if(!quiet)
-			fprintf(stderr, "\r%*zu / %zu", pad, i-offset, nframes);
+			fprintf(stderr, "\r%*zu / %zu", pad, i-offset+1, nframes);
 
 		// just clear intermediate coords instead of wiping the entire frame
 		if(intermediates && visualize)
