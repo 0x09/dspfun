@@ -2,7 +2,7 @@ spec - Generate invertible DCT frequency spectrums for viewing and editing.
 
 # Usage
 ## spec
-    Usage: spec -h -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float)) <infile> <outfile>
+    Usage: spec [options] <infile> <outfile>
     options:
       -h  This help text.
     
@@ -21,7 +21,7 @@ spec - Generate invertible DCT frequency spectrums for viewing and editing.
                      values: native, reference, custom
 
 ## ispec
-    Usage: ispec -h -p -m <signmap> -g -c csp -t (abs, shift, flat, sign, copy) -R (one, dc, dcs) -T (linear, log) -S (abs, shift, saturate, retain) -G (native, reference, custom(float)) <infile> <outfile>
+    Usage: ispec [options] <infile> <outfile>
     options:
       -h            This help text.
       -p            Apply the DC coeffient from the original image if available.

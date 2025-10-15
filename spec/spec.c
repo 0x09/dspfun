@@ -11,9 +11,7 @@ int main(int argc, char* argv[]) {
 	while((c = getopt(argc,argv,SPEC_OPT_FLAGS "h")) > 0) {
 		switch(c) {
 			case 'h':
-				printf("Usage: %s -h ",argv[0]);
-				spec_usage(stdout);
-				printf(" <infile> <outfile>\n");
+				printf("Usage: %s [options] <infile> <outfile>\n",argv[0]);
 				printf("options:\n"
 				"  -h  This help text.\n\n");
 				printf("spectrogram options:\n");

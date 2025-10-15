@@ -17,9 +17,7 @@ int main(int argc, char* argv[]) {
 			case 'p': preserve_dc = true; break;
 			case 'm': signmap = optarg; break;
 			case 'h':
-				printf("Usage: %s -h -p -m <signmap> ",argv[0]);
-				spec_usage(stdout);
-				printf(" <infile> <outfile>\n");
+				printf("Usage: %s [options] <infile> <outfile>\n",argv[0]);
 				printf("options:\n"
 				"  -h            This help text.\n"
 				"  -p            Apply the DC coeffient from the original image if available.\n"
