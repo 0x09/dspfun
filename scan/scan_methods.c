@@ -265,12 +265,12 @@ static void* init_magnitude(size_t width, size_t height, size_t channels, coeff*
 	coeff last_val = -1;
 	size_t j = 0;
 	for(size_t i = 0; i < len; i++) {
+		if(!scan_precomputed_add_coord(p,j,sort[i].index%width,sort[i].index/width))
+			goto error;
 		if(sort[i].val != last_val) {
 			j++;
 			last_val = sort[i].val;
 		}
-		if(!scan_precomputed_add_coord(p,j,sort[i].index%width,sort[i].index/width))
-			goto error;
 	}
 
 end:
