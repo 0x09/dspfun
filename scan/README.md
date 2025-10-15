@@ -25,6 +25,7 @@ Flower image part way through a radial scan, showing intermediates. [Link to ful
 	   -p, --pruned-idct <bool>          use built-in pruned idct instead of fftw, faster on small scan intervals [default: auto based on scan interval]
 	   -f, --serialization-file <path>   serialize scan to file
 	   -t, --serialization-format <fmt>  scan format to serialize (with -f)
+	   -P, --measure-parity              print the scan index at which the reconstructed image becomes identical to the original
 
 	ffmpeg options:
 	   --ff-format <avformat>  output format

@@ -63,6 +63,7 @@ void help(bool fullhelp) {
 		"   -p, --pruned-idct <bool>          use built-in pruned idct instead of fftw, faster on small scan intervals [default: auto based on scan interval]\n"
 		"   -f, --serialization-file <path>   serialize scan to file\n"
 		"   -t, --serialization-format <fmt>  scan format to serialize (with -f)\n"
+		"   -P, --measure-parity              print the scan index at which the reconstructed image becomes identical to the original\n"
 		"\n"
 		"ffmpeg options:\n"
 		"   --ff-format <avformat>  output format\n"
@@ -124,7 +125,7 @@ int main(int argc, char* argv[]) {
 	int loglevel = 0;
 	const char* method = "diag",* scan_options = NULL,* serialized_scan = NULL;
 	size_t nframes = 0, offset = 0;
-	bool spec = false, invert = false, intermediates = false, linear = false, max_intermediates = false, visualize = false, fill_offset = true, quiet = false;
+	bool spec = false, invert = false, intermediates = false, linear = false, max_intermediates = false, visualize = false, fill_offset = true, quiet = false, measure_parity = false;
 	int use_fftw = -1, fftw_threads = 1;
 	intermediate gain = 0;
 	struct spec_params sparams = {0};
@@ -151,6 +152,7 @@ int main(int argc, char* argv[]) {
 		{"pruned-idct",required_argument,NULL,'p'},
 		{"serialization-file",required_argument,NULL,'f'},
 		{"serialization-format",required_argument,NULL,'t'},
+		{"measure-parity",no_argument,NULL,'P'},
 
 		// ffapi opts
 		{"ff-opts",required_argument,NULL,2},
@@ -168,7 +170,7 @@ int main(int argc, char* argv[]) {
 		{0}
 	};
 
-	while((opt = getopt_long(argc,argv,"hHqm:o:vsiMS:In:O:gp:f:t:",gopts,&longoptind)) != -1)
+	while((opt = getopt_long(argc,argv,"hHqm:o:vsiMS:In:O:gp:f:t:P",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'h':
 			case 'H': help(opt == 'H'); break;
@@ -194,6 +196,7 @@ int main(int argc, char* argv[]) {
 				}
 			} break;
 			case 'O': offset = strtol(optarg,NULL,10); break;
+			case 'P': measure_parity = true; break;
 			case 1: fill_offset = false; break;
 
 			case 2: oopt = optarg; break;
@@ -269,8 +272,17 @@ int main(int argc, char* argv[]) {
 
 	coeff* coeffs = fftw(alloc_real)(width*height*channels);
 	MagickExportImagePixels(wand,0,0,width,height,"RGB",TypePixel,coeffs);
+
+	size_t original_depth = MagickGetImageDepth(wand);
+
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
+
+	coeff* original = NULL;
+	if(measure_parity) {
+		original = malloc(sizeof(*original)*width*height*channels);
+		memcpy(original,coeffs,sizeof(*original)*width*height*channels);
+	}
 
 	fftw(init_threads)();
 	fftw(plan_with_nthreads)(fftw_threads);
@@ -392,6 +404,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	int pad = log10f(nframes/step)+1;
+	size_t parity_index = nframes;
 	for(size_t i = offset; i < offset+nframes; i++) {
 		size_t ncoords = 0;
 		for(size_t s = i*step; s < i*step+step && s < limit; s++) {
@@ -473,9 +486,36 @@ int main(int argc, char* argv[]) {
 			for(size_t ci = 0; ci < ncoords; ci++)
 				for(size_t z = 0; z < channels; z++)
 					ffapi_setpelf(ffctx, frame, coords[ci][1]+width, coords[ci][0]+height, z, 0);
+
+		if(measure_parity && parity_index > i-offset) {
+			bool reached_parity = true;
+			if(original_depth < 32) {
+				uint16_t scale = (1u << original_depth)-1;
+				for(size_t j = 0; j < width*height*channels; j++)
+					if(mc(lround)(original[j]*scale) != mc(lround)(sum[j]*scale)) {
+						reached_parity = false;
+						break;
+					}
+			}
+			else
+				for(size_t j = 0; j < width*height*channels; j++)
+					if((float)original[j] != (float)sum[j]) {
+						reached_parity = false;
+						break;
+					}
+			if(reached_parity)
+				parity_index = i-offset;
+		}
 	}
 	if(!quiet)
 		fprintf(stderr,"\n");
+
+	if(measure_parity) {
+		if(parity_index == nframes)
+			fprintf(stderr,"Didn't reach parity with the original image before the end of the scan.\n");
+		else
+			fprintf(stderr,"Reached parity with the original image at scan index %zu\n",parity_index);
+	}
 
 	free(sum);
 	spec_destroy(sp);
@@ -491,6 +531,7 @@ int main(int argc, char* argv[]) {
 	fftw(free)(image);
 	fftw(free)(reconstruction);
 	free(coords);
+	free(original);
 
 ffapi_end:
 	ffapi_free_frame(frame);
