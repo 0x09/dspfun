@@ -26,8 +26,13 @@
 	X(T,flat)\
 	X(T,copy)
 
+#define preserve_dctype(X,T)\
+	X(T,dc)\
+	X(T,grey)
+
 enum_gen(spectype)
 enum_gen(ispectype)
+enum_gen(preserve_dctype)
 
 static bool ffapi_pixfmts_8bit_or_float_pel(const AVPixFmtDescriptor* desc) {
 	return ffapi_pixfmts_8bit_pel(desc) || ffapi_pixfmts_32_bit_float_pel(desc);
@@ -131,8 +136,8 @@ static void help() {
 	"  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero [default: 0-1].\n"
 	"  --coeff-limit <limit>   Limit output to only the top N frequency coefficients per block.\n"
 	"  -d, --dither            Apply 2D Floyd-Steinberg dithering to the high-precision transform products.\n"
-	"  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p.\n"
-	"                          type: dc (default), grey.\n"
+	"  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p. [default: dc]\n"
+	"                          type: %s\n"
 	"  --eval <expression>     Apply a formula to coefficients using FFmpeg's expression evaluator.\n"
 	"                          Provided arguments are coefficient \"c\" in a non-uniform range 0-1, indexes as \"x\", \"y\", \"z\", and \"i\" (color component), and dimensions \"width\", \"height\", \"depth\", and \"components\".\n"
 	"\n"
@@ -156,7 +161,8 @@ static void help() {
 	"  --decopts <optstring>   Option string containing FFmpeg decoder options for the input file.\n"
 	"  --loglevel <int>        Integer FFmpeg log level [default: 16 (AV_LOG_ERROR)]\n",
 	enum_keys(spectype),
-	enum_keys(ispectype)
+	enum_keys(ispectype),
+	enum_keys(preserve_dctype)
 	);
 	exit(0);
 }
@@ -170,12 +176,13 @@ int main(int argc, char* argv[]) {
 	int samerate = false, samesize = false, dithering = false;
 	enum spectype spec = spectype_none;
 	enum ispectype ispec = ispectype_none;
+	enum preserve_dctype preserve_dc = preserve_dctype_none;
 	AVRational out_rate = {0};
 	range bandpass = {0};
 	coeff boost[4] = {1,1,1,1};
 	coeff damp[4] = {0,0,0,0};
 	intermediate quant = 0;
-	int preserve_dc = 0, fftw_flags = FFTW_ESTIMATE, fftw_threads = 1;
+	int fftw_flags = FFTW_ESTIMATE, fftw_threads = 1;
 	int loglevel = AV_LOG_ERROR;
 	bool quiet = false;
 	coeff threshold_min = 0, threshold_max = 0;
@@ -245,7 +252,13 @@ int main(int argc, char* argv[]) {
 			case  8 : iformat = optarg; break;
 			case  9 : decopts = optarg; break;
 			case 10 : loglevel = strtol(optarg,NULL,10); break;
-			case 11 : preserve_dc = optarg && !strcmp(optarg,"grey") ? 2 : 1; break;
+			case 11 :
+				preserve_dc = preserve_dctype_dc;
+				if(optarg && !(preserve_dc = enum_val(preserve_dctype,optarg))) {
+					fprintf(stderr,"invalid preserve-dc type '%s', use one of: %s\n",optarg,enum_keys(preserve_dctype));
+					exit(1);
+				}
+				break;
 			case 12 : exprstr = optarg; break;
 			case 13 :
 				if((fftw_flags = parse_fftw_flag(optarg)) < 0) {
@@ -654,9 +667,9 @@ int main(int argc, char* argv[]) {
 				if(preserve_dc) {
 					bool dcstop = bandpass.begin[i].d || bandpass.begin[i].h || bandpass.begin[i].w;
 					if(expr || dcstop || boost[i] != 1 || threshold_max) {
-						if(preserve_dc < 2)
+						if(preserve_dc == preserve_dctype_dc)
 							coeffs[0] = dc;
-						else
+						else if(preserve_dc == preserve_dctype_grey)
 							coeffs[0] += (1-(dcstop ? damp[i] : boost[i])) * mi(127.5)/(normalization[i]*normalization[i]*scalefactor[i]);
 					}
 				}

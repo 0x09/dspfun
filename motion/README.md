@@ -34,8 +34,8 @@ As a precaution the output rate can be limited to a very low or even fractional 
 	  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero [default: 0-1].
 	  --coeff-limit <limit>   Limit output to only the top N frequency coefficients per block.
 	  -d, --dither            Apply 2D Floyd-Steinberg dithering to the high-precision transform products.
-	  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p.
-	                          type: dc (default), grey.
+	  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p. [default: dc]
+	                          type: dc, grey
 	  --eval <expression>     Apply a formula to coefficients using FFmpeg's expression evaluator.
 	                          Provided arguments are coefficient "c" in a non-uniform range 0-1, indexes as "x", "y", "z", and "i" (color component), and dimensions "width", "height", "depth", and "components".
       
