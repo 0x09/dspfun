@@ -139,7 +139,7 @@ static void help() {
 	"  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p. [default: dc]\n"
 	"                          type: %s\n"
 	"  --eval <expression>     Apply a formula to coefficients using FFmpeg's expression evaluator.\n"
-	"                          Provided arguments are coefficient \"c\" in a non-uniform range 0-1, indexes as \"x\", \"y\", \"z\", and \"i\" (color component), and dimensions \"width\", \"height\", \"depth\", and \"components\".\n"
+	"                          Provided arguments are coefficient \"c\" in a uniform range 0-1, indexes as \"x\", \"y\", \"z\", and \"i\" (color component), and dimensions \"width\", \"height\", \"depth\", and \"components\".\n"
 	"\n"
 	"  --fftw-planning-method <m>  How thoroughly to plan the transform: estimate (default), measure, patient, exhaustive. Higher values trade startup time for transform time.\n"
 	"  --fftw-wisdom-file <file>   File to read accumulated FFTW plan wisdom from and save new wisdom to. Can be used to save startup time for higher planning methods for repeat block sizes.\n"
@@ -583,7 +583,16 @@ int main(int argc, char* argv[]) {
 							coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel;
 						}
 
-				if(!ispec) fftw(execute)(planforward[i]);
+				if(!ispec) {
+					fftw(execute)(planforward[i]);
+
+					// normalize coeffs to uniform range
+					for(int z = 0; z < active[i].d; z++)
+						for(int y = 0; y < active[i].h; y++)
+							for(int x = 0; x < active[i].w; x++)
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= 2*mi(M_SQRT2) / ((x ? 1 : mi(M_SQRT2)) * (y ? 1 : mi(M_SQRT2)) * (z ? 1 : mi(M_SQRT2)));
+				}
+
 				coeff dc = coeffs[0];
 
 				if(coeff_limit) {
@@ -677,11 +686,18 @@ int main(int argc, char* argv[]) {
 				if(quant)
 					for(int z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
-							for(int x = 0; x < active[i].w; x++) {
-								intermediate q = quantizer[i] * (z?mi(1.):mi(M_SQRT2)) * (y?mi(1.):mi(M_SQRT2)) * (x?mi(1.):mi(M_SQRT2));
-								coeffs_coded += !!(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(round)(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] / q)*q);
-							}
-				if(!spec) fftw(execute)(planinverse[i]);
+							for(int x = 0; x < active[i].w; x++)
+								coeffs_coded += !!(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(round)(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] / quantizer[i])*quantizer[i]);
+
+				if(!spec) {
+					// reverse uniform range normalization before inverting
+					for(int z = 0; z < active[i].d; z++)
+						for(int y = 0; y < active[i].h; y++)
+							for(int x = 0; x < active[i].w; x++)
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= ((x ? 1 : mi(M_SQRT2)) * (y ? 1 : mi(M_SQRT2)) * (z ? 1 : mi(M_SQRT2))) / (2*mi(M_SQRT2));
+
+					fftw(execute)(planinverse[i]);
+				}
 				else if(spec == spectype_abs) c[i] = 255/mi(log1p)(mi(fabs)(dc * scalefactor[i] * normalization[i]));
 				for(int z = 0; z < scaled[i].d; z++)
 					for(int y = 0; y < scaled[i].h; y++)

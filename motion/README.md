@@ -37,7 +37,7 @@ As a precaution the output rate can be limited to a very low or even fractional 
 	  --preserve-dc[=<type>]  Preserve the DC coefficient when applying a band pass filter with -p. [default: dc]
 	                          type: dc, grey
 	  --eval <expression>     Apply a formula to coefficients using FFmpeg's expression evaluator.
-	                          Provided arguments are coefficient "c" in a non-uniform range 0-1, indexes as "x", "y", "z", and "i" (color component), and dimensions "width", "height", "depth", and "components".
+	                          Provided arguments are coefficient "c" in a uniform range 0-1, indexes as "x", "y", "z", and "i" (color component), and dimensions "width", "height", "depth", and "components".
       
 	  --fftw-planning-method <m>  How thoroughly to plan the transform: estimate (default), measure, patient, exhaustive. Higher values trade startup time for transform time.
 	  --fftw-wisdom-file <file>   File to read accumulated FFTW plan wisdom from and save new wisdom to. Can be used to save startup time for higher planning methods for repeat block sizes.
