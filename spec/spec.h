@@ -67,7 +67,7 @@ struct specopts {
 	const char* csp;
 	const char* input,* output;
 	struct specparams params;
-	intermediate gain, clip, quant;
+	intermediate gain;
 };
 
 #define specparams(X)\
