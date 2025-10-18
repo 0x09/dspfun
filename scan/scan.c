@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
 			case 5: loglevel = strtol(optarg, NULL, 10); break;
 			case 6: av_parse_video_rate(&fps, optarg); break;
 
-			case 7: gain = strtold(optarg,NULL); break;
+			case 7: gain = precision_strtoi(optarg,NULL); break;
 			case 8: {
 				const char* e = spec_params_parse(&sparams,optarg,"=",":");
 				if(e) {

@@ -144,7 +144,7 @@ static int spec_opt_proc(struct specopts* opts, int c, const char* arg) {
 			if(!(opts->params.gaintype = enum_val(gaintype,arg))) {
 				opts->params.gaintype = gaintype_custom;
 				char* endptr;
-				opts->gain = strtold(arg,&endptr);
+				opts->gain = precision_strtoi(arg,&endptr);
 				if(endptr == arg) {
 					fprintf(stderr,"Invalid gain type '%s', use a numeric value or one of: %s\n",arg,enum_keys(gaintype));
 					return 1;

@@ -240,7 +240,7 @@ static inline int sort_descending(const void* left, const void* right) {
 static void* init_magnitude(size_t width, size_t height, size_t channels, coeff* coeffs, const char* args) {
 	intermediate qfactor = 0;
 	if(args)
-		qfactor = strtod(args,NULL);
+		qfactor = precision_strtoi(args,NULL);
 
 	struct scan_precomputed* p = calloc(1,sizeof(*p));
 

@@ -6,6 +6,8 @@
 #ifndef PRECISION_H
 #define PRECISION_H
 
+#include <stdlib.h>
+
 #define F 1
 #define D 2
 #define L 4
@@ -44,18 +46,21 @@
 	#define COEFF_SUFFIX f
 	#define COEFF_SPECIFIER "f"
 	#define TypePixel FloatPixel
+	#define precision_strtoc(nptr,endptr) strtof(nptr,endptr)
 #elif COEFF_PRECISION == L
 	#define COEFF_TYPE long double
 	#define COEFF_NAME LDBL
 	#define COEFF_SUFFIX l
 	#define COEFF_SPECIFIER "Lf"
 	// TypePixel not supported in this configuration
+	#define precision_strtoc(nptr,endptr) strtold(nptr,endptr)
 #else // D
 	#define COEFF_TYPE double
 	#define COEFF_NAME DBL
 	#define COEFF_SUFFIX
 	#define COEFF_SPECIFIER "lf"
 	#define TypePixel DoublePixel
+	#define precision_strtoc(nptr,endptr) strtod(nptr,endptr)
 #endif
 
 #if INTERMEDIATE_PRECISION == F
@@ -63,16 +68,19 @@
 	#define INTERMEDIATE_NAME FLT
 	#define INTERMEDIATE_SUFFIX f
 	#define INTERMEDIATE_SPECIFIER "f"
+	#define precision_strtoi(nptr,endptr) strtof(nptr,endptr)
 #elif INTERMEDIATE_PRECISION == D
 	#define INTERMEDIATE_TYPE double
 	#define INTERMEDIATE_NAME DBL
 	#define INTERMEDIATE_SUFFIX
 	#define INTERMEDIATE_SPECIFIER "lf"
+	#define precision_strtoi(nptr,endptr) strtod(nptr,endptr)
 #else // L
 	#define INTERMEDIATE_TYPE long double
 	#define INTERMEDIATE_NAME LDBL
 	#define INTERMEDIATE_SUFFIX l
 	#define INTERMEDIATE_SPECIFIER "Lf"
+	#define precision_strtoi(nptr,endptr) strtold(nptr,endptr)
 #endif
 
 typedef INTERMEDIATE_TYPE intermediate;

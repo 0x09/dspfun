@@ -248,7 +248,7 @@ int main(int argc, char* argv[]) {
 			case  5 : format = optarg; break;
 			case  6 : encoder = optarg; break;
 			case  7 : encopts = optarg; break;
-			case 'q': quant = strtold(optarg,NULL); break;
+			case 'q': quant = precision_strtoi(optarg,NULL); break;
 			case  8 : iformat = optarg; break;
 			case  9 : decopts = optarg; break;
 			case 10 : loglevel = strtol(optarg,NULL,10); break;
