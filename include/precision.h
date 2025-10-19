@@ -3,6 +3,22 @@
  * Copyright 2014-2018 0x09.net.
  */
 
+/*
+ * This header defines a set of types and macros which can be used to comprehensively control the precision of floating point math at compile time
+ * with two levels to sematically separate the storage precision of floating point values (coeff type, named for its use storing DCT coefficients)
+ * from the by default higher precision of intermediate calculations (intermediate type).
+ *
+ * For example the following code uses the coeff typedef and function-like macro `mi()`, which adds the suffix for the intermediate precision defined at compile time:
+ *    coeff x = mi(cos)(P_PIi * mi(2.0))
+ * When compiled with -DCOEFF_PRECISION=D -DINTERMEDIATE_PRECISION=L or just -DPRECISION=DL this is expanded to:
+ *    double x = cosl(3.14[..]l * 2.0l)
+ * but when compiled with -DCOEFF_PRECISION=F -DINTERMEDIATE_PRECISION=F or -DPRECISION=FF expands to:
+ *    float x = cosf(3.14[..]f * 2.0f)
+ * and so on for any combination of the basic floating point types.
+ *
+ * Other than macros for types, math.h functions and constants, this header includes macros for using the types with printf/scanf, FFTW, and MagickWand pixel types.
+ */
+
 #ifndef PRECISION_H
 #define PRECISION_H
 
