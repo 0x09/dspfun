@@ -17,7 +17,6 @@
 #include <libavutil/eval.h>
 
 #include "magickwand.h"
-#include "longmath.h"
 #include "precision.h"
 #include "ffapi.h"
 

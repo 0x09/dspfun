@@ -7,7 +7,7 @@ CFLAGS := -D_GNU_SOURCE -DCOEFF_PRECISION=$(COEFF_PRECISION) -DINTERMEDIATE_PREC
 LDLIBS := $(shell pkg-config --libs MagickWand $(fftw) libavcodec libavformat libswscale libavutil) -lm
 
 vpath %.h ../include
-DEPS = precision.h magickwand.h longmath.h ffapi.h
+DEPS = precision.h magickwand.h ffapi.h
 TOOLS = zoom
 
 all: $(TOOLS)

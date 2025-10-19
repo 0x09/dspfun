@@ -14,7 +14,6 @@
 #include <getopt.h>
 
 #include "precision.h"
-#include "longmath.h"
 #include "magickwand.h"
 
 #define absf(f,x) mi(copysign)(mi(f)(mc(fabs)(x)),x)

@@ -13,7 +13,6 @@
 #include <unistd.h>
 
 #include "magickwand.h"
-#include "longmath.h"
 #include "precision.h"
 
 #ifndef I
