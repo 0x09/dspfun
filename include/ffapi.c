@@ -395,8 +395,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	avcodec_parameters_from_context(out->st->codecpar,avc);
 
 	if(!strcmp(file,"ffplay:")) {
-		char* cmd;
-		asprintf(&cmd,
+		char* cmd = av_asprintf(
 			"ffplay -loglevel quiet -f %s -vcodec %s -video_size %dx%d -framerate %d/%d -pixel_format %s -color_range %s -color_primaries %s -color_trc %s -colorspace %s -chroma_sample_location %s -",
 			out->fmt->oformat->name, enc->name, avc->width, avc->height, rate.num, rate.den,
 			av_pix_fmt_desc_get(avc->pix_fmt)->name,
@@ -406,13 +405,15 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 			(avc->colorspace == AVCOL_SPC_RGB ? "rgb" : av_color_space_name(avc->colorspace)),
 			av_chroma_location_name(avc->chroma_sample_location)
 		);
+		if(!cmd)
+			goto error;
 
 		av_log(NULL,AV_LOG_INFO,"ffapi: Invoking %s\n",cmd);
 		if(!(out->fmt->opaque = popen(cmd,"w"))) {
-			free(cmd);
+			av_free(cmd);
 			goto error;
 		}
-		free(cmd);
+		av_free(cmd);
 		out->fmt->io_close2 = ffapi_io_close_pipe;
 		int fd = fileno((FILE*)out->fmt->opaque);
 		av_free(out->fmt->url);
