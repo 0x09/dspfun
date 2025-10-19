@@ -30,7 +30,7 @@ intermediate mag(complex_intermediate coeff) {
 	return mi(cabs)(coeff);
 }
 intermediate phase(complex_intermediate coeff) {
-	return mi(carg)(coeff+I*INTERMEDIATE_CONST(EPSILON))/mi(M_PI);
+	return mi(carg)(coeff+I*INTERMEDIATE_CONST(EPSILON))/P_PIi;
 }
 
 void linear(intermediate coeff[3], intermediate scale) {
@@ -77,57 +77,57 @@ void hue(intermediate coeff[3]) {
 }
 
 complex_intermediate dft(long long k, long long n, unsigned long long N, bool ortho) {
-	return mi(cexp)((-2*I*mi(M_PI)*k*n)/N);
+	return mi(cexp)((-2*I*P_PIi*k*n)/N);
 }
 complex_intermediate idft(long long k, long long n, unsigned long long N, bool ortho) {
-	return mi(cexp)((2*I*mi(M_PI)*k*n)/N);
+	return mi(cexp)((2*I*P_PIi*k*n)/N);
 }
 complex_intermediate dct1(long long k, long long n, unsigned long long N, bool ortho) {
-	intermediate coeff = (n && N-1-n) ? mi(cos)((mi(M_PI)*(k*n))/(N-1)) : (n ? mi(pow)(-1,k) : mi(1.))/2;
+	intermediate coeff = (n && N-1-n) ? mi(cos)((P_PIi*(k*n))/(N-1)) : (n ? mi(pow)(-1,k) : mi(1.))/2;
 	if(ortho)
-		coeff *= mi(M_SQRT2);
+		coeff *= P_SQRT2i;
 	return coeff;
 }
 complex_intermediate dct2(long long k, long long n, unsigned long long N, bool ortho) {
-	intermediate coeff = mi(cos)((mi(M_PI)*(k*(2*n+1)))/(2*N));
+	intermediate coeff = mi(cos)((P_PIi*(k*(2*n+1)))/(2*N));
 	if(ortho)
-		coeff *= (k ? mi(M_SQRT2) : 1);
+		coeff *= (k ? P_SQRT2i : 1);
 	return coeff;
 }
 complex_intermediate dct3(long long k, long long n, unsigned long long N, bool ortho) {
-	intermediate coeff = n ? mi(cos)((mi(M_PI)*(n*(2*k+1)))/(2*N)) : mi(0.5);
+	intermediate coeff = n ? mi(cos)((P_PIi*(n*(2*k+1)))/(2*N)) : mi(0.5);
 	if(ortho)
-		coeff *= n ? mi(M_SQRT2) : 2;
+		coeff *= n ? P_SQRT2i : 2;
 	return coeff;
 }
 complex_intermediate dct4(long long k, long long n, unsigned long long N, bool ortho) {
-	intermediate coeff = mi(cos)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
+	intermediate coeff = mi(cos)((P_PIi*((2*k+1)*(2*n+1)))/(4*N));
 	if(ortho)
-		coeff *= mi(M_SQRT2);
+		coeff *= P_SQRT2i;
 	return coeff;
 }
 complex_intermediate dst1(long long k, long long n, unsigned long long N, bool ortho) {
-	intermediate coeff = mi(sin)((mi(M_PI)*((k+1)*(n+1)))/(N+1));
+	intermediate coeff = mi(sin)((P_PIi*((k+1)*(n+1)))/(N+1));
 	if(ortho)
-		coeff *= mi(M_SQRT2);
+		coeff *= P_SQRT2i;
 	return coeff;
 }
 complex_intermediate dst2(long long k, long long n, unsigned long long N, bool ortho) {
-	intermediate coeff = mi(sin)((mi(M_PI)*((k+1)*(2*n+1)))/(2*N));
+	intermediate coeff = mi(sin)((P_PIi*((k+1)*(2*n+1)))/(2*N));
 	if(ortho)
-		coeff *= (N-1-k) ? mi(M_SQRT2) : 1;
+		coeff *= (N-1-k) ? P_SQRT2i : 1;
 	return coeff;
 }
 complex_intermediate dst3(long long k, long long n, unsigned long long N, bool ortho) {
-	intermediate coeff = (N-1-n) ? mi(sin)((mi(M_PI)*((2*k+1)*(n+1)))/(2*N)) : mi(pow)(-1,k)/2;
+	intermediate coeff = (N-1-n) ? mi(sin)((P_PIi*((2*k+1)*(n+1)))/(2*N)) : mi(pow)(-1,k)/2;
 	if(ortho)
-		coeff *= (N-1-n) ? mi(M_SQRT2) : 2;
+		coeff *= (N-1-n) ? P_SQRT2i : 2;
 	return coeff;
 }
 complex_intermediate dst4(long long k, long long n, unsigned long long N, bool ortho) {
-	intermediate coeff = mi(sin)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
+	intermediate coeff = mi(sin)((P_PIi*((2*k+1)*(2*n+1)))/(4*N));
 	if(ortho)
-		coeff *= mi(M_SQRT2);
+		coeff *= P_SQRT2i;
 	return coeff;
 }
 complex_intermediate wht(long long k, long long n, unsigned long long N, bool ortho) {
@@ -138,7 +138,7 @@ complex_intermediate wht(long long k, long long n, unsigned long long N, bool or
 	return mi(pow)(-1,sig);
 }
 complex_intermediate dht(long long k, long long n, unsigned long long N, bool ortho) {
-	return mi(M_SQRT2) * mi(cos)(2*mi(M_PI)*n*k/N - mi(M_PI)/4);
+	return P_SQRT2i * mi(cos)(2*P_PIi*n*k/N - P_PIi/4);
 }
 
 typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } coords;

@@ -62,7 +62,7 @@ static size_t generate_scaled_basis(coeff** out_basis, enum scaling_type scaling
 					N = sampling_len;
 					break;
 			}
-			basis[b*(ncomponents-1)+n-1] = mi(cos)(mi(M_PI) * (k+mi(0.5)) * n / N);
+			basis[b*(ncomponents-1)+n-1] = mi(cos)(P_PIi * (k+mi(0.5)) * n / N);
 		}
 
 	*out_basis = basis;

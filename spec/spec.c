@@ -57,10 +57,10 @@ int main(int argc, char* argv[]) {
 		DC[z] = f[z]/(w*h*4);
 
 	for(size_t xz = 0; xz < w*d; xz++)
-		f[xz] /= mi(M_SQRT2);
+		f[xz] /= P_SQRT2i;
 	for(y = 0; y < h; y++)
 		for(z = 0; z < d; z++)
-			f[y*w*d+z] /= mi(M_SQRT2); //coeffs in uniform range -w*h*2..w*h*2
+			f[y*w*d+z] /= P_SQRT2i; //coeffs in uniform range -w*h*2..w*h*2
 
 	intermediate norm = w*h*2; //puts in range -1..1
 	for(i = 0; i < l; i++)

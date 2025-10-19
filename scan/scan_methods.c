@@ -257,7 +257,7 @@ static void* init_magnitude(size_t width, size_t height, size_t channels, coeff*
 			intermediate sum = 0;
 			for(size_t z = 0; z < channels; z++)
 				sum += mc(fabs)(coeffs[i*channels+z]);
-			intermediate normalization = (x ? mi(M_SQRT2) : mi(1.)) * (y ? mi(M_SQRT2) : mi(1.));
+			intermediate normalization = (x ? P_SQRT2i : mi(1.)) * (y ? P_SQRT2i : mi(1.));
 			sort[i].val = qfactor ? rint(sum*normalization*qfactor/channels) : sum*normalization;
 		}
 	qsort(sort,len,sizeof(*sort),sort_descending);

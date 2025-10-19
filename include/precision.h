@@ -111,6 +111,15 @@ typedef _Complex COEFF_TYPE complex_coeff;
 // for namespacing declarations of functions to be called from another TU with a specific precision
 #define precision_namespace(f) CAT(CAT(CAT(f##_##pc,COEFF_SUFFIX),i),INTERMEDIATE_SUFFIX)
 
+// precision-typed versions of commonly used math constants
+#if INTERMEDIATE_PRECISION == L && defined(M_PIl)
+	#define P_PIi    M_PIl
+	#define P_SQRT2i M_SQRT2l
+#else
+	#define P_PIi    mi(M_PI)
+	#define P_SQRT2i mi(M_SQRT2)
+#endif
+
 #undef F
 #undef D
 #undef L

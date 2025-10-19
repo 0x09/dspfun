@@ -39,7 +39,7 @@ void mag(complex_intermediate component, coeff real_component[3]) {
 		real_component[i] = real_component[0];
 }
 void phase(complex_intermediate component, coeff real_component[3]) {
-	real_component[0] = (mi(carg)(component+I*INTERMEDIATE_CONST(EPSILON))+mi(M_PI))/mi(M_PI)/2;
+	real_component[0] = (mi(carg)(component+I*INTERMEDIATE_CONST(EPSILON))+P_PIi)/P_PIi/2;
 
 	for(int i = 1; i < 3; i++)
 		real_component[i] = real_component[0];
@@ -52,34 +52,34 @@ void cplx(complex_intermediate component, coeff real_component[3]) {
 
 
 complex_intermediate dft(long long k, long long n, unsigned long long N) {
-	return mi(cexp)((-2*I*mi(M_PI)*k*n)/N);
+	return mi(cexp)((-2*I*P_PIi*k*n)/N);
 }
 complex_intermediate idft(long long k, long long n, unsigned long long N) {
-	return mi(cexp)((2*I*mi(M_PI)*k*n)/N);
+	return mi(cexp)((2*I*P_PIi*k*n)/N);
 }
 complex_intermediate dct1(long long k, long long n, unsigned long long N) {
-	return (n && N-1-n) ? mi(cos)((mi(M_PI)*(k*n))/(N-1)) : (n ? mi(pow)(-1,k) : mi(1.))/2;
+	return (n && N-1-n) ? mi(cos)((P_PIi*(k*n))/(N-1)) : (n ? mi(pow)(-1,k) : mi(1.))/2;
 }
 complex_intermediate dct2(long long k, long long n, unsigned long long N) {
-	return mi(cos)((mi(M_PI)*(k*(2*n+1)))/(2*N));
+	return mi(cos)((P_PIi*(k*(2*n+1)))/(2*N));
 }
 complex_intermediate dct3(long long k, long long n, unsigned long long N) {
-	return n ? mi(cos)((mi(M_PI)*(n*(2*k+1)))/(2*N)) : mi(0.5);
+	return n ? mi(cos)((P_PIi*(n*(2*k+1)))/(2*N)) : mi(0.5);
 }
 complex_intermediate dct4(long long k, long long n, unsigned long long N) {
-	return mi(cos)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
+	return mi(cos)((P_PIi*((2*k+1)*(2*n+1)))/(4*N));
 }
 complex_intermediate dst1(long long k, long long n, unsigned long long N) {
-	return mi(sin)((mi(M_PI)*((k+1)*(n+1)))/(N+1));
+	return mi(sin)((P_PIi*((k+1)*(n+1)))/(N+1));
 }
 complex_intermediate dst2(long long k, long long n, unsigned long long N) {
-	return mi(sin)((mi(M_PI)*((k+1)*(2*n+1)))/(2*N));
+	return mi(sin)((P_PIi*((k+1)*(2*n+1)))/(2*N));
 }
 complex_intermediate dst3(long long k, long long n, unsigned long long N) {
-	return (N-1-n) ? mi(sin)((mi(M_PI)*((2*k+1)*(n+1)))/(2*N)) : mi(pow)(-1,k)/2;
+	return (N-1-n) ? mi(sin)((P_PIi*((2*k+1)*(n+1)))/(2*N)) : mi(pow)(-1,k)/2;
 }
 complex_intermediate dst4(long long k, long long n, unsigned long long N) {
-	return mi(sin)((mi(M_PI)*((2*k+1)*(2*n+1)))/(4*N));
+	return mi(sin)((P_PIi*((2*k+1)*(2*n+1)))/(4*N));
 }
 complex_intermediate wht(long long k, long long n, unsigned long long N) {
 	unsigned long long sig = 0;
@@ -91,7 +91,7 @@ complex_intermediate wht(long long k, long long n, unsigned long long N) {
 	return mi(pow)(-1,sig);
 }
 complex_intermediate dht(long long k, long long n, unsigned long long N) {
-	return mi(M_SQRT2) * mi(cos)(2*mi(M_PI)*n*k/N - mi(M_PI)/4);
+	return P_SQRT2i * mi(cos)(2*P_PIi*n*k/N - P_PIi/4);
 }
 
 typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } coords;

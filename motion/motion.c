@@ -590,7 +590,7 @@ int main(int argc, char* argv[]) {
 					for(int z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++)
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= 2*mi(M_SQRT2) / ((x ? 1 : mi(M_SQRT2)) * (y ? 1 : mi(M_SQRT2)) * (z ? 1 : mi(M_SQRT2)));
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= 2*P_SQRT2i / ((x ? 1 : P_SQRT2i) * (y ? 1 : P_SQRT2i) * (z ? 1 : P_SQRT2i));
 				}
 
 				coeff dc = coeffs[0];
@@ -694,7 +694,7 @@ int main(int argc, char* argv[]) {
 					for(int z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++)
-								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= ((x ? 1 : mi(M_SQRT2)) * (y ? 1 : mi(M_SQRT2)) * (z ? 1 : mi(M_SQRT2))) / (2*mi(M_SQRT2));
+								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= ((x ? 1 : P_SQRT2i) * (y ? 1 : P_SQRT2i) * (z ? 1 : P_SQRT2i)) / (2*P_SQRT2i);
 
 					fftw(execute)(planinverse[i]);
 				}

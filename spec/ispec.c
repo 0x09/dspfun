@@ -140,10 +140,10 @@ int main(int argc, char* argv[]) {
 		f[i] /= gain;
 
 	for(size_t xz = 0; xz < w*d; xz++)
-		f[xz] *= mi(M_SQRT2);
+		f[xz] *= P_SQRT2i;
 	for(y = 0; y < h; y++)
 		for(z = 0; z < d; z++)
-			f[y*w*d+z] *= mi(M_SQRT2); //coeffs in non-uniform range -2..2
+			f[y*w*d+z] *= P_SQRT2i; //coeffs in non-uniform range -2..2
 	for(i = 0; i < l; i++)
 		f[i]/=2;
 
