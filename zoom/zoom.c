@@ -216,19 +216,24 @@ int main(int argc, char* argv[]) {
 
 	av_log_set_level(loglevel);
 
+	int ret = 0;
+
 	AVExpr* xexpr = NULL,* yexpr = NULL,* scaleexpr = NULL,* xscaleexpr = NULL,* yscaleexpr = NULL;
 	AVExpr** exprs[] = {&xexpr,&yexpr,&scaleexpr,&xscaleexpr,&yscaleexpr};
 	const char* exprnames[] = {"i","n","x","y","xs","ys","w","h","vw","vh",NULL};
 	for(int i = 0; i < sizeof(exprstrs)/sizeof(*exprstrs); i++)
-		if(exprstrs[i] && av_expr_parse(exprs[i],exprstrs[i],exprnames,NULL,NULL,NULL,NULL,0,NULL) < 0)
-			return 1;
+		if(exprstrs[i] && av_expr_parse(exprs[i],exprstrs[i],exprnames,NULL,NULL,NULL,NULL,0,NULL) < 0) {
+			ret = 1;
+			goto end;
+		}
 
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
 	if(MagickReadImage(wand,infile) == MagickFalse) {
 		DestroyMagickWand(wand);
 		MagickWandTerminus();
-		return 1;
+		ret = 1;
+		goto end;
 	}
 
 	FFColorProperties color_props;
@@ -403,12 +408,13 @@ int main(int argc, char* argv[]) {
 	free(xbasis);
 	free(ybuf);
 
-	for(int i = 0; i < sizeof(exprstrs)/sizeof(*exprstrs); i++)
-		av_expr_free(*exprs[i]);
-
 	free(icoeffs);
 	ffapi_free_frame(frame);
 	ffapi_close(ffctx);
 
-	return 0;
+end:
+	for(int i = 0; i < sizeof(exprstrs)/sizeof(*exprstrs); i++)
+		av_expr_free(*exprs[i]);
+
+	return ret;
 }
