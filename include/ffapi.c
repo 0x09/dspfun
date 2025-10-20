@@ -150,7 +150,7 @@ bool ffapi_pixfmts_32_bit_float_pel(const AVPixFmtDescriptor* desc) {
 
 FFContext* ffapi_open_input(const char* file, const char* options,
                          const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter* pix_fmt_filter,
-                         unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], unsigned long* frames, AVRational* rate, bool calc_frames) {
+                         unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], uint64_t* frames, AVRational* rate, bool calc_frames) {
 
 	if(color_props && !ffapi_validate_color_props(color_props))
 		return NULL;
@@ -208,7 +208,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 					return NULL;
 				}
 
-				*frames = ffapi_seek_frame(in,SIZE_MAX,NULL);
+				*frames = ffapi_seek_frame(in,UINT64_MAX,NULL);
 				ffapi_close(in);
 				return ffapi_open_input(file,options,format,color_props,pix_fmt_filter,components,widths,heights,NULL,rate,false);
 			}
@@ -504,12 +504,12 @@ AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 	return frame;
 }
 
-size_t ffapi_seek_frame(FFContext* ctx, size_t offset, void (*progress)(size_t)) {
+uint64_t ffapi_seek_frame(FFContext* ctx, uint64_t offset, void (*progress)(uint64_t)) {
 	if(!offset)
 		return 0;
 
 	AVFrame* frame = av_frame_alloc();
-	size_t seek;
+	uint64_t seek;
 	FFContext ctx_copy = (FFContext){ .fmt = ctx->fmt, .codec = ctx->codec, .st = ctx->st };
 
 	// just unswitch this manually

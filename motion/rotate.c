@@ -45,7 +45,7 @@ void help() {
 int main(int argc, char* argv[]) {
 	AVRational fps = {0};
 	bool samedur = false, quiet = false;
-	size_t frames = 0, offset = 0;
+	uint64_t frames = 0, offset = 0;
 	const char* iopt = NULL,* ifmt = NULL,* cprops = NULL;
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = AV_LOG_ERROR;
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 			case 'f': ifmt = optarg; break; case 'F': ofmt = optarg; break;
 			case 'c': cprops = optarg; break; case 'e': enc  = optarg; break;
 			case 'l': loglevel = strtol(optarg,NULL,10); break;
-			case 's': sscanf(optarg,"%zu:%zu",&offset,&frames); break;
+			case 's': sscanf(optarg, "%" SCNu64 ":" "%" SCNu64, &offset, &frames); break;
 			case 'r': {
 				if(!strcmp(optarg,"same"))
 					samedur = true;
@@ -90,7 +90,8 @@ int main(int argc, char* argv[]) {
 	av_log_set_level(loglevel);
 	AVRational r;
 	unsigned long components = 0;
-	unsigned long widths[4], heights[4], nframes;
+	unsigned long widths[4], heights[4];
+	uint64_t nframes;
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, cprops);
 

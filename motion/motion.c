@@ -50,8 +50,8 @@ static int sortcoeffs(const void* left, const void* right) {
 	return cmp < 0 ? -1 : (cmp > 0 ? 1 : 0);
 }
 
-static void seek_progress(size_t seek) {
-	fprintf(stderr,"\rseek: %zu",seek);
+static void seek_progress(uint64_t seek) {
+	fprintf(stderr,"\rseek: %" PRIu64,seek);
 }
 
 struct coords {	unsigned long long w, h, d; };
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
 	int longoptind = 0;
 	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL,* exprstr = NULL,* fftw_wisdom_file = NULL;
 	coords block = {0,0,1}, scaled = {0};
-	unsigned long long int offset = 0, maxframes = 0;
+	uint64_t offset = 0, maxframes = 0;
 	int samerate = false, samesize = false, dithering = false;
 	enum spectype spec = spectype_none;
 	enum ispectype ispec = ispectype_none;
@@ -303,11 +303,13 @@ int main(int argc, char* argv[]) {
 	}
 
 	unsigned long w[4], h[4], components;
-	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,(unsigned long*)&source->d,&r_frame_rate,!(outfile && maxframes));
+	uint64_t nframes;
+	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,&nframes,&r_frame_rate,!(outfile && maxframes));
 	if(!in) {
 		fprintf(stderr, "Error opening \"%s\"\n", infile);
 		return 1;
 	}
+	source->d = nframes;
 
 	if(spec)
 		color_props.color_range = AVCOL_RANGE_JPEG;
