@@ -209,7 +209,12 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 				}
 
 				*frames = UINT64_MAX;
-				ffapi_seek_frame(in,frames,NULL);
+				int err = ffapi_seek_frame(in,frames,NULL);
+				if(err && err != AVERROR_EOF) {
+					av_log(NULL,AV_LOG_ERROR,"Error calculating frame count: %s\n",av_err2str(err));
+					ffapi_close(in);
+					return NULL;
+				}
 				ffapi_close(in);
 				return ffapi_open_input(file,options,format,color_props,pix_fmt_filter,components,widths,heights,NULL,rate,false);
 			}

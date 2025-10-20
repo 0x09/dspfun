@@ -103,7 +103,12 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	ffapi_seek_frame(in,&offset,NULL);
+	if((err = ffapi_seek_frame(in,&offset,NULL))) {
+		fprintf(stderr,"Error seeking: %s\n",av_err2str(err));
+		ffapi_close(in);
+		return 1;
+	}
+
 	if(nframes)
 		nframes -= offset;
 	unsigned long len[] = {*widths, *heights, nframes};
