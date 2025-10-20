@@ -1,3 +1,7 @@
+/*
+ * speclib - Library for scaling DCT spectrograms.
+ */
+
 #include "speclib.h"
 #include "assoc.h"
 

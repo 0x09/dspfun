@@ -1,3 +1,7 @@
+/*
+ * speclib - Library for scaling DCT spectrograms.
+ */
+
 #include "precision.h"
 #include "keyed_enum.h"
 
