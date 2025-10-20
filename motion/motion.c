@@ -426,8 +426,11 @@ int main(int argc, char* argv[]) {
 
 	AVExpr* expr = NULL;
 	const char* names[] = {"c","x","y","z","i","width","height","depth","components","bx","by","bz","bwidth","bheight","bdepth",NULL};
-	if(exprstr && av_expr_parse(&expr,exprstr,names,NULL,NULL,NULL,NULL,0,NULL) < 0)
+	if(exprstr && av_expr_parse(&expr,exprstr,names,NULL,NULL,NULL,NULL,0,NULL) < 0) {
+		ffapi_close(in);
+		ffapi_close(out);
 		return 1;
+	}
 
 	// Seeking
 	if(offset) {
