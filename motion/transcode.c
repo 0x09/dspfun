@@ -31,6 +31,7 @@ int main(int argc, char* argv[]) {
 
 	av_log_set_level(loglevel);
 
+	int err = 0, ret = 0;
 	unsigned long components = 0;
 	unsigned long widths[4], heights[4];
 	uint64_t nframes;
@@ -53,19 +54,31 @@ int main(int argc, char* argv[]) {
 	else nframes -= FFMIN(nframes, offset);
 	ffapi_seek_frame(in, offset, NULL);
 
-	for(int z = 0; z < nframes && !ffapi_read_frame(in, iframe); z++) {
+	for(int z = 0; z < nframes && !(err = ffapi_read_frame(in, iframe)); z++) {
 		// equivalent to ffapi_write_frame(out, iframe) since no image processing is being done
 		for(int c = 0; c < components; c++)
 			for(int y = 0; y < heights[c]; y++)
 				for(int x = 0; x < widths[c]; x++)
 					ffapi_setpel(out, oframe, x, y, c, ffapi_getpel(in, iframe, x, y, c));
 
-		ffapi_write_frame(out, oframe);
+		if((err = ffapi_write_frame(out, oframe))) {
+			fprintf(stderr,"\nError writing frame: %s\n",av_err2str(err));
+			ret = 1;
+			goto end;
+		}
 		fprintf(stderr, "\r%d", z);
 	}
 	fprintf(stderr, "\n");
+
+	if(err) {
+		fprintf(stderr,"Error reading frame: %s\n",av_err2str(err));
+		ret = 1;
+	}
+
+end:
 	ffapi_free_frame(iframe);
 	ffapi_close(in);
 	ffapi_free_frame(oframe);
 	ffapi_close(out);
+	return ret;
 }

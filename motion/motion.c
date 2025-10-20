@@ -541,10 +541,15 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr,"read: %*d wrote: %*d",padb,0,pads,0);
 	AVFrame* readframe = ffapi_alloc_frame(in);
 	AVFrame* writeframe = ffapi_alloc_frame(out);
+	int ret = 0, err = 0;
 	unsigned long long coeffs_coded = 0;
 	for(int bz = 0; bz < nblocks->d; bz++) {
 		for(int z = 0; z < block->d; z++) {
-			int error = ffapi_read_frame(in,readframe);
+			if((err = ffapi_read_frame(in,readframe))) {
+				fprintf(stderr,"Error reading frame: %s\n",av_err2str(err));
+				ret = 1;
+				goto end;
+			}
 			for(int i = 0; i < components; i++) {
 				if(bz >= nblocks[i].d || z >= block[i].d) continue;
 				AVComponentDescriptor comp = pixdesc.comp[i];
@@ -744,7 +749,11 @@ int main(int argc, char* argv[]) {
 								else
 									ffapi_setpel_direct(writeframe,bx*scaled[i].w+x,by*scaled[i].h+y,comp,((unsigned char*)pixels[i][by*nblocks[i].w+bx])[(z*minbuf[i].h+y)*minbuf[i].w+x]);
 			}
-			ffapi_write_frame(out,writeframe);
+			if((err = ffapi_write_frame(out,writeframe))) {
+				fprintf(stderr,"Error writing frame: %s\n",av_err2str(err));
+				ret = 1;
+				goto end;
+			}
 			if(!quiet)
 				fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,(bz+1)*block->d,pads,bz*scaled->d+z+1);
 		}
@@ -759,6 +768,7 @@ int main(int argc, char* argv[]) {
 			fprintf(stderr,"coeffs: %llu / %llu (%2.0f%%)\nzeroes: %llu / %llu (%2.0f%%)\n",coeffs_coded,total,coeffs_coded*100.0/total,total-coeffs_coded,total,(total-coeffs_coded)*100.0/total);
 	}
 
+end:
 	fftw(free)(coeffs);
 	for(int i = 0; i < components; i++) {
 		for(int b = 0; b < nblocks[i].h * nblocks[i].w; b++)
@@ -779,5 +789,5 @@ int main(int argc, char* argv[]) {
 		free(topcoeffs);
 	}
 
-	return 0;
+	return ret;
 }

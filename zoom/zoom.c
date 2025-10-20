@@ -398,7 +398,12 @@ int main(int argc, char* argv[]) {
 					ffapi_setpelf(ffctx, frame, x, y, z, pel);
 				}
 
-		ffapi_write_frame(ffctx, frame);
+		int err = ffapi_write_frame(ffctx, frame);
+		if(err) {
+			fprintf(stderr,"\nError writing frame: %s\n",av_err2str(err));
+			ret = 1;
+			goto err;
+		}
 		if(!quiet)
 			fprintf(stderr, "\r%zu/%zu         ",d,nframes);
 	}
@@ -406,6 +411,7 @@ int main(int argc, char* argv[]) {
 	if(!quiet)
 		fprintf(stderr, "\r%zu/%zu         \n",nframes,nframes);
 
+err:
 	free(tmp);
 	fftw(free)(coeffs);
 	free(xbasis);

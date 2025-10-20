@@ -479,7 +479,12 @@ int main(int argc, char* argv[]) {
 					}
 		}
 
-		ffapi_write_frame(ffctx, frame);
+		int err = ffapi_write_frame(ffctx, frame);
+		if(err) {
+			fprintf(stderr,"\nError writing frame: %s\n",av_err2str(err));
+			ret = 1;
+			goto err;
+		}
 		if(!quiet)
 			fprintf(stderr, "\r%*zu / %zu", pad, i-offset+1, nframes);
 
@@ -519,6 +524,7 @@ int main(int argc, char* argv[]) {
 			fprintf(stderr,"Reached parity with the original image at scan index %zu\n",parity_index);
 	}
 
+err:
 	free(sum);
 	spec_destroy(sp);
 

@@ -88,6 +88,8 @@ int main(int argc, char* argv[]) {
 			usage();
 
 	av_log_set_level(loglevel);
+
+	int err = 0, ret = 0;
 	AVRational r;
 	unsigned long components = 0;
 	unsigned long widths[4], heights[4];
@@ -128,7 +130,13 @@ int main(int argc, char* argv[]) {
 
 	unsigned char (*buf)[in->pixdesc->nb_components] = malloc(len[0]*len[1]*len[2]*sizeof(*buf));
 	for(int z = 0; z < len[2]; z++) {
-		ffapi_read_frame(in,iframe);
+		if((err = ffapi_read_frame(in,iframe))) {
+			fprintf(stderr,"Error reading frame: %s\n",av_err2str(err));
+			ffapi_free_frame(iframe);
+			ffapi_close(in);
+			ret = 1;
+			goto end;
+		}
 		for(int y = 0; y < len[1]; y++)
 			for(int x = 0; x < len[0]; x++)
 				ffapi_getpixel(in,iframe,x,y,buf[(z*len[1]+y)*len[0]+x]);
@@ -146,13 +154,19 @@ int main(int argc, char* argv[]) {
 		for(axis[map[1]] = 0; axis[map[1]] < len[map[1]]; axis[map[1]]++)
 			for(axis[map[0]] = 0; axis[map[0]] < len[map[0]]; axis[map[0]]++)
 				ffapi_setpixel(out,oframe,axis[map[0]],axis[map[1]],buf[(INV(2)*len[1]+INV(1))*len[0]+INV(0)]);
-		ffapi_write_frame(out,oframe);
+		if((err = ffapi_write_frame(out,oframe))) {
+			fprintf(stderr,"Error writing frame: %s\n",av_err2str(err));
+			ret = 1;
+			goto end;
+		}
 		if(!quiet)
 			fprintf(stderr,"\r%lu",axis[map[2]]);
 	}
 
 	if(!quiet)
 		fputc('\n',stderr);
+end:
 	ffapi_free_frame(oframe);
 	ffapi_close(out);
+	return ret;
 }
