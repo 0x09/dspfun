@@ -1,6 +1,5 @@
 /*
  * transcode - simple transcoder / ffapi test utility
- * Copyright 2017 0x09.net.
  */
 
 #include "ffapi.h"

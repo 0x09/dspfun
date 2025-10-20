@@ -1,6 +1,5 @@
 /*
  * motion - apply various 2- or 3-dimensional frequency-domain operations to an image or video.
- * Copyright 2012-2016 0x09.net.
  */
 
 #include <fftw3.h>

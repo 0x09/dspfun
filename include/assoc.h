@@ -1,6 +1,5 @@
 /*
  * assoc - Define key/value tables for arbitrary static data
- * Copyright 2014-2018 0x09.net.
  */
 
 #ifndef ASSOC_H

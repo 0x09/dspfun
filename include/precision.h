@@ -1,6 +1,5 @@
 /*
  * precision - Defines macros for toggling floating point precision of specific types at compile time.
- * Copyright 2014-2018 0x09.net.
  */
 
 /*

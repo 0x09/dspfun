@@ -1,6 +1,5 @@
 /*
  * rotate - rotate video by right angles on a 3-dimensional axis.
- * Copyright 2013-2017 0x09.net.
  */
 
 /* 90ª ccw = +y-x+z

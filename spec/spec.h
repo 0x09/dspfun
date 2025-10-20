@@ -1,6 +1,5 @@
 /*
  * spec - Generate invertible frequency spectrums for viewing and editing.
- * Copyright 2014-2016 0x09.net.
  */
 
 #ifndef SPEC_H

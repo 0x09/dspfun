@@ -1,6 +1,5 @@
 /*
  * applybasis - Apply basis functions for a variety of 2D transforms to images.
- * Copyright 2012-2016 0x09.net.
  */
 
 #include <stdlib.h>

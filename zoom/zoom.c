@@ -1,6 +1,5 @@
 /*
  * zoom - Interpolate images with a cosine basis at arbitrary scales/offsets.
- * Copyright 2013-2016 0x09.net.
  */
 
 #include <stdio.h>

@@ -1,6 +1,5 @@
 /*
  * ffapi - Wrapper for pulling/pushing frames with libav*
- * Copyright 2013-2016 0x09.net.
  */
 
 #ifndef FFAPI_H

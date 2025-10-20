@@ -1,6 +1,5 @@
 /*
  * scan - progressively reconstruct images using various frequency space scans.
- * Copyright 2018 0x09.net.
  */
 
 #ifndef SCAN_PRECOMPUTED_H

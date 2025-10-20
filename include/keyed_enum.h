@@ -1,6 +1,5 @@
 /*
  * keyed_enum - Define enums with static string lookup
- * Copyright 2014-2018 0x09.net.
  */
 
 #ifndef KEYED_ENUM_H

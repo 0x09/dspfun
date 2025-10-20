@@ -1,6 +1,5 @@
 /*
  * draw - Draw DCT coefficients directly on a canvas.
- * Copyright 2011-2016 0x09.net.
  */
 
 #include <stdio.h>
