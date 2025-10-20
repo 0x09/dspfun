@@ -103,8 +103,8 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	ffapi_seek_frame(in,offset,NULL);
 	unsigned long len[] = {*widths, *heights, nframes - offset};
+	ffapi_seek_frame(in,&offset,NULL);
 
 	if(frames && len[2])
 		len[2] = FFMIN(frames,len[2]);

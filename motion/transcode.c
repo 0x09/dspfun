@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 	if(frames)
 		nframes = frames;
 	else nframes -= FFMIN(nframes, offset);
-	ffapi_seek_frame(in, offset, NULL);
+	ffapi_seek_frame(in, &offset, NULL);
 
 	for(int z = 0; z < nframes && !(err = ffapi_read_frame(in, iframe)); z++) {
 		// equivalent to ffapi_write_frame(out, iframe) since no image processing is being done

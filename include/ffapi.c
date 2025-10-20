@@ -208,7 +208,8 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 					return NULL;
 				}
 
-				*frames = ffapi_seek_frame(in,UINT64_MAX,NULL);
+				*frames = UINT64_MAX;
+				ffapi_seek_frame(in,frames,NULL);
 				ffapi_close(in);
 				return ffapi_open_input(file,options,format,color_props,pix_fmt_filter,components,widths,heights,NULL,rate,false);
 			}
@@ -504,22 +505,24 @@ AVFrame* ffapi_alloc_frame(FFContext* ctx) {
 	return frame;
 }
 
-uint64_t ffapi_seek_frame(FFContext* ctx, uint64_t offset, void (*progress)(uint64_t)) {
-	if(!offset)
+int ffapi_seek_frame(FFContext* ctx, uint64_t* offset, void (*progress)(uint64_t)) {
+	if(!*offset)
 		return 0;
 
 	AVFrame* frame = av_frame_alloc();
 	uint64_t seek;
 	FFContext ctx_copy = (FFContext){ .fmt = ctx->fmt, .codec = ctx->codec, .st = ctx->st };
 
+	int err = 0;
 	// just unswitch this manually
 	if(progress)
-		for(seek = 0; seek < offset && !ffapi_read_frame(&ctx_copy, frame); seek++)
+		for(seek = 0; seek < *offset && !(err = ffapi_read_frame(&ctx_copy, frame)); seek++)
 			progress(seek);
-	else for(seek = 0; seek < offset && !ffapi_read_frame(&ctx_copy, frame); seek++);
+	else for(seek = 0; seek < *offset && !(err = ffapi_read_frame(&ctx_copy, frame)); seek++);
 
 	av_frame_free(&frame);
-	return seek;
+	*offset = seek;
+	return err;
 }
 
 void ffapi_clear_frame(AVFrame* frame) {

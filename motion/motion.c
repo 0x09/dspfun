@@ -431,7 +431,7 @@ int main(int argc, char* argv[]) {
 
 	// Seeking
 	if(offset) {
-		ffapi_seek_frame(in, offset, quiet ? NULL : seek_progress);
+		ffapi_seek_frame(in, &offset, quiet ? NULL : seek_progress);
 		if(!quiet)
 			fprintf(stderr,"\n");
 	}

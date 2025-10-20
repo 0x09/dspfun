@@ -49,7 +49,7 @@ AVFrame*  ffapi_alloc_frame(FFContext*);
 void      ffapi_free_frame (AVFrame*);
 void      ffapi_clear_frame(AVFrame*);
 int       ffapi_read_frame (FFContext*, AVFrame*);
-uint64_t  ffapi_seek_frame (FFContext*, uint64_t offset, void (*progress)(uint64_t));
+int       ffapi_seek_frame (FFContext*, uint64_t* offset, void (*progress)(uint64_t));
 int       ffapi_write_frame(FFContext*, AVFrame*);
 int       ffapi_close(FFContext*);
 
