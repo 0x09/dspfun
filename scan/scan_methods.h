@@ -7,7 +7,7 @@
 
 #include "precision.h"
 
-#include <stdlib.h>
+#include <stddef.h>
 
 struct scan_method {
 	const char* name;

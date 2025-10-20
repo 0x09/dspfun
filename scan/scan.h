@@ -8,7 +8,7 @@
 #include "precision.h"
 #include "keyed_enum.h"
 
-#include <stdlib.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdio.h>
 
