@@ -162,8 +162,8 @@ int main(int argc, char* argv[]) {
 		MagickSetImageColorspace(wand,RGBColorspace);
 		MagickTransformImageColorspace(wand,sRGBColorspace);
 	}
-end:
 	MagickWriteImage(wand,opts.output);
+end:
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
 	return ret;
