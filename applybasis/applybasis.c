@@ -276,20 +276,35 @@ int main(int argc, char* argv[]) {
 	if(!outfile)
 		usage();
 
+	int ret = 0;
+
 	size_t inrange = 1;
-	complex_intermediate* pixels;
+	complex_intermediate* pixels = NULL;
 	coords insize, size;
 
 	MagickWandGenesis();
 	MagickWand* wand;
 
+	FILE* df = NULL;
+
 	char* ext;
 	if((ext = strrchr(infile,'.')) && !strcmp(ext,".coeff")) {
 		orthogonal = true;
 		FILE* f = fopen(infile,"r");
-		fread(&insize,sizeof(insize),1,f);
+		if(!f || fread(&insize,sizeof(insize),1,f) != 1) {
+			fprintf(stderr,"Error reading %s: %s\n",infile,strerror(errno));
+			if(f)
+				fclose(f);
+			ret = 1;
+			goto end;
+		}
 		pixels = malloc(sizeof(*pixels)*insize.w*insize.h*3);
-		fread(pixels,sizeof(*pixels),insize.w*insize.h*3,f);
+		if(fread(pixels,sizeof(*pixels),insize.w*insize.h*3,f) != insize.w*insize.h*3) {
+			fprintf(stderr,"Error reading %s: %s\n",infile,strerror(errno));
+			fclose(f);
+			ret = 1;
+			goto end;
+		}
 		fclose(f);
 		inrange = (insize.w/partsum.w)*(insize.h/partsum.h);
 	}
@@ -333,12 +348,14 @@ int main(int argc, char* argv[]) {
 	N->w /= partsum.w;
 	N->h /= partsum.h;
 
-
-	FILE* df = NULL;
 	coords dumpsize = {{N->w*K->w,N->h*K->h}};
 	if(outcoeffs) {
 		df = fopen(outcoeffs,"w");
-		fwrite(&dumpsize,sizeof(dumpsize),1,df);
+		if(!df || fwrite(&dumpsize,sizeof(dumpsize),1,df) != 1) {
+			fprintf(stderr,"Error writing %s: %s\n",outcoeffs,strerror(errno));
+			ret = 1;
+			goto end;
+		}
 	}
 
 	coords framesize;
@@ -390,8 +407,12 @@ int main(int argc, char* argv[]) {
 						for(size_t xs = 0; xs < scale; xs++)
 							for(int d = 0; d < 3; d++)
 								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = real_coeff[d];
-					if(df)
-						fwrite(partsums,sizeof(partsums),1,df);
+
+					if(df && fwrite(partsums,sizeof(partsums),1,df) != 1) {
+						fprintf(stderr,"Error writing %s: %s\n",outcoeffs,strerror(errno));
+						ret = 1;
+						goto end;
+					}
 				}
 	wand = NewMagickWand();
 	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",TypePixel,frame);
@@ -401,11 +422,13 @@ int main(int argc, char* argv[]) {
 	}
 	MagickWriteImage(wand,outfile);
 	DestroyMagickWand(wand);
+
+end:
 	MagickWandTerminus();
 
 	if(df)
 		fclose(df);
 	free(pixels);
 
-	return 0;
+	return ret;
 }
