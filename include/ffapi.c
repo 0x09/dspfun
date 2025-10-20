@@ -576,14 +576,18 @@ int ffapi_write_frame(FFContext* out, AVFrame* frame) {
 	else writeframe = frame;
 	AVCodecContext* codec = out->codec;
 	writeframe->pts = codec->frame_num; //for now timebase == 1/rate
-	avcodec_send_frame(codec,writeframe);
+	int err = avcodec_send_frame(codec,writeframe);
+	if(err)
+		return err;
 	return flush_frame(out);
 }
 
 static int write_end(FFContext* out) {
 	AVCodecContext* codec = out->codec;
-	avcodec_send_frame(codec,NULL);
-	int err = flush_frame(out);
+	int err = avcodec_send_frame(codec,NULL);
+	if(err)
+		return err;
+	err = flush_frame(out);
 	while(!err)
 		err = av_write_frame(out->fmt,NULL);
 	return FFMIN(err,0);
