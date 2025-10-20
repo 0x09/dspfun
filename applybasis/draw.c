@@ -75,15 +75,21 @@ int main(int argc, char* argv[]) {
 	fftw(execute)(p);
 	fftw(destroy_plan)(p);
 
+	int ret = 0;
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
 	MagickConstituteImage(wand,bs.w,bs.h,"I",TypePixel,coefs);
-	MagickWriteImage(wand,outfile);
+	if(MagickWriteImage(wand,outfile) == MagickFalse) {
+		char* exception = MagickGetException(wand,&(ExceptionType){0});
+		fprintf(stderr,"%s\n",exception);
+		RelinquishMagickMemory(exception);
+		ret = 1;
+	}
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
 
 	fftw(free)(coefs);
 	fftw(cleanup)();
 
-	return 0;
+	return ret;
 }

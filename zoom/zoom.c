@@ -230,6 +230,9 @@ int main(int argc, char* argv[]) {
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
 	if(MagickReadImage(wand,infile) == MagickFalse) {
+		char* exception = MagickGetException(wand,&(ExceptionType){0});
+		fprintf(stderr,"%s\n",exception);
+		RelinquishMagickMemory(exception);
 		DestroyMagickWand(wand);
 		MagickWandTerminus();
 		ret = 1;

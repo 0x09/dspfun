@@ -246,8 +246,11 @@ int main(int argc, char* argv[]) {
 
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
-	if(!MagickReadImage(wand,argv[0])) {
-		fprintf(stderr,"Unable to read image '%s'\n",argv[0]);
+	if(MagickReadImage(wand,argv[0]) == MagickFalse) {
+		char* exception = MagickGetException(wand,&(ExceptionType){0});
+		fprintf(stderr,"%s\n",exception);
+		RelinquishMagickMemory(exception);
+		DestroyMagickWand(wand);
 		MagickWandTerminus();
 		return 1;
 	}

@@ -310,7 +310,10 @@ int main(int argc, char* argv[]) {
 	}
 	else {
 		wand = NewMagickWand();
-		if(!MagickReadImage(wand,infile)) {
+		if(MagickReadImage(wand,infile) == MagickFalse) {
+			char* exception = MagickGetException(wand,&(ExceptionType){0});
+			fprintf(stderr,"%s\n",exception);
+			RelinquishMagickMemory(exception);
 			DestroyMagickWand(wand);
 			MagickWandTerminus();
 			return 1;
@@ -420,7 +423,12 @@ int main(int argc, char* argv[]) {
 		MagickSetImageColorspace(wand,RGBColorspace);
 		MagickTransformImageColorspace(wand,sRGBColorspace);
 	}
-	MagickWriteImage(wand,outfile);
+	if(MagickWriteImage(wand,outfile) == MagickFalse) {
+		char* exception = MagickGetException(wand,&(ExceptionType){0});
+		fprintf(stderr,"%s\n",exception);
+		RelinquishMagickMemory(exception);
+		ret = 1;
+	}
 	DestroyMagickWand(wand);
 
 end:

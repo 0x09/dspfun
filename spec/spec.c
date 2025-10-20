@@ -40,7 +40,14 @@ int main(int argc, char* argv[]) {
 	size_t i, y, z;
 	MagickWandGenesis();
 	MagickWand* wand = NewMagickWand();
-	MagickReadImage(wand,opts.input);
+	if(MagickReadImage(wand,opts.input) == MagickFalse) {
+		char* exception = MagickGetException(wand,&(ExceptionType){0});
+		fprintf(stderr,"%s\n",exception);
+		RelinquishMagickMemory(exception);
+		DestroyMagickWand(wand);
+		MagickWandTerminus();
+		return 1;
+	}
 	w = MagickGetImageWidth(wand), h = MagickGetImageHeight(wand), d = strlen(opts.csp), l = w*h*d;
 	if(opts.gamma) MagickTransformImageColorspace(wand,RGBColorspace);
 
@@ -136,7 +143,15 @@ int main(int argc, char* argv[]) {
 	base16enc(DC,tmp,sizeof(DC));
 	MagickSetImageProperty(wand,"DC",tmp);
 //	MagickSetImageProperty(wand,"spectype",enum_key(spectype,opts.type));
-	MagickWriteImage(wand,opts.output);
+	int ret = 0;
+	if(MagickWriteImage(wand,opts.output) == MagickFalse) {
+		char* exception = MagickGetException(wand,&(ExceptionType){0});
+		fprintf(stderr,"%s\n",exception);
+		RelinquishMagickMemory(exception);
+		ret = 1;
+	}
+
 	DestroyMagickWand(wand);
 	MagickWandTerminus();
+	return ret;
 }
