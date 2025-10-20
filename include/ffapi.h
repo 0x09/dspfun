@@ -11,7 +11,6 @@
 #include <libavutil/pixdesc.h>
 #include <libavutil/parseutils.h>
 #include <libavutil/intreadwrite.h>
-#include <assert.h>
 #include <stdbool.h>
 
 typedef struct FFColorProperties {
