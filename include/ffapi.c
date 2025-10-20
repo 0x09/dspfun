@@ -565,7 +565,7 @@ static int flush_frame(FFContext* out) {
 		err = av_write_frame(out->fmt,packet);
 	}
 	av_packet_free(&packet);
-	if(err == AVERROR(EOF))
+	if(err == AVERROR(EOF) || err == AVERROR(EAGAIN))
 		err = 0;
 	return err;
 }
