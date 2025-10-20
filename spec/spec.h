@@ -154,8 +154,6 @@ static int spec_opt_proc(struct specopts* opts, int c, const char* arg) {
 	return 0;
 }
 
-#include <limits.h>
-
 static inline void base16enc(const void* restrict in_, void* restrict out_, size_t size) {
 	unsigned char* out = out_;
 	for(const unsigned char* in = in_; in != (const unsigned char*)in_+size; in++) {
