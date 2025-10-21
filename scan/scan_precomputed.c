@@ -51,7 +51,6 @@ bool scan_precomputed_add_coord(struct scan_precomputed* p, size_t index, size_t
 static struct scan_precomputed* unserialize_coordinate(FILE* f, char** line) {
 	struct scan_precomputed* p = calloc(1,sizeof(*p));
 	size_t linecap = *line ? strlen(*line) : 0;
-	ssize_t linelen;
 	size_t i = 0;
 	do {
 		if(!*line || **line == '\n')
@@ -68,14 +67,13 @@ static struct scan_precomputed* unserialize_coordinate(FILE* f, char** line) {
 			}
 		}
 		i++;
-	} while((linelen = getline(line,&linecap,f)) > 0);
+	} while((getline(line,&linecap,f)) > 0);
 	return p;
 }
 
 static struct scan_precomputed* unserialize_index(FILE* f, char** line) {
 	struct scan_precomputed* p = calloc(1,sizeof(*p));
 	size_t linecap = *line ? strlen(*line) : 0;
-	ssize_t linelen;
 	size_t y = 0;
 	do {
 		if(!*line || **line == '\n')
@@ -93,7 +91,7 @@ static struct scan_precomputed* unserialize_index(FILE* f, char** line) {
 			x++;
 		}
 		y++;
-	} while((linelen = getline(line,&linecap,f)) > 0);
+	} while((getline(line,&linecap,f)) > 0);
 	return p;
 }
 
