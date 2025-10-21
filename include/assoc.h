@@ -14,15 +14,20 @@ struct assoc {
 
 #define assoc_gen_key_elem(key,value)   key,
 #define assoc_gen_table_elem(key,value) {key,(value)},
-#define assoc_gen_count_elem(key,value) 1+
 
 #define assoc_keys(name) assoc_##name##_keys
 #define assoc_keys_gen(name)\
-	const static char* assoc_keys(name)[name(assoc_gen_count_elem)+1] = { name(assoc_gen_key_elem) };
+	const static char* assoc_keys(name)[] = {\
+		name(assoc_gen_key_elem)\
+		NULL\
+	};
 
 #define assoc_table(name) assoc_##name##_table
 #define assoc_table_gen(name)\
-	const static struct assoc assoc_table(name)[name(assoc_gen_count_elem)+1] = { name(assoc_gen_table_elem) };
+	const static struct assoc assoc_table(name)[] = {\
+		name(assoc_gen_table_elem)\
+		{0}\
+	};
 
 #define assoc_gen(name)\
 	assoc_keys_gen(name)\

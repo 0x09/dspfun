@@ -10,7 +10,6 @@
 #define enum_gen_enum_elem(type,value) type##_##value,
 #define enum_gen_key_elem(type,value) ", " #value
 #define enum_gen_table_elem(type,value) #value,
-#define enum_gen_count_elem(type,value) 1+
 
 #define enum_gen_enum(type)\
 	enum type {\
@@ -24,9 +23,10 @@
 
 #define enum_table(type) enum##_##type##_##table
 #define enum_gen_table(type)\
-	const static char* enum_table(type)[type(enum_gen_count_elem,type)+2] = {\
+	const static char* enum_table(type)[] = {\
 		enum_gen_table_elem(type,)\
 		type(enum_gen_table_elem,type)\
+		NULL\
 	};
 
 #define enum_gen_accessor_defs(type)\
