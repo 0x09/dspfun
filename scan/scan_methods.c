@@ -437,6 +437,8 @@ static void* init_precomputed(size_t width, size_t height, size_t channels, coef
 		goto end;
 
 	struct scan_context* ctx = scan_init(m,width,height,channels,coeffs,optstart);
+	if(!ctx)
+		goto end;
 	p = scan_precompute(ctx);
 	scan_destroy(ctx);
 
