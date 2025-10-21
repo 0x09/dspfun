@@ -409,6 +409,8 @@ static void* init_file(size_t width, size_t height, size_t channels, coeff* coef
 		return NULL;
 	struct scan_precomputed* p = scan_precomputed_unserialize(f);
 	fclose(f);
+	if(!p)
+		return NULL;
 
 	for(size_t i = 0; i < p->limit; i++)
 		for(size_t j = 0; j < p->intervals[i]; j++)
