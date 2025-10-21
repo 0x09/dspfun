@@ -309,7 +309,7 @@ int main(int argc, char* argv[]) {
 		if(!f) {
 			fprintf(stderr,"Error opening %s: %s\n",serialized_scan,strerror(errno));
 			ret = 1;
-			goto fftw_end;
+			goto scan_end;
 		}
 		scan_serialize(scanctx, f, serialization_format);
 		fclose(f);
