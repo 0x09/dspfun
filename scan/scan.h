@@ -34,6 +34,6 @@ size_t scan_interval(struct scan_context*, size_t i);
 size_t scan_limit(struct scan_context*);
 size_t scan_max_interval(struct scan_context*);
 size_t scan_method(struct scan_context*);
-void scan_serialize(struct scan_context*, FILE*, enum scan_serialization);
+bool scan_serialize(struct scan_context*, FILE*, enum scan_serialization);
 
 #endif

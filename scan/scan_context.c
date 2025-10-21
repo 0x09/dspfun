@@ -70,16 +70,18 @@ struct scan_precomputed* scan_precompute(struct scan_context* ctx) {
 	return p;
 }
 
-void scan_serialize(struct scan_context* ctx, FILE* f, enum scan_serialization fmt) {
+bool scan_serialize(struct scan_context* ctx, FILE* f, enum scan_serialization fmt) {
+	bool ret;
 	struct scan_precomputed* p = scan_precompute(ctx);
 	switch(fmt) {
 		case scan_serialization_none:
 		case scan_serialization_coordinate:
-			scan_precomputed_serialize_coordinate(p, f);
+			ret = scan_precomputed_serialize_coordinate(p, f);
 			break;
 		case scan_serialization_index:
-			scan_precomputed_serialize_index(p, f);
+			ret = scan_precomputed_serialize_index(p, f);
 			break;
 	}
 	scan_precomputed_destroy(p);
+	return ret;
 }

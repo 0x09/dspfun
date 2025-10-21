@@ -120,15 +120,19 @@ struct scan_precomputed* scan_precomputed_unserialize(FILE* f) {
 	return p;
 }
 
-void scan_precomputed_serialize_coordinate(struct scan_precomputed* p, FILE* f) {
+bool scan_precomputed_serialize_coordinate(struct scan_precomputed* p, FILE* f) {
 	for(size_t i = 0; i < p->limit; i++) {
 		for(size_t j = 0; j < p->intervals[i]; j++)
-			fprintf(f,"%zu,%zu ", p->scans[i][j][1], p->scans[i][j][0]);
-		fprintf(f,"\n");
+			if(fprintf(f,"%zu,%zu ", p->scans[i][j][1], p->scans[i][j][0]) <= 0)
+				return false;
+		if(fprintf(f,"\n") <= 0)
+			return false;
 	}
+	return true;
 }
 
-void scan_precomputed_serialize_index(struct scan_precomputed* p, FILE* f) {
+bool scan_precomputed_serialize_index(struct scan_precomputed* p, FILE* f) {
+	bool err = false;
 	int pad = log10f(p->limit)+1;
 	size_t width, height;
 	scan_precomputed_dimensions(p,&width,&height);
@@ -138,10 +142,15 @@ void scan_precomputed_serialize_index(struct scan_precomputed* p, FILE* f) {
 			index[p->scans[i][j][0]*width+p->scans[i][j][1]] = i;
 	for(size_t y = 0; y < height; y++) {
 		for(size_t x = 0; x < width; x++)
-			fprintf(f,"%*zu ",pad,index[y*width+x]);
-		fprintf(f,"\n");
+			if((err = fprintf(f,"%*zu ",pad,index[y*width+x]) <= 0))
+				goto end;
+		if((err = fprintf(f,"\n") <= 0))
+			goto end;
 	}
+
+end:
 	free(index);
+	return !err;
 }
 
 void scan_precomputed_destroy(struct scan_precomputed* p) {

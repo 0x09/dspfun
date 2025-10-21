@@ -16,8 +16,8 @@ struct scan_precomputed {
 };
 
 struct scan_precomputed* scan_precomputed_unserialize(FILE* f);
-void scan_precomputed_serialize_coordinate(struct scan_precomputed* p, FILE* f);
-void scan_precomputed_serialize_index(struct scan_precomputed* p, FILE* f);
+bool scan_precomputed_serialize_coordinate(struct scan_precomputed* p, FILE* f);
+bool scan_precomputed_serialize_index(struct scan_precomputed* p, FILE* f);
 void scan_precomputed_destroy(struct scan_precomputed*);
 
 void scan_precomputed_dimensions(struct scan_precomputed*, size_t* restrict width, size_t* restrict height);

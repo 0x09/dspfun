@@ -311,7 +311,11 @@ int main(int argc, char* argv[]) {
 			ret = 1;
 			goto scan_end;
 		}
-		scan_serialize(scanctx, f, serialization_format);
+		if(!scan_serialize(scanctx, f, serialization_format)) {
+			fprintf(stderr,"Error writing %s\n",serialized_scan);
+			ret = 1;
+			goto scan_end;
+		}
 		fclose(f);
 	}
 	if(argc <= 1)
