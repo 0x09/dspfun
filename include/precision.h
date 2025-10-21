@@ -33,31 +33,26 @@
 #define DL (L<<3|D)
 #define LL (L<<3|L)
 
-#if COEFF_PRECISION + 0 == 0
-	#undef COEFF_PRECISION
-#endif
-
-#if INTERMEDIATE_PRECISION + 0 == 0
-	#undef INTERMEDIATE_PRECISION
-#endif
-
 // can be specified individually or together with PRECISION
-#ifndef COEFF_PRECISION
+#ifdef PRECISION
 	#define COEFF_PRECISION (PRECISION & 7)
-#endif
-
-#ifndef INTERMEDIATE_PRECISION
 	#define INTERMEDIATE_PRECISION (PRECISION >> 3)
 #endif
 
+#if defined(COEFF_PRECISION) && COEFF_PRECISION + 0 == 0 
+	#error "Invalid value for COEFF_PRECISION, use one of F, D, or L"
+#endif
+
+#if defined(INTERMEDIATE_PRECISION) && INTERMEDIATE_PRECISION + 0 == 0 
+	#error "Invalid value for INTERMEDIATE_PRECISION, use one of F, D, or L"
+#endif
+
 // default to COEFF_PRECISION=D, INTERMEDIATE_PRECISION=L
-#if COEFF_PRECISION == 0
-	#undef COEFF_PRECISION
+#ifndef COEFF_PRECISION
 	#define COEFF_PRECISION D
 #endif
 
-#if INTERMEDIATE_PRECISION == 0
-	#undef INTERMEDIATE_PRECISION
+#ifndef INTERMEDIATE_PRECISION
 	#define INTERMEDIATE_PRECISION (COEFF_PRECISION << 1)
 #endif
 

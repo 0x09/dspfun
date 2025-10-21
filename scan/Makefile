@@ -1,4 +1,5 @@
 COEFF_PRECISION ?= F
+INTERMEDIATE_PRECISION ?= D
 
 fftw := fftw3$(subst L,l,$(subst D,,$(subst F,f,$(COEFF_PRECISION))))
 

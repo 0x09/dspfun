@@ -1,3 +1,6 @@
+COEFF_PRECISION ?= D
+INTERMEDIATE_PRECISION ?= L
+
 PREFIX ?= /usr/local
 
 fftw := fftw3$(subst L,l,$(subst D,,$(subst F,f,$(COEFF_PRECISION))))
