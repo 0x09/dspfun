@@ -306,6 +306,11 @@ int main(int argc, char* argv[]) {
 
 	if(serialized_scan) {
 		FILE* f = fopen(serialized_scan,"w");
+		if(!f) {
+			fprintf(stderr,"Error opening %s: %s\n",serialized_scan,strerror(errno));
+			ret = 1;
+			goto fftw_end;
+		}
 		scan_serialize(scanctx, f, serialization_format);
 		fclose(f);
 	}
