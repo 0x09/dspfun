@@ -246,6 +246,7 @@ int main(int argc, char* argv[]) {
 	MagickWand* wand;
 	wand = NewMagickWand();
 	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",TypePixel,frame);
+	free(frame);
 	if(linear) { // linear here refers to the processing colorspace, so this actually means genbasis should convert to nonlinear for output
 		MagickSetImageColorspace(wand,RGBColorspace);
 		MagickTransformImageColorspace(wand,sRGBColorspace);
