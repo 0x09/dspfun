@@ -137,12 +137,10 @@ int main(int argc, char* argv[]) {
 	MagickConstituteImage(wand,w,h,opts.csp,TypePixel,f);
 	fftw(free)(f);
 
-	//if(opts.gamma) MagickSetImageColorspace(wand,RGBColorspace);
 	char tmp[sizeof(DC)*2+1];
 	tmp[sizeof(tmp)-1]='\0';
 	base16enc(DC,tmp,sizeof(DC));
 	MagickSetImageProperty(wand,"DC",tmp);
-//	MagickSetImageProperty(wand,"spectype",enum_key(spectype,opts.type));
 	int ret = 0;
 	if(MagickWriteImage(wand,opts.output) == MagickFalse) {
 		char* exception = MagickGetException(wand,&(ExceptionType){0});
