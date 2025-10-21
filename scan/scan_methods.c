@@ -394,6 +394,7 @@ static void* init_evali(size_t width, size_t height, size_t channels, coeff* coe
 		av_expr_free(expr[0]);
 		goto error;
 	}
+	free(xexpr);
 	return expr;
 
 error:
