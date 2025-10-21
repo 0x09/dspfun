@@ -61,14 +61,20 @@ static struct scan_precomputed* unserialize_coordinate(FILE* f, char** line) {
 				continue;
 			size_t x, y;
 			if(sscanf(token,"%zu,%zu",&x,&y) != 2 ||
-			   !scan_precomputed_add_coord(p,i,x,y)) {
-				scan_precomputed_destroy(p);
-				return NULL;
-			}
+			   !scan_precomputed_add_coord(p,i,x,y))
+			   goto err;
 		}
 		i++;
 	} while((getline(line,&linecap,f)) > 0);
+
+	if(!feof(f))
+		goto err;
+
 	return p;
+
+err:
+	scan_precomputed_destroy(p);
+	return NULL;
 }
 
 static struct scan_precomputed* unserialize_index(FILE* f, char** line) {
@@ -84,15 +90,21 @@ static struct scan_precomputed* unserialize_index(FILE* f, char** line) {
 			if(!*token)
 				continue;
 			size_t index;
-			if(sscanf(token,"%zu",&index) != 1 || !scan_precomputed_add_coord(p,index,x,y)) {
-				scan_precomputed_destroy(p);
-				return NULL;
-			}
+			if(sscanf(token,"%zu",&index) != 1 || !scan_precomputed_add_coord(p,index,x,y))
+				goto err;
 			x++;
 		}
 		y++;
 	} while((getline(line,&linecap,f)) > 0);
+
+	if(!feof(f))
+		goto err;
+
 	return p;
+
+err:
+	scan_precomputed_destroy(p);
+	return NULL;
 }
 
 struct scan_precomputed* scan_precomputed_unserialize(FILE* f) {
