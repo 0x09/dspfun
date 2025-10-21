@@ -26,8 +26,11 @@ bool scan_precomputed_add_coord(struct scan_precomputed* p, size_t index, size_t
 		size_t limit = index+1;
 		size_t* intervals = realloc(p->intervals,sizeof(*p->intervals)*limit);
 		size_t (**scans)[2] = realloc(p->scans,sizeof(*p->scans)*limit);
-		if(!(intervals && scans))
+		if(!(intervals && scans)) {
+			free(intervals);
+			free(scans);
 			return false;
+		}
 		p->intervals = intervals;
 		p->scans = scans;
 		memset(p->intervals+p->limit,0,sizeof(*p->intervals)*(limit-p->limit));
