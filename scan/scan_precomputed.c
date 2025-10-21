@@ -150,6 +150,7 @@ void scan_precomputed_serialize_index(struct scan_precomputed* p, FILE* f) {
 void scan_precomputed_destroy(struct scan_precomputed* p) {
 	for(size_t i = 0; i < p->limit; i++)
 		free(p->scans[i]);
+	free(p->scans);
 	free(p->intervals);
 	free(p);
 }
