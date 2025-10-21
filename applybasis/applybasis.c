@@ -280,6 +280,7 @@ int main(int argc, char* argv[]) {
 
 	size_t inrange = 1;
 	complex_intermediate* pixels = NULL;
+	coeff* frame = NULL;
 	coords insize, size;
 
 	MagickWandGenesis();
@@ -365,7 +366,7 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i < 2; i++)
 		framesize.a[i] = size.a[i]*terms.a[i]*scale+padding*terms.a[i]+padding;
 
-	coeff* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
+	frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
 	for(int i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
@@ -437,6 +438,7 @@ end:
 	if(df)
 		fclose(df);
 	free(pixels);
+	free(frame);
 
 	return ret;
 }
