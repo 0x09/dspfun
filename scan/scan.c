@@ -539,7 +539,6 @@ err:
 	fftw(free)(image);
 	fftw(free)(reconstruction);
 	free(coords);
-	free(original);
 
 ffapi_end:
 	ffapi_free_frame(frame);
@@ -552,6 +551,7 @@ fftw_end:
 	fftw(free)(coeffs);
 	fftw(cleanup)();
 	fftw(cleanup_threads)();
+	free(original);
 
 	return ret;
 }
