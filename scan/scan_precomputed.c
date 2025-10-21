@@ -128,21 +128,6 @@ void scan_precomputed_serialize_coordinate(struct scan_precomputed* p, FILE* f) 
 	}
 }
 
-void scan_precomputed_serialize_index_noalloc(struct scan_precomputed* p, FILE* f) {
-	int pad = log10f(p->limit)+1;
-	size_t width, height;
-	scan_precomputed_dimensions(p,&width,&height);
-	for(size_t y = 0; y < height; y++) {
-		for(size_t x = 0; x < width; x++)
-			for(size_t i = 0; i < p->limit; i++)
-				for(size_t j = 0; j < p->intervals[i]; j++) {
-					if(p->scans[i][j][0] == y && p->scans[i][j][1] == x)
-						fprintf(f,"%*zu ",pad,i);
-				}
-		fprintf(f,"\n");
-	}
-}
-
 void scan_precomputed_serialize_index(struct scan_precomputed* p, FILE* f) {
 	int pad = log10f(p->limit)+1;
 	size_t width, height;
