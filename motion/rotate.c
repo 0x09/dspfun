@@ -173,6 +173,7 @@ int main(int argc, char* argv[]) {
 	if(!quiet)
 		fputc('\n',stderr);
 end:
+	free(buf);
 	ffapi_free_frame(oframe);
 	ffapi_close(out);
 	return ret;
