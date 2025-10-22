@@ -12,8 +12,9 @@ int main(int argc, char* argv[]) {
 	const char* iopt = NULL,* ifmt = NULL,* cprops = NULL;
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = AV_LOG_ERROR;
+	bool quiet = false;
 	int c;
-	while((c = getopt(argc, argv, "o:O:f:F:c:e:l:r:s:")) > 0)
+	while((c = getopt(argc, argv, "o:O:f:F:c:e:l:r:s:q")) > 0)
 		switch(c) {
 			case 'o': iopt = optarg; break; case 'O': oopt = optarg; break;
 			case 'f': ifmt = optarg; break; case 'F': ofmt = optarg; break;
@@ -21,11 +22,12 @@ int main(int argc, char* argv[]) {
 			case 'l': loglevel = strtol(optarg, NULL, 10); break;
 			case 'r': av_parse_video_rate(&fps, optarg); break;
 			case 's': sscanf(optarg, "%" SCNu64 ":" "%" SCNu64, &offset, &frames); break;
+			case 'q': quiet = true; break;
 		}
 	argv += optind;
 	argc -= optind;
 	if(!argc) {
-		fprintf(stderr, "usage: transcode -fF <in/out format> -oO <in/out options> -c <intermediate colorspace options> -e <encoder> -l <loglevel> -r <rate> -s <start>:<frames> input output\n");
+		fprintf(stderr, "usage: transcode -fF <in/out format> -oO <in/out options> -c <intermediate colorspace options> -e <encoder> -l <loglevel> -r <rate> -s <start>:<frames> -q input output\n");
 		return 0;
 	}
 
@@ -87,9 +89,11 @@ int main(int argc, char* argv[]) {
 			ret = 1;
 			goto end;
 		}
-		fprintf(stderr, "\r%d", z);
+		if(!quiet)
+			fprintf(stderr, "\r%d", z);
 	}
-	fprintf(stderr, "\n");
+	if(!quiet)
+		fprintf(stderr, "\n");
 
 	if(err) {
 		fprintf(stderr,"Error reading frame: %s\n",av_err2str(err));
