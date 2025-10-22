@@ -96,21 +96,22 @@ This tool takes an input image or video and swaps its axes in 3 dimensions based
 
     Usage: rotate [options] [-]xyz <infile> <outfile>
     
-      [-]xyz  how to rearrange the input dimensions, with -/+ to indicate direction.
-    	       e.g. "zyx" swaps the x and z axis while "x-yz" results in a vertical flip
+      [-]xyz  How to rearrange the input dimensions, with -/+ to indicate direction.
+    	       e.g. "zyx" swaps the x and z axis while "x-yz" results in a vertical flip.
     
-      -h                  this help text
-      -s <start:nframes>  starting frame number and total number of frames of input to use
-      -r <rational>       output framerate or "same" to match input duration [default: input rate]
-      -q                  don't print progress
+      -h                  This help text.
+      -s <start:nframes>  Starting frame number and total number of frames of input to use.
+      -r <rational>       Output framerate or "same" to match input duration. [default: input rate]
+      -q                  Don't print progress.
     
-      -o  input av options string
-      -O  output av options string
-      -f  input format
-      -F  output format
-      -c  intermediate colorspace options
-      -e  encoder
-      -l  loglevel
+      -o <optstring>  Option string containing FFmpeg decoder options for the input file.
+      -O <optstring>  Option string containing FFmpeg encoder options for the output file.
+      -f <fmt>        FFmpeg input format name (e.g. for pipe input).
+      -F <fmt>        FFmpeg output format name. [default: selected by FFmpeg based on output file extension]
+      -c <optstring>  Option string specifying the pixel format and color properties to convert to for processing.
+      -e <enc>        FFmpeg output encoder name. [default: FFV1 or selected by FFmpeg based on output format]
+      -l <int>        Integer FFmpeg log level. [default: 16 (AV_LOG_ERROR)]
+
 
 ## Examples
 Rotate a short video such that the time axis is now facing the viewer, with frames stacked as "slices" from left to right. If the dimensions of our input.avi are 1280x720, and it is 3000 frames long, the output will be 3000x720, and 1280 frames long. We can limit the number of frames, thus limiting the output width to 1920, so that it is fully visible on most monitors:
