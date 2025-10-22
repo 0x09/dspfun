@@ -23,6 +23,7 @@ int main(int argc, char* argv[]) {
 			case 'r': av_parse_video_rate(&fps, optarg); break;
 			case 's': sscanf(optarg, "%" SCNu64 ":" "%" SCNu64, &offset, &frames); break;
 			case 'q': quiet = true; break;
+			default: return 1;
 		}
 	argv += optind;
 	argc -= optind;
