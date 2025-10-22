@@ -302,7 +302,8 @@ int main(int argc, char* argv[]) {
 			pix_fmt_filter = pixfmts_8bit_or_float_rgb;
 	}
 
-	unsigned long w[4], h[4], components;
+	uint8_t components;
+	unsigned long w[4], h[4];
 	uint64_t nframes;
 	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,&nframes,&r_frame_rate,!(outfile && maxframes));
 	if(!in) {

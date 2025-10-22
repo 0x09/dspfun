@@ -39,7 +39,7 @@ ffapi_pix_fmt_filter ffapi_pixfmts_8bit_pel, ffapi_pixfmts_32_bit_float_pel;
 void       ffapi_parse_color_props(FFColorProperties* c, const char* props);
 FFContext* ffapi_open_input (const char* file, const char* options,
                              const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter*,
-                             unsigned long* components, unsigned long (*widths)[4], unsigned long (*heights)[4], uint64_t* frames,
+                             uint8_t* components, unsigned long (*widths)[4], unsigned long (*heights)[4], uint64_t* frames,
                              AVRational* rate, bool calc_frames);
 FFContext* ffapi_open_output(const char* file, const char* options,
                              const char* format, const char* encoder, enum AVCodecID preferred_encoder,
@@ -64,7 +64,7 @@ static inline unsigned char ffapi_getpel_direct(AVFrame* frame, size_t x, size_t
 }
 
 // float pel accessors
-static inline void ffapi_setpelf(FFContext* ctx, AVFrame* frame, size_t x, size_t y, int c, float val) {
+static inline void ffapi_setpelf(FFContext* ctx, AVFrame* frame, size_t x, size_t y, uint8_t c, float val) {
 	AVComponentDescriptor comp = ctx->pixdesc->comp[c];
 	uint32_t valu = (union { float f; uint32_t u; }){val}.u;
 	uint8_t* data = &FFA_PEL(frame,comp,x,y);
@@ -74,7 +74,7 @@ static inline void ffapi_setpelf(FFContext* ctx, AVFrame* frame, size_t x, size_
 		AV_WL32(data,valu);
 }
 
-static inline float ffapi_getpelf(FFContext* ctx, AVFrame* frame, size_t x, size_t y, int c) {
+static inline float ffapi_getpelf(FFContext* ctx, AVFrame* frame, size_t x, size_t y, uint8_t c) {
 	AVComponentDescriptor comp = ctx->pixdesc->comp[c];
 	uint8_t* data = &FFA_PEL(frame,comp,x,y);
 	return (union { uint32_t u; float f; }) {
