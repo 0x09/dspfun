@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
 	int opt;
 	int longoptind = 0;
 	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL,* exprstr = NULL,* fftw_wisdom_file = NULL;
-	coords block = {0,0,1}, scaled = {0};
+	coords block = {{0,0,1}}, scaled = {0};
 	uint64_t offset = 0, maxframes = 0;
 	int samerate = false, samesize = false, dithering = false;
 	enum spectype spec = spectype_none;
