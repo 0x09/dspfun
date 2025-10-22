@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
 	char* infile = NULL,* outfile = NULL,* outcoeffs = NULL;
 	if(isatty(STDOUT_FILENO))
 		outfile = "sixel:-";
-	coords terms = {}, partsum = {1,1};
+	coords terms = {}, partsum = {{1,1}};
 	offsets offset = {};
 	int inverse = false, orthogonal = false, linearlight = false;
 	unsigned int scale = 1, padding = 1;
