@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
 		}
 	argv += optind;
 	argc -= optind;
-	if(!argc) {
+	if(argc < 2) {
 		fprintf(stderr, "usage: transcode -fF <in/out format> -oO <in/out options> -c <intermediate colorspace options> -e <encoder> -l <loglevel> -r <rate> -s <start>:<frames> -q input output\n");
-		return 0;
+		return 1;
 	}
 
 	av_log_set_level(loglevel);
