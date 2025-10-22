@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 	const char* oopt = NULL,* ofmt = NULL,* enc = NULL;
 	int loglevel = AV_LOG_ERROR;
 	int c;
-	while((c = getopt(argc,argv,":o:O:f:F:c:e:l:r:s:hq")) > 0)
+	while((c = getopt(argc,argv,"o:O:f:F:c:e:l:r:s:hq")) > 0)
 		switch(c) {
 			case 'o': iopt = optarg; break; case 'O': oopt = optarg; break;
 			case 'f': ifmt = optarg; break; case 'F': ofmt = optarg; break;
@@ -64,6 +64,7 @@ int main(int argc, char* argv[]) {
 			}; break;
 			case 'q': quiet = true; break;
 			case 'h': help();
+			default: return 1;
 		}
 	argv += optind;
 	argc -= optind;
