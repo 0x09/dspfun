@@ -606,6 +606,9 @@ static int write_end(FFContext* out) {
 }
 
 int ffapi_close(FFContext* ctx) {
+	if(!ctx)
+		return 0;
+
 	int ret = 0;
 	if(ctx->fmt->oformat) {
 		ret = write_end(ctx);
