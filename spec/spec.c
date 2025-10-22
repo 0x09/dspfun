@@ -4,6 +4,13 @@
 
 #include "spec.h"
 
+void usage() {
+	fprintf(stderr,"Usage: spec -h ");
+	spec_usage(stderr);
+	fprintf(stderr," <infile> <outfile>\n");
+	exit(1);
+}
+
 int main(int argc, char* argv[]) {
 	struct specopts opts = spec_opt_defaults;
 	int c;
@@ -16,23 +23,21 @@ int main(int argc, char* argv[]) {
 				printf("spectrogram options:\n");
 				spec_help();
 				return 0;
-			default: {
-				int err = spec_opt_proc(&opts,c,optarg);
-				if(err) {
-					fprintf(stderr,"Usage: %s -h ",argv[0]);
-					spec_usage(stderr);
-					fprintf(stderr," <infile> <outfile>\n");
-					return 1;
-				}
-			}
+			default:
+				if(spec_opt_proc(&opts,c,optarg))
+					usage();
 		}
 	}
 
 	argc -= optind;
 	argv += optind;
 	opts.input = opts.output = "-";
-	if(argc > 0) opts.input  = argv[0];
-	if(argc > 1) opts.output = argv[1];
+	if(argc > 0)
+		opts.input  = argv[0];
+	else if(isatty(STDIN_FILENO))
+		usage();
+	if(argc > 1)
+		opts.output = argv[1];
 	else if(isatty(STDOUT_FILENO))
 		opts.output = "sixel:-";
 
