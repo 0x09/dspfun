@@ -6,6 +6,26 @@
 #include <unistd.h>
 #include <getopt.h>
 
+void help() {
+	puts(
+		"Usage: transcode [options] <infile> <outfile>\n"
+		"\n"
+		"  -h                  This help text.\n"
+		"  -s <start:nframes>  Starting frame number and total number of frames of input to use.\n"
+		"  -r <rational>       Output framerate. [default: input rate]\n"
+		"  -q                  Don't print progress.\n"
+		"\n"
+		"  -o <optstring>  Option string containing FFmpeg decoder options for the input file.\n"
+		"  -O <optstring>  Option string containing FFmpeg encoder options for the output file.\n"
+		"  -f <fmt>        FFmpeg input format name (e.g. for pipe input).\n"
+		"  -F <fmt>        FFmpeg output format name. [default: selected by FFmpeg based on output file extension]\n"
+		"  -c <optstring>  Option string specifying the pixel format and color properties to convert to for processing.\n"
+		"  -e <enc>        FFmpeg output encoder name. [default: FFV1 or selected by FFmpeg based on output format]\n"
+		"  -l <int>        Integer FFmpeg log level. [default: 16 (AV_LOG_ERROR)]\n"
+	);
+	exit(0);
+}
+
 int main(int argc, char* argv[]) {
 	AVRational fps = {0};
 	uint64_t frames = 0, offset = 0;
@@ -14,7 +34,7 @@ int main(int argc, char* argv[]) {
 	int loglevel = AV_LOG_ERROR;
 	bool quiet = false;
 	int c;
-	while((c = getopt(argc, argv, "o:O:f:F:c:e:l:r:s:q")) > 0)
+	while((c = getopt(argc, argv, "o:O:f:F:c:e:l:r:s:qh")) > 0)
 		switch(c) {
 			case 'o': iopt = optarg; break; case 'O': oopt = optarg; break;
 			case 'f': ifmt = optarg; break; case 'F': ofmt = optarg; break;
@@ -23,12 +43,13 @@ int main(int argc, char* argv[]) {
 			case 'r': av_parse_video_rate(&fps, optarg); break;
 			case 's': sscanf(optarg, "%" SCNu64 ":" "%" SCNu64, &offset, &frames); break;
 			case 'q': quiet = true; break;
+			case 'h': help();
 			default: return 1;
 		}
 	argv += optind;
 	argc -= optind;
 	if(argc < 2) {
-		fprintf(stderr, "usage: transcode -fF <in/out format> -oO <in/out options> -c <intermediate colorspace options> -e <encoder> -l <loglevel> -r <rate> -s <start>:<frames> -q input output\n");
+		fprintf(stderr, "Usage: transcode [options] <input> <output>\n");
 		return 1;
 	}
 

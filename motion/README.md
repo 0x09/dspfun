@@ -127,7 +127,20 @@ Basic transcoder meant for testing dspfun's FFmpeg API wrapper. Simply decodes a
 
 ## Usage
 
-	Usage: transcode <ffapi args> -r framerate -s start:frames input output
+    Usage: transcode [options] <infile> <outfile>
+    
+      -h                  This help text.
+      -s <start:nframes>  Starting frame number and total number of frames of input to use.
+      -r <rational>       Output framerate. [default: input rate]
+      -q                  Don't print progress.
+    
+      -o <optstring>  Option string containing FFmpeg decoder options for the input file.
+      -O <optstring>  Option string containing FFmpeg encoder options for the output file.
+      -f <fmt>        FFmpeg input format name (e.g. for pipe input).
+      -F <fmt>        FFmpeg output format name. [default: selected by FFmpeg based on output file extension]
+      -c <optstring>  Option string specifying the pixel format and color properties to convert to for processing.
+      -e <enc>        FFmpeg output encoder name. [default: FFV1 or selected by FFmpeg based on output format]
+      -l <int>        Integer FFmpeg log level. [default: 16 (AV_LOG_ERROR)]
 
 ## Examples
 Just convert an mp4 to y4m
