@@ -335,7 +335,6 @@ static void* init_evalxy(size_t width, size_t height, size_t channels, coeff* co
 		return NULL;
 
 	struct scan_precomputed* p = NULL;
-	size_t* map = NULL;
 	AVExpr* expr = NULL;
 	const char* names[3] = {"x","y"};
 	if(av_expr_parse(&expr,args,names,NULL,NULL,NULL,NULL,0,NULL) < 0)
@@ -348,26 +347,11 @@ static void* init_evalxy(size_t width, size_t height, size_t channels, coeff* co
 			if(isnan(result) || isinf(result) || result < 0)
 				continue;
 			size_t i = (size_t)result;
-			size_t j;
-			for(j = 0; j < p->limit; j++)
-				if(map[j] == i) {
-					if(!scan_precomputed_add_coord(p,j,x,y))
-						goto error;
-					break;
-				}
-			if(j == p->limit) {
-				if(!scan_precomputed_add_coord(p,j,x,y))
-					goto error;
-				size_t* m = realloc(map,sizeof(*map)*p->limit);
-				if(!m)
-					goto error;
-				map = m;
-				map[p->limit-1] = i;
-			}
+			if(!scan_precomputed_add_coord(p,i,x,y))
+				goto error;
 		}
 
 end:
-	free(map);
 	av_expr_free(expr);
 	return p;
 
