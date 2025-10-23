@@ -351,6 +351,8 @@ static void* init_evalxy(size_t width, size_t height, size_t channels, coeff* co
 				goto error;
 		}
 
+	if(!p->limit)
+		goto error;
 end:
 	av_expr_free(expr);
 	return p;
