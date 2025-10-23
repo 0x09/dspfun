@@ -54,7 +54,7 @@ static void seek_progress(uint64_t seek) {
 	fprintf(stderr,"\rseek: %" PRIu64,seek);
 }
 
-struct coords {	unsigned long long w, h, d; };
+struct coords { uint64_t w, h, d; };
 typedef struct coords coords[4];
 typedef struct range { coords begin, end; } range;
 static void propagate_planes(coords c, const coords subsample_factors) {
@@ -79,15 +79,15 @@ static void limit_coords(const coords src, coords dest) {
 	}
 }
 #define match_planes(left,right) (left.w == right.w && left.h == right.h && left.d == right.d)
-#define print_coords(x) printf("%llux%llux%llu\n",x->w,x->h,x->d)
+#define print_coords(x) printf("%" PRIu64 "x%" PRIu64 "x%" PRIu64 "\n",x->w,x->h,x->d)
 #undef print_coords
 #define print_coords(x) do {\
 for(int i1 = 0; i1 < components; i1++)\
-	fprintf(stderr,"%llu%s",x[i1].w,i1 == components -1? " x " : ":");\
+	fprintf(stderr,"%" PRIu64 "%s",x[i1].w,i1 == components -1? " x " : ":");\
 for(int i1 = 0; i1 < components; i1++)\
-	fprintf(stderr,"%llu%s",x[i1].h,i1 == components -1? " x " : ":");\
+	fprintf(stderr,"%" PRIu64 "%s",x[i1].h,i1 == components -1? " x " : ":");\
 for(int i1 = 0; i1 < components; i1++)\
-	fprintf(stderr,"%llu%s",x[i1].d,i1 == components -1? "\n" : ":");\
+	fprintf(stderr,"%" PRIu64 "%s",x[i1].d,i1 == components -1? "\n" : ":");\
 } while(0)
 
 int parse_fftw_flag(const char* arg) {
@@ -221,9 +221,9 @@ int main(int argc, char* argv[]) {
 	};
 	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Qh",gopts,&longoptind)) != -1)
 		switch(opt) {
-			case 'b': sscanf(optarg,"%llux%llux%llu",&block->w,&block->h,&block->d); break;
-			case 's': sscanf(optarg,"%llux%llux%llu",&scaled->w,&scaled->h,&scaled->d); break;
-			case 'p': sscanf(optarg,"%llux%llux%llu-%llux%llux%llu",&bandpass.begin->w,&bandpass.begin->h,&bandpass.begin->d,&bandpass.end->w,&bandpass.end->h,&bandpass.end->d); break;
+			case 'b': sscanf(optarg,"%" SCNu64 "x%" SCNu64 "x%" SCNu64,&block->w,&block->h,&block->d); break;
+			case 's': sscanf(optarg,"%" SCNu64 "x%" SCNu64 "x%" SCNu64,&scaled->w,&scaled->h,&scaled->d); break;
+			case 'p': sscanf(optarg,"%" SCNu64 "x%" SCNu64 "x%" SCNu64 "-%" SCNu64 "x%" SCNu64 "x%" SCNu64,&bandpass.begin->w,&bandpass.begin->h,&bandpass.begin->d,&bandpass.end->w,&bandpass.end->h,&bandpass.end->d); break;
 			case 'B': for(int i = sscanf(optarg,"%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER,boost,boost+1,boost+2,boost+3); i < 4; i++) boost[i] = i ? boost[i-1] : 1; break;
 			case 'D': for(int i = sscanf(optarg,"%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER,damp,damp+1,damp+2,damp+3); i < 4; i++) damp[i] = i ? damp[i-1] : 0; break;
 			case 'c': colorspace = optarg; break;
@@ -553,8 +553,8 @@ int main(int argc, char* argv[]) {
 	AVFrame* writeframe = ffapi_alloc_frame(out);
 	int ret = 0, err = 0;
 	unsigned long long coeffs_coded = 0;
-	for(int bz = 0; bz < nblocks->d; bz++) {
-		for(int z = 0; z < block->d; z++) {
+	for(uint64_t bz = 0; bz < nblocks->d; bz++) {
+		for(uint64_t z = 0; z < block->d; z++) {
 			if((err = ffapi_read_frame(in,readframe))) {
 				fprintf(stderr,"Error reading frame: %s\n",av_err2str(err));
 				ret = 1;
@@ -573,14 +573,14 @@ int main(int argc, char* argv[]) {
 									((unsigned char*)pixels[i][by*nblocks[i].w+bx])[(z*minbuf[i].h+y)*minbuf[i].w+x] = ffapi_getpel_direct(readframe,bx*block[i].w+x,by*block[i].h+y,comp);
 			}
 			if(!quiet)
-				fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,bz*block->d+z+1,pads,bz*scaled->d);
+				fprintf(stderr,"\rread: %*" PRIu64 " wrote: %*" PRIu64,padb,bz*block->d+z+1,pads,bz*scaled->d);
 		}
 		for(int i = 0; i < components; i++) {
 			if(bz >= nblocks[i].d) continue;
 			for(int b = 0; b < nblocks[i].h * nblocks[i].w; b++) {
 				void* pblock = pixels[i][b];
 				memset(coeffs,0,sizeof(coeff)*mincomponent);
-				for(int z = 0; z < block[i].d; z++)
+				for(uint64_t z = 0; z < block[i].d; z++)
 					for(int y = 0; y < block[i].h; y++)
 						for(int x = 0; x < block[i].w; x++) {
 							intermediate pel;
@@ -603,7 +603,7 @@ int main(int argc, char* argv[]) {
 					fftw(execute)(planforward[i]);
 
 					// normalize coeffs to uniform range
-					for(int z = 0; z < active[i].d; z++)
+					for(uint64_t z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++)
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= 2*P_SQRT2i / ((x ? 1 : P_SQRT2i) * (y ? 1 : P_SQRT2i) * (z ? 1 : P_SQRT2i));
@@ -630,7 +630,7 @@ int main(int argc, char* argv[]) {
 				}
 
 				if(expr)
-					for(int z = 0; z < active[i].d; z++)
+					for(uint64_t z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++) {
 								double vals[] = {
@@ -644,44 +644,44 @@ int main(int argc, char* argv[]) {
 
 				if(damp[i] != 1) {
 					if(bandpass.begin[i].d) // front
-						for(long long z = 0; z < bandpass.begin[i].d; z++)
 							for(long long y = 0; y < active[i].h; y++)
 								for(long long x = 0; x < active[i].w; x++)
+						for(uint64_t z = 0; z < bandpass.begin[i].d; z++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.end[i].d < active[i].d) // back
-						for(long long z = bandpass.end[i].d; z < active[i].d; z++)
 							for(long long y = 0; y < active[i].h; y++)
 								for(long long x = 0; x < active[i].w; x++)
+						for(uint64_t z = bandpass.end[i].d; z < active[i].d; z++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.begin[i].h) // top
-						for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 							for(long long y = 0; y < bandpass.begin[i].h; y++)
 								for(long long x = 0; x < active[i].w; x++)
+						for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.end[i].h < active[i].h) // bottom
-						for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 							for(long long y = bandpass.end[i].h; y < active[i].h; y++)
 								for(long long x = 0; x < active[i].w; x++)
+						for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.begin[i].w) // left
-						for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 							for(long long y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
 								for(long long x = 0; x < bandpass.begin[i].w; x++)
+						for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.end[i].w < active[i].w) //right
-						for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 							for(long long y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
 								for(long long x = bandpass.end[i].w; x < active[i].w; x++)
+						for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 				}
 				if(boost[i] != 1)
-					for(long long z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 						for(long long y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
 							for(long long x = bandpass.begin[i].w; x < bandpass.end[i].w; x++)
+					for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= boost[i];
 
 				if(threshold_max)
-					for(int z = 0; z < active[i].d; z++)
+					for(uint64_t z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++) {
 								coeff c = mc(fabs)(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x]);
@@ -700,14 +700,14 @@ int main(int argc, char* argv[]) {
 				}
 
 				if(quant)
-					for(int z = 0; z < active[i].d; z++)
+					for(uint64_t z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++)
 								coeffs_coded += !!(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = mi(round)(coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] / quantizer[i])*quantizer[i]);
 
 				if(!spec) {
 					// reverse uniform range normalization before inverting
-					for(int z = 0; z < active[i].d; z++)
+					for(uint64_t z = 0; z < active[i].d; z++)
 						for(int y = 0; y < active[i].h; y++)
 							for(int x = 0; x < active[i].w; x++)
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= ((x ? 1 : P_SQRT2i) * (y ? 1 : P_SQRT2i) * (z ? 1 : P_SQRT2i)) / (2*P_SQRT2i);
@@ -715,7 +715,7 @@ int main(int argc, char* argv[]) {
 					fftw(execute)(planinverse[i]);
 				}
 				else if(spec == spectype_abs) c[i] = 255/mi(log1p)(mi(fabs)(dc * scalefactor[i] * normalization[i]));
-				for(int z = 0; z < scaled[i].d; z++)
+				for(uint64_t z = 0; z < scaled[i].d; z++)
 					for(int y = 0; y < scaled[i].h; y++)
 						for(int x = 0; x < scaled[i].w; x++) {
 							intermediate pel = coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] * scalefactor[i] * normalization[i];
@@ -746,7 +746,7 @@ int main(int argc, char* argv[]) {
 						}
 			}
 		}
-		for(int z = 0; z < scaled->d; z++) {
+		for(uint64_t z = 0; z < scaled->d; z++) {
 			for(int i = 0; i < components; i++) {
 				if(bz >= nblocks[i].d || z >= scaled[i].d) continue;
 				AVComponentDescriptor comp = pixdesc.comp[i];
@@ -765,7 +765,7 @@ int main(int argc, char* argv[]) {
 				goto end;
 			}
 			if(!quiet)
-				fprintf(stderr,"\rread: %*llu wrote: %*llu",padb,(bz+1)*block->d,pads,bz*scaled->d+z+1);
+				fprintf(stderr,"\rread: %*" PRIu64 " wrote: %*" PRIu64,padb,(bz+1)*block->d,pads,bz*scaled->d+z+1);
 		}
 	}
 	fprintf(stderr,"\n");

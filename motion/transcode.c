@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
 		goto end;
 	}
 
-	for(int z = 0; z < nframes && !(err = ffapi_read_frame(in, iframe)); z++) {
+	for(uint64_t z = 0; z < nframes && !(err = ffapi_read_frame(in, iframe)); z++) {
 		// equivalent to ffapi_write_frame(out, iframe) since no image processing is being done
 		for(int c = 0; c < components; c++)
 			for(int y = 0; y < heights[c]; y++)
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 			goto end;
 		}
 		if(!quiet)
-			fprintf(stderr, "\r%d", z);
+			fprintf(stderr, "\r%" PRIu64, z);
 	}
 	if(!quiet)
 		fprintf(stderr, "\n");

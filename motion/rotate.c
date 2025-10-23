@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 
 	if(nframes)
 		nframes -= offset;
-	unsigned long len[] = {*widths, *heights, nframes};
+	uint64_t len[] = {*widths, *heights, nframes};
 
 	if(frames && len[2])
 		len[2] = FFMIN(frames,len[2]);
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
 	if(!oframe) { fprintf(stderr,"outframe error\n"); return 1; }
 
 	unsigned char (*buf)[in->pixdesc->nb_components] = malloc(len[0]*len[1]*len[2]*sizeof(*buf));
-	for(int z = 0; z < len[2]; z++) {
+	for(uint64_t z = 0; z < len[2]; z++) {
 		if((err = ffapi_read_frame(in,iframe))) {
 			fprintf(stderr,"Error reading frame: %s\n",av_err2str(err));
 			ffapi_free_frame(iframe);
@@ -149,14 +149,14 @@ int main(int argc, char* argv[]) {
 			for(int x = 0; x < len[0]; x++)
 				ffapi_getpixel(in,iframe,x,y,buf[(z*len[1]+y)*len[0]+x]);
 		if(!quiet)
-			fprintf(stderr,"\r%d",z);
+			fprintf(stderr,"\r%" PRIu64,z);
 	}
 	if(!quiet)
 		fprintf(stderr,"\n");
 	ffapi_free_frame(iframe);
 	ffapi_close(in);
 
-	unsigned long axis[3];
+	uint64_t axis[3];
 #define INV(i) ((len[i]-axis[i]-1)*invert[map[i]]+axis[i]*!invert[map[i]])
 	for(axis[map[2]] = 0; axis[map[2]] < len[map[2]]; axis[map[2]]++) {
 		for(axis[map[1]] = 0; axis[map[1]] < len[map[1]]; axis[map[1]]++)
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
 			goto end;
 		}
 		if(!quiet)
-			fprintf(stderr,"\r%lu",axis[map[2]]);
+			fprintf(stderr,"\r%" PRIu64,axis[map[2]]);
 	}
 
 	if(!quiet)
