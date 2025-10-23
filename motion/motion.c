@@ -79,8 +79,7 @@ static void limit_coords(const coords src, coords dest) {
 	}
 }
 #define match_planes(left,right) (left.w == right.w && left.h == right.h && left.d == right.d)
-#define print_coords(x) printf("%" PRIu64 "x%" PRIu64 "x%" PRIu64 "\n",x->w,x->h,x->d)
-#undef print_coords
+
 #define print_coords(x) do {\
 for(int i1 = 0; i1 < components; i1++)\
 	fprintf(stderr,"%" PRIu64 "%s",x[i1].w,i1 == components -1? " x " : ":");\
