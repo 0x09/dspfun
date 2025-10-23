@@ -61,7 +61,7 @@ static void propagate_planes(coords c, const coords subsample_factors) {
 	for(int i = 0; i < 4; i++) {
 		if(!c[i].w) c[i].w = -((-((int)c[0].w)) >> subsample_factors[i].w);
 		if(!c[i].h) c[i].h = -((-((int)c[0].h)) >> subsample_factors[i].h);
-		if(!c[i].d) c[i].d = -((-((int)c[0].d)) >> subsample_factors[i].d);
+		if(!c[i].d) c[i].d = c[0].d;
 	}
 }
 static void fill_coords(const coords src, coords dest) {
