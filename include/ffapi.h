@@ -39,7 +39,7 @@ ffapi_pix_fmt_filter ffapi_pixfmts_8bit_pel, ffapi_pixfmts_32_bit_float_pel;
 void       ffapi_parse_color_props(FFColorProperties* c, const char* props);
 FFContext* ffapi_open_input (const char* file, const char* options,
                              const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter*,
-                             uint8_t* components, unsigned long (*widths)[4], unsigned long (*heights)[4], uint64_t* frames,
+                             uint8_t* components, int (*widths)[4], int (*heights)[4], uint64_t* frames,
                              AVRational* rate, bool calc_frames);
 FFContext* ffapi_open_output(const char* file, const char* options,
                              const char* format, const char* encoder, enum AVCodecID preferred_encoder,

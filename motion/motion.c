@@ -303,7 +303,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	uint8_t components;
-	unsigned long w[4], h[4];
+	int w[4], h[4];
 	uint64_t nframes;
 	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,&nframes,&r_frame_rate,!(outfile && maxframes));
 	if(!in) {
@@ -644,40 +644,40 @@ int main(int argc, char* argv[]) {
 
 				if(damp[i] != 1) {
 					if(bandpass.begin[i].d) // front
-							for(long long y = 0; y < active[i].h; y++)
-								for(long long x = 0; x < active[i].w; x++)
 						for(uint64_t z = 0; z < bandpass.begin[i].d; z++)
+							for(int y = 0; y < active[i].h; y++)
+								for(int x = 0; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.end[i].d < active[i].d) // back
-							for(long long y = 0; y < active[i].h; y++)
-								for(long long x = 0; x < active[i].w; x++)
 						for(uint64_t z = bandpass.end[i].d; z < active[i].d; z++)
+							for(int y = 0; y < active[i].h; y++)
+								for(int x = 0; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.begin[i].h) // top
-							for(long long y = 0; y < bandpass.begin[i].h; y++)
-								for(long long x = 0; x < active[i].w; x++)
 						for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
+							for(int y = 0; y < bandpass.begin[i].h; y++)
+								for(int x = 0; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.end[i].h < active[i].h) // bottom
-							for(long long y = bandpass.end[i].h; y < active[i].h; y++)
-								for(long long x = 0; x < active[i].w; x++)
 						for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
+							for(int y = bandpass.end[i].h; y < active[i].h; y++)
+								for(int x = 0; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.begin[i].w) // left
-							for(long long y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
-								for(long long x = 0; x < bandpass.begin[i].w; x++)
 						for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
+							for(int y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
+								for(int x = 0; x < bandpass.begin[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 					if(bandpass.end[i].w < active[i].w) //right
-							for(long long y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
-								for(long long x = bandpass.end[i].w; x < active[i].w; x++)
 						for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
+							for(int y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
+								for(int x = bandpass.end[i].w; x < active[i].w; x++)
 									coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= damp[i];
 				}
 				if(boost[i] != 1)
-						for(long long y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
-							for(long long x = bandpass.begin[i].w; x < bandpass.end[i].w; x++)
 					for(uint64_t z = bandpass.begin[i].d; z < bandpass.end[i].d; z++)
+						for(int y = bandpass.begin[i].h; y < bandpass.end[i].h; y++)
+							for(int x = bandpass.begin[i].w; x < bandpass.end[i].w; x++)
 								coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] *= boost[i];
 
 				if(threshold_max)

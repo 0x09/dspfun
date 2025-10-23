@@ -150,7 +150,7 @@ bool ffapi_pixfmts_32_bit_float_pel(const AVPixFmtDescriptor* desc) {
 
 FFContext* ffapi_open_input(const char* file, const char* options,
                          const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter* pix_fmt_filter,
-                         uint8_t* components, unsigned long (*widths)[4], unsigned long (*heights)[4], uint64_t* frames, AVRational* rate, bool calc_frames) {
+                         uint8_t* components, int (*widths)[4], int (*heights)[4], uint64_t* frames, AVRational* rate, bool calc_frames) {
 
 	if(color_props && !ffapi_validate_color_props(color_props))
 		return NULL;

@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
 
 	int err = 0, ret = 0;
 	uint8_t components = 0;
-	unsigned long widths[4], heights[4];
+	int widths[4], heights[4];
 	uint64_t nframes;
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, cprops);
