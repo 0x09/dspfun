@@ -222,7 +222,13 @@ int main(int argc, char* argv[]) {
 	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Qh",gopts,&longoptind)) != -1)
 		switch(opt) {
 			case 'b': sscanf(optarg,"%" SCNu64 "x%" SCNu64 "x%" SCNu64,&block->w,&block->h,&block->d); break;
-			case 's': sscanf(optarg,"%" SCNu64 "x%" SCNu64 "x%" SCNu64,&scaled->w,&scaled->h,&scaled->d); break;
+			case 's':
+				sscanf(optarg,"%" SCNu64 "x%" SCNu64 "x%" SCNu64,&scaled->w,&scaled->h,&scaled->d);
+				if(scaled->w > INT_MAX || scaled->h > INT_MAX) {
+					fprintf(stderr,"Scaled dimensions must be less than %d\n",INT_MAX);
+					exit(1);
+				}
+				break;
 			case 'p': sscanf(optarg,"%" SCNu64 "x%" SCNu64 "x%" SCNu64 "-%" SCNu64 "x%" SCNu64 "x%" SCNu64,&bandpass.begin->w,&bandpass.begin->h,&bandpass.begin->d,&bandpass.end->w,&bandpass.end->h,&bandpass.end->d); break;
 			case 'B': for(int i = sscanf(optarg,"%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER,boost,boost+1,boost+2,boost+3); i < 4; i++) boost[i] = i ? boost[i-1] : 1; break;
 			case 'D': for(int i = sscanf(optarg,"%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER ":%" COEFF_SPECIFIER,damp,damp+1,damp+2,damp+3); i < 4; i++) damp[i] = i ? damp[i-1] : 0; break;
