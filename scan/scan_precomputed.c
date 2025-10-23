@@ -53,7 +53,7 @@ static struct scan_precomputed* unserialize_coordinate(FILE* f, char** line) {
 	size_t linecap = *line ? strlen(*line) : 0;
 	size_t i = 0;
 	do {
-		if(!*line || **line == '\n')
+		if(!*line)
 			continue;
 		char *token,* string = *line;
 		while((token = strsep(&string, " ")) && *token != '\n') {
@@ -110,12 +110,14 @@ err:
 struct scan_precomputed* scan_precomputed_unserialize(FILE* f) {
 	struct scan_precomputed* p = NULL;
 	char *line = NULL;
-	size_t linecap = 0;
-	ssize_t linelen;
-	while((linelen = getline(&line,&linecap,f)) > 0 && strspn(line," \n") == linelen)
-		;
-	if(linelen > 0)
-		p = strchr(line,',') ? unserialize_coordinate(f,&line) : unserialize_index(f,&line);
+	if(getline(&line,&(size_t){0},f) > 0) {
+		p = strchr(line,',') || *line == '\n' ? unserialize_coordinate(f,&line) : unserialize_index(f,&line);
+
+		if(p && !p->limit) {
+			free(p);
+			p = NULL;
+		}
+	}
 	free(line);
 	return p;
 }
