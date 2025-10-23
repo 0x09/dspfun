@@ -44,7 +44,7 @@ FFContext* ffapi_open_input (const char* file, const char* options,
 FFContext* ffapi_open_output(const char* file, const char* options,
                              const char* format, const char* encoder, enum AVCodecID preferred_encoder,
                              const FFColorProperties* in_color_props,
-                             unsigned long width, unsigned long height, AVRational rate);
+                             size_t width, size_t height, AVRational rate);
 AVFrame*  ffapi_alloc_frame(FFContext*);
 void      ffapi_free_frame (AVFrame*);
 void      ffapi_clear_frame(AVFrame*);

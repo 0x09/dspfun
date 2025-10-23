@@ -338,10 +338,16 @@ static int ffapi_io_close_pipe(AVFormatContext *s, AVIOContext* pb) {
 FFContext* ffapi_open_output(const char* file, const char* options,
                          const char* format, const char* encoder, enum AVCodecID preferred_encoder,
                          const FFColorProperties* in_color_props,
-                         unsigned long width, unsigned long height, AVRational rate) {
+                         size_t width, size_t height, AVRational rate) {
 
 	if(!ffapi_validate_color_props(in_color_props))
 		return NULL;
+
+	// accept size_t for these for compatibility with other APIs but check for overflow
+	if(width > INT_MAX || height > INT_MAX) {
+		av_log(NULL,AV_LOG_ERROR,"Output dimensions %zux%zu too large.\n",width,height);
+		return NULL;
+	}
 
 	AVDictionary* opts = NULL;
 	FFContext* out = calloc(1,sizeof(*out));
