@@ -202,7 +202,8 @@ static void scan_evali(void* opaque, size_t width, size_t height, size_t i, size
 
 static void scan_precomputed(void* opaque, size_t width, size_t height, size_t i, size_t (*coords)[2]) {
 	struct scan_precomputed* p = opaque;
-	memcpy(coords,p->scans[i],sizeof(*coords)*p->intervals[i]);
+	if(p->scans[i])
+		memcpy(coords,p->scans[i],sizeof(*coords)*p->intervals[i]);
 }
 
 // a-priori data needed by the scan if any
