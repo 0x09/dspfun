@@ -59,30 +59,35 @@ int main(int argc, char* argv[]) {
 	uint8_t components = 0;
 	int widths[4], heights[4];
 	uint64_t nframes;
+
+	FFContext* in = NULL,* out = NULL;
+	AVFrame* iframe = NULL,* oframe = NULL;
+
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, cprops);
-	FFContext* in = ffapi_open_input(argv[0], iopt, ifmt, &color_props, ffapi_pixfmts_8bit_pel, &components, &widths, &heights, &nframes, (fps.den == 0 ? &fps : NULL), frames == 0);
+
+	in = ffapi_open_input(argv[0], iopt, ifmt, &color_props, ffapi_pixfmts_8bit_pel, &components, &widths, &heights, &nframes, (fps.den == 0 ? &fps : NULL), frames == 0);
 	if(!in) {
 		fprintf(stderr, "Error opening input context\n");
 		ret = 1;
 		goto end;
 	}
 
-	FFContext* out = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, *widths, *heights, fps);
+	out = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, *widths, *heights, fps);
 	if(!out) {
 		fprintf(stderr, "Error opening output context\n");
 		ret = 1;
 		goto end;
 	 }
 
-	AVFrame* iframe = ffapi_alloc_frame(in);
+	iframe = ffapi_alloc_frame(in);
 	if(!iframe) {
 		fprintf(stderr, "Couldn't allocate input frame\n");
 		ret = 1;
 		goto end;
 	}
 
-	AVFrame* oframe = ffapi_alloc_frame(out);
+	oframe = ffapi_alloc_frame(out);
 	if(!oframe) {
 		fprintf(stderr, "Couldn't allocate output frame\n");
 		ret = 1;
