@@ -322,10 +322,8 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 	return in;
 
 error:
-	avcodec_free_context(&avc);
-	avformat_close_input(&in->fmt);
+	ffapi_close(in);
 	av_dict_free(&opts);
-	free(in);
 	return NULL;
 }
 
@@ -492,10 +490,8 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 
 	 return out;
 error:
+	ffapi_close(out);
 	av_dict_free(&opts);
-	avcodec_free_context(&out->codec);
-	avformat_free_context(out->fmt);
-	free(out);
 	return NULL;
 }
 
@@ -616,7 +612,7 @@ int ffapi_close(FFContext* ctx) {
 		return 0;
 
 	int ret = 0;
-	if(ctx->fmt->oformat) {
+	if(ctx->fmt && ctx->fmt->oformat) {
 		ret = write_end(ctx);
 		av_write_trailer(ctx->fmt);
 	}
@@ -626,12 +622,14 @@ int ffapi_close(FFContext* ctx) {
 		sws_freeContext(ctx->sws);
 	}
 
-	if(ctx->fmt->oformat) {
-		if(!((ctx->fmt->oformat->flags & AVFMT_NOFILE) || (ctx->fmt->flags & AVFMT_FLAG_CUSTOM_IO)))
-			ctx->fmt->io_close2(ctx->fmt,ctx->fmt->pb);
-		avformat_free_context(ctx->fmt);
+	if(ctx->fmt) {
+		if(ctx->fmt->oformat) {
+			if(!((ctx->fmt->oformat->flags & AVFMT_NOFILE) || (ctx->fmt->flags & AVFMT_FLAG_CUSTOM_IO)))
+				ctx->fmt->io_close2(ctx->fmt,ctx->fmt->pb);
+			avformat_free_context(ctx->fmt);
+		}
+		else avformat_close_input(&ctx->fmt);
 	}
-	else avformat_close_input(&ctx->fmt);
 
 	free(ctx);
 	return ret;
