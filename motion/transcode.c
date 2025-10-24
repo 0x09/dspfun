@@ -66,16 +66,16 @@ int main(int argc, char* argv[]) {
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, cprops);
 
-	in = ffapi_open_input(argv[0], iopt, ifmt, &color_props, ffapi_pixfmts_8bit_pel, &components, &widths, &heights, &nframes, (fps.den == 0 ? &fps : NULL), frames == 0);
+	in = ffapi_open_input(argv[0], iopt, ifmt, &color_props, ffapi_pixfmts_8bit_pel, &components, &widths, &heights, &nframes, (fps.den == 0 ? &fps : NULL), frames == 0, &err);
 	if(!in) {
-		fprintf(stderr, "Error opening input context\n");
+		fprintf(stderr, "Error opening input context: %s\n",av_err2str(err));
 		ret = 1;
 		goto end;
 	}
 
-	out = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, *widths, *heights, fps);
+	out = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, *widths, *heights, fps, &err);
 	if(!out) {
-		fprintf(stderr, "Error opening output context\n");
+		fprintf(stderr, "Error opening output context: %s\n",av_err2str(err));
 		ret = 1;
 		goto end;
 	 }

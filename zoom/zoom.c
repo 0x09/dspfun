@@ -302,9 +302,10 @@ int main(int argc, char* argv[]) {
 		vy = (height*yscale_num/yscale_den-vh)/2;
 	}
 
-	FFContext* ffctx = ffapi_open_output(outfile, oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, vw, vh, fps);
+	int err;
+	FFContext* ffctx = ffapi_open_output(outfile, oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, vw, vh, fps, &err);
 	if(!ffctx) {
-		fprintf(stderr,"Error opening output context\n");
+		fprintf(stderr,"Error opening output context: %s\n",av_err2str(err));
 		return 1;
 	}
 

@@ -150,16 +150,26 @@ bool ffapi_pixfmts_32_bit_float_pel(const AVPixFmtDescriptor* desc) {
 
 FFContext* ffapi_open_input(const char* file, const char* options,
                          const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter* pix_fmt_filter,
-                         uint8_t* components, int (*widths)[4], int (*heights)[4], uint64_t* frames, AVRational* rate, bool calc_frames) {
+                         uint8_t* components, int (*widths)[4], int (*heights)[4], uint64_t* frames, AVRational* rate, bool calc_frames, int* averror) {
 
-	if(color_props && !ffapi_validate_color_props(color_props))
-		return NULL;
+	int err = 0;
+	if(averror)
+		*averror = 0;
 
-	FFContext* in = calloc(1,sizeof(*in));
-
-	AVCodecContext* avc = NULL;
 	AVDictionary* opts = NULL;
-	av_dict_parse_string(&opts,options,"=",":",0);
+	FFContext* in = calloc(1,sizeof(*in));
+	if(!in) {
+		err = AVERROR(ENOMEM);
+		goto error;
+	}
+
+	if(color_props && !ffapi_validate_color_props(color_props)) {
+		err = AVERROR(EINVAL);
+		goto error;
+	}
+
+	if((err = av_dict_parse_string(&opts,options,"=",":",0)))
+		goto error;
 
 	if(!strcmp(file,"-"))
 		file = "pipe:";
@@ -168,21 +178,31 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		format = "yuv4mpegpipe";
 
 	const AVInputFormat* ifmt = NULL;
-	if(format) ifmt = av_find_input_format(format);
-	if(avformat_open_input(&in->fmt,file,ifmt,&opts))
+	if(format)
+		ifmt = av_find_input_format(format);
+	if((err = avformat_open_input(&in->fmt,file,ifmt,&opts)))
 		goto error;
 
-	avformat_find_stream_info(in->fmt,NULL);
+	if((err = avformat_find_stream_info(in->fmt,NULL)) < 0)
+		goto error;
+
 	const AVCodec* dec;
 	int stream = av_find_best_stream(in->fmt,AVMEDIA_TYPE_VIDEO,-1,-1,&dec,0);
-	if(stream < 0)
+	if(stream < 0) {
+		err = stream;
 		goto error;
+	}
 	in->st = in->fmt->streams[stream];
 	AVCodecParameters* params = in->st->codecpar;
 
-	avc = in->codec = avcodec_alloc_context3(dec);
-	avcodec_parameters_to_context(avc, params);
-	if(avcodec_open2(avc,dec,&opts) < 0)
+	AVCodecContext* avc = in->codec = avcodec_alloc_context3(dec);
+	if(!avc) {
+		err = AVERROR(ENOMEM);
+		goto error;
+	}
+	if((err = avcodec_parameters_to_context(avc, params)) < 0)
+		goto error;
+	if((err = avcodec_open2(avc,dec,&opts)))
 		goto error;
 
 	av_dict_free(&opts);
@@ -192,10 +212,6 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		*rate = in->st->r_frame_rate;
 
 	in->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(avc->pix_fmt);
-	if(!in->pixdesc) {
-		ffapi_close(in);
-		return NULL;
-	}
 	if(frames) {
 		*frames = in->st->nb_frames;
 		if(!*frames) {
@@ -204,19 +220,18 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 			else if(calc_frames) {
 				if(!strncmp(file,"pipe:",5) || (!stat(file,&st) && S_ISFIFO(st.st_mode))) {
 					av_log(NULL,AV_LOG_ERROR,"Can't calculate frame count on pipe input\n");
-					ffapi_close(in);
-					return NULL;
+					err = AVERROR(EINVAL);
+					goto error;
 				}
 
 				*frames = UINT64_MAX;
-				int err = ffapi_seek_frame(in,frames,NULL);
+				err = ffapi_seek_frame(in,frames,NULL);
 				if(err && err != AVERROR_EOF) {
 					av_log(NULL,AV_LOG_ERROR,"Error calculating frame count: %s\n",av_err2str(err));
-					ffapi_close(in);
-					return NULL;
+					goto error;
 				}
 				ffapi_close(in);
-				return ffapi_open_input(file,options,format,color_props,pix_fmt_filter,components,widths,heights,NULL,rate,false);
+				return ffapi_open_input(file,options,format,color_props,pix_fmt_filter,components,widths,heights,NULL,rate,false,averror);
 			}
 		}
 	}
@@ -226,8 +241,10 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		size_t nb_pix_fmts = 1;
 		for(const AVPixFmtDescriptor* desc = av_pix_fmt_desc_next(NULL); desc; desc = av_pix_fmt_desc_next(desc))
 			nb_pix_fmts++;
-		if(!(supported_pix_fmts = malloc(nb_pix_fmts*sizeof(*supported_pix_fmts))))
+		if(!(supported_pix_fmts = malloc(nb_pix_fmts*sizeof(*supported_pix_fmts)))) {
+			err = AVERROR(ENOMEM);
 			goto error;
+		}
 		size_t di = 0;
 		for(const AVPixFmtDescriptor* desc = av_pix_fmt_desc_next(NULL); desc; desc = av_pix_fmt_desc_next(desc))
 			if(pix_fmt_filter(desc))
@@ -257,6 +274,7 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		if(*fmt == AV_PIX_FMT_NONE) {
 			av_log(NULL,AV_LOG_INFO,"requested intermediate pixel_format %s not supported by application\n",av_get_pix_fmt_name(color_props->pix_fmt));
 			free(supported_pix_fmts);
+			err = AVERROR(EINVAL);
 			goto error;
 		}
 	}
@@ -270,7 +288,10 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 		color_props->color_space != avc->colorspace ||
 		color_props->chroma_location != avc->chroma_sample_location
 	) {
-		in->sws = sws_alloc_context();
+		if(!(in->sws = sws_alloc_context())) {
+			err = AVERROR(ENOMEM);
+			goto error;
+		}
 		av_opt_set_int(in->sws, "srcw", avc->width, 0);
 		av_opt_set_int(in->sws, "srch", avc->height, 0);
 		av_opt_set_int(in->sws, "src_format", avc->pix_fmt, 0);
@@ -287,10 +308,8 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 			av_opt_set_int(in->sws,"dst_h_chr_pos",xpos,0);
 			av_opt_set_int(in->sws,"dst_v_chr_pos",ypos,0);
 		}
-		if(sws_init_context(in->sws,NULL,NULL)) {
-			ffapi_close(in);
-			return NULL;
-		}
+		if((err = sws_init_context(in->sws,NULL,NULL)) < 0)
+			goto error;
 
 		int brightness, contrast, saturation;
 		sws_getColorspaceDetails(in->sws, &(int*){0}, &(int){0}, &(int*){0}, &(int){0}, &brightness, &contrast, &saturation);
@@ -299,7 +318,10 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 			sws_getCoefficients(color_props->color_space), color_props->color_range == AVCOL_RANGE_JPEG,
 			brightness, contrast, saturation);
 
-		in->swsframe = av_frame_alloc();
+		if(!(in->swsframe = av_frame_alloc())) {
+			err = AVERROR(ENOMEM);
+			goto error;
+		}
 		in->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(color_props->pix_fmt);
 	}
 
@@ -324,6 +346,10 @@ FFContext* ffapi_open_input(const char* file, const char* options,
 error:
 	ffapi_close(in);
 	av_dict_free(&opts);
+
+	if(averror)
+		*averror = err;
+
 	return NULL;
 }
 
@@ -336,19 +362,30 @@ static int ffapi_io_close_pipe(AVFormatContext *s, AVIOContext* pb) {
 FFContext* ffapi_open_output(const char* file, const char* options,
                          const char* format, const char* encoder, enum AVCodecID preferred_encoder,
                          const FFColorProperties* in_color_props,
-                         size_t width, size_t height, AVRational rate) {
+                         size_t width, size_t height, AVRational rate, int* averror) {
 
-	if(!ffapi_validate_color_props(in_color_props))
-		return NULL;
+	int err = 0;
+	if(averror)
+		*averror = 0;
+
+	AVDictionary* opts = NULL;
+	FFContext* out = calloc(1,sizeof(*out));
+	if(!out) {
+		err = AVERROR(ENOMEM);
+		goto error;
+	}
+
+	if(in_color_props && !ffapi_validate_color_props(in_color_props)) {
+		err = AVERROR(EINVAL);
+		goto error;
+	}
 
 	// accept size_t for these for compatibility with other APIs but check for overflow
 	if(width > INT_MAX || height > INT_MAX) {
 		av_log(NULL,AV_LOG_ERROR,"Output dimensions %zux%zu too large.\n",width,height);
-		return NULL;
+		err = AVERROR(EINVAL);
+		goto error;
 	}
-
-	AVDictionary* opts = NULL;
-	FFContext* out = calloc(1,sizeof(*out));
 
 	if(!strcmp(file,"-"))
 		file = "pipe:";
@@ -360,7 +397,7 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 			format = "yuv4mpegpipe";
 	}
 
-	if(avformat_alloc_output_context2(&out->fmt,NULL,format,file))
+	if((err = avformat_alloc_output_context2(&out->fmt,NULL,format,file)))
 		goto error;
 
 	const AVCodec* enc = NULL;
@@ -370,11 +407,20 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		enc = avcodec_find_encoder(preferred_encoder);
 	if(!enc || avformat_query_codec(out->fmt->oformat,enc->id,FF_COMPLIANCE_NORMAL) != 1)
 		enc = avcodec_find_encoder(av_guess_codec(out->fmt->oformat,NULL,out->fmt->url,NULL,AVMEDIA_TYPE_VIDEO));
-	if(!enc)
+	if(!enc) {
+		err = AVERROR_ENCODER_NOT_FOUND;
 		goto error;
+	}
 
-	out->st = avformat_new_stream(out->fmt,enc);
+	if(!(out->st = avformat_new_stream(out->fmt,enc))) {
+		err = AVERROR_UNKNOWN;
+		goto error;
+	}
 	AVCodecContext* avc = out->codec = avcodec_alloc_context3(enc);
+	if(!avc) {
+		err = AVERROR(ENOMEM);
+		goto error;
+	}
 	out->pixdesc = (AVPixFmtDescriptor*)av_pix_fmt_desc_get(in_color_props->pix_fmt);
 
 	const enum AVPixelFormat* codec_pix_fmts = NULL;
@@ -396,12 +442,15 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 	avc->chroma_sample_location = in_color_props->chroma_location;
 	fill_color_defaults(out->fmt->oformat, avc);
 
-	avcodec_parameters_from_context(out->st->codecpar,avc);
-
-	av_dict_parse_string(&opts,options,"=",":",0);
-	if(avcodec_open2(avc,enc,&opts))
+	if((err = avcodec_parameters_from_context(out->st->codecpar,avc)) < 0)
 		goto error;
-	avcodec_parameters_from_context(out->st->codecpar,avc);
+
+	if((err = av_dict_parse_string(&opts,options,"=",":",0)))
+		goto error;
+	if((err = avcodec_open2(avc,enc,&opts)))
+		goto error;
+	if((err = avcodec_parameters_from_context(out->st->codecpar,avc)) < 0)
+		goto error;
 
 	if(!strcmp(file,"ffplay:")) {
 		char* cmd = av_asprintf(
@@ -414,24 +463,30 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 			(avc->colorspace == AVCOL_SPC_RGB ? "rgb" : av_color_space_name(avc->colorspace)),
 			av_chroma_location_name(avc->chroma_sample_location)
 		);
-		if(!cmd)
+		if(!cmd) {
+			err = AVERROR(ENOMEM);
 			goto error;
+		}
 
 		av_log(NULL,AV_LOG_INFO,"ffapi: Invoking %s\n",cmd);
 		if(!(out->fmt->opaque = popen(cmd,"w"))) {
 			av_free(cmd);
+			err = AVERROR_UNKNOWN;
 			goto error;
 		}
 		av_free(cmd);
 		out->fmt->io_close2 = ffapi_io_close_pipe;
 		int fd = fileno((FILE*)out->fmt->opaque);
 		av_free(out->fmt->url);
-		out->fmt->url = av_asprintf("pipe:%d",fd);
+		if(!(out->fmt->url = av_asprintf("pipe:%d",fd))) {
+			err = AVERROR(ENOMEM);
+			goto error;
+		}
 	}
 
-	if(avio_open2(&out->fmt->pb,out->fmt->url,AVIO_FLAG_WRITE,NULL,&opts))
+	if((err = avio_open2(&out->fmt->pb,out->fmt->url,AVIO_FLAG_WRITE,NULL,&opts)) < 0)
 		goto error;
-	if(avformat_write_header(out->fmt,&opts))
+	if((err = avformat_write_header(out->fmt,&opts)) < 0)
 		goto error;
 	av_dict_free(&opts);
 	opts = NULL;
@@ -445,7 +500,10 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		in_color_props->color_space != avc->colorspace ||
 		in_color_props->chroma_location != avc->chroma_sample_location
 	) {
-		out->sws = sws_alloc_context();
+		if(!(out->sws = sws_alloc_context())) {
+			err = AVERROR(ENOMEM);
+			goto error;
+		}
 		av_opt_set_int(out->sws, "srcw", width, 0);
 		av_opt_set_int(out->sws, "srch", height, 0);
 		av_opt_set_int(out->sws, "src_format", in_color_props->pix_fmt, 0);
@@ -463,10 +521,8 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 			av_opt_set_int(out->sws,"dst_v_chr_pos",ypos,0);
 		}
 
-		if(sws_init_context(out->sws,NULL,NULL)) {
-			sws_freeContext(out->sws);
+		if((err = sws_init_context(out->sws,NULL,NULL)) < 0)
 			goto error;
-		}
 
 		int brightness, contrast, saturation;
 		sws_getColorspaceDetails(out->sws, &(int*){0}, &(int){0}, &(int*){0}, &(int){0}, &brightness, &contrast, &saturation);
@@ -475,7 +531,10 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 			sws_getCoefficients(avc->colorspace), avc->color_range == AVCOL_RANGE_JPEG,
 			brightness, contrast, saturation);
 
-		out->swsframe = av_frame_alloc();
+		if(!(out->swsframe = av_frame_alloc()))  {
+			err = AVERROR(ENOMEM);
+			goto error;
+		}
 		out->swsframe->width  = avc->width;
 		out->swsframe->height = avc->height;
 		out->swsframe->format = avc->pix_fmt;
@@ -492,6 +551,10 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 error:
 	ffapi_close(out);
 	av_dict_free(&opts);
+
+	if(averror)
+		*averror = err;
+
 	return NULL;
 }
 

@@ -98,9 +98,9 @@ int main(int argc, char* argv[]) {
 	FFColorProperties color_props;
 	ffapi_parse_color_props(&color_props, cprops);
 
-	FFContext* in = ffapi_open_input(argv[1],iopt,ifmt,&color_props,pix_fmt_filter,&components,&widths,&heights,&nframes,&r,frames == 0);
+	FFContext* in = ffapi_open_input(argv[1],iopt,ifmt,&color_props,pix_fmt_filter,&components,&widths,&heights,&nframes,&r,frames == 0,&err);
 	if(!in) {
-		fprintf(stderr,"error opening input file %s\n",argv[1]);
+		fprintf(stderr,"error opening input file %s: %s\n",argv[1],av_err2str(err));
 		return 1;
 	}
 
@@ -125,9 +125,9 @@ int main(int argc, char* argv[]) {
 		else fps = r;
 	}
 
-	FFContext* out = ffapi_open_output(argv[2],oopt,ofmt,enc,AV_CODEC_ID_FFV1,&color_props,len[map[0]],len[map[1]],fps);
+	FFContext* out = ffapi_open_output(argv[2],oopt,ofmt,enc,AV_CODEC_ID_FFV1,&color_props,len[map[0]],len[map[1]],fps,&err);
 	if(!out) {
-		fprintf(stderr,"error opening output file %s\n",argv[2]);
+		fprintf(stderr,"error opening output file %s: %s\n",argv[2],av_err2str(err));
 		return 1;
 	}
 

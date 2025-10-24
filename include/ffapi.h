@@ -40,11 +40,13 @@ void       ffapi_parse_color_props(FFColorProperties* c, const char* props);
 FFContext* ffapi_open_input (const char* file, const char* options,
                              const char* format, FFColorProperties* color_props, ffapi_pix_fmt_filter*,
                              uint8_t* components, int (*widths)[4], int (*heights)[4], uint64_t* frames,
-                             AVRational* rate, bool calc_frames);
+                             AVRational* rate, bool calc_frames,
+                             int* averror);
 FFContext* ffapi_open_output(const char* file, const char* options,
                              const char* format, const char* encoder, enum AVCodecID preferred_encoder,
                              const FFColorProperties* in_color_props,
-                             size_t width, size_t height, AVRational rate);
+                             size_t width, size_t height, AVRational rate,
+                             int* averror);
 AVFrame*  ffapi_alloc_frame(FFContext*);
 void      ffapi_free_frame (AVFrame*);
 void      ffapi_clear_frame(AVFrame*);

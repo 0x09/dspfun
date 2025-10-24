@@ -322,10 +322,11 @@ int main(int argc, char* argv[]) {
 	if(argc <= 1)
 		goto scan_end;
 
-	FFContext* ffctx = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, width*(!!visualize+1), height*(!!intermediates+1), fps);
+	int err;
+	FFContext* ffctx = ffapi_open_output(argv[1], oopt, ofmt, enc, AV_CODEC_ID_FFV1, &color_props, width*(!!visualize+1), height*(!!intermediates+1), fps, &err);
 	if(!ffctx) {
 		ret = 1;
-		fprintf(stderr, "Error opening output context\n");
+		fprintf(stderr, "Error opening output context: %s\n",av_err2str(err));
 		goto scan_end;
 	}
 	av_csp_trc_function trc_encode = NULL;

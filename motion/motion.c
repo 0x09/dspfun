@@ -310,9 +310,10 @@ int main(int argc, char* argv[]) {
 	uint8_t components;
 	int w[4], h[4];
 	uint64_t nframes;
-	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,&nframes,&r_frame_rate,!(outfile && maxframes));
+	int err;
+	FFContext* in = ffapi_open_input(infile,decopts,iformat,&color_props,pix_fmt_filter,&components,&w,&h,&nframes,&r_frame_rate,!(outfile && maxframes), &err);
 	if(!in) {
-		fprintf(stderr, "Error opening \"%s\"\n", infile);
+		fprintf(stderr, "Error opening \"%s\": %s\n", infile, av_err2str(err));
 		return 1;
 	}
 	source->d = nframes;
@@ -414,9 +415,9 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Setup output
-	FFContext* out = ffapi_open_output(outfile,encopts,format,encoder,AV_CODEC_ID_FFV1,&color_props,newres->w,newres->h,r_frame_rate);
+	FFContext* out = ffapi_open_output(outfile,encopts,format,encoder,AV_CODEC_ID_FFV1,&color_props,newres->w,newres->h,r_frame_rate, &err);
 	if(!out) {
-		fprintf(stderr,"Output setup failed for '%s' / '%s'\n",outfile,format);
+		fprintf(stderr,"Output setup failed for '%s' / '%s': %s\n",outfile,format,av_err2str(err));
 		ffapi_close(in);
 		return 1;
 	}
@@ -440,7 +441,7 @@ int main(int argc, char* argv[]) {
 
 	// Seeking
 	if(offset) {
-		int err = ffapi_seek_frame(in, &offset, quiet ? NULL : seek_progress);
+		err = ffapi_seek_frame(in, &offset, quiet ? NULL : seek_progress);
 		if(err) {
 			fprintf(stderr,"Error seeking: %s\n",av_err2str(err));
 			ffapi_close(in);
@@ -556,7 +557,7 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr,"read: %*d wrote: %*d",padb,0,pads,0);
 	AVFrame* readframe = ffapi_alloc_frame(in);
 	AVFrame* writeframe = ffapi_alloc_frame(out);
-	int ret = 0, err = 0;
+	int ret = 0;
 	unsigned long long coeffs_coded = 0;
 	for(uint64_t bz = 0; bz < nblocks->d; bz++) {
 		for(uint64_t z = 0; z < block->d; z++) {
