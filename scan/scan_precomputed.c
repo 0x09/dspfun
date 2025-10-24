@@ -48,9 +48,8 @@ bool scan_precomputed_add_coord(struct scan_precomputed* p, size_t index, size_t
 	return true;
 }
 
-static struct scan_precomputed* unserialize_coordinate(FILE* f, char** line) {
+static struct scan_precomputed* unserialize_coordinate(FILE* f, char** line, size_t linecap) {
 	struct scan_precomputed* p = calloc(1,sizeof(*p));
-	size_t linecap = strlen(*line);
 	size_t i = 0;
 	do {
 		char *token,* string = *line;
@@ -75,9 +74,8 @@ err:
 	return NULL;
 }
 
-static struct scan_precomputed* unserialize_index(FILE* f, char** line) {
+static struct scan_precomputed* unserialize_index(FILE* f, char** line, size_t linecap) {
 	struct scan_precomputed* p = calloc(1,sizeof(*p));
-	size_t linecap = strlen(*line);
 	size_t y = 0;
 	do {
 		if(**line == '\n')
@@ -108,8 +106,9 @@ err:
 struct scan_precomputed* scan_precomputed_unserialize(FILE* f) {
 	struct scan_precomputed* p = NULL;
 	char *line = NULL;
-	if(getline(&line,&(size_t){0},f) > 0) {
-		p = strchr(line,',') || *line == '\n' ? unserialize_coordinate(f,&line) : unserialize_index(f,&line);
+	size_t linecap;
+	if(getline(&line,&linecap,f) > 0) {
+		p = strchr(line,',') || *line == '\n' ? unserialize_coordinate(f,&line,linecap) : unserialize_index(f,&line,linecap);
 
 		if(p && !p->limit) {
 			free(p);
