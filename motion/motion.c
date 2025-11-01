@@ -37,12 +37,12 @@ static bool ffapi_pixfmts_8bit_or_float_pel(const AVPixFmtDescriptor* desc) {
 	return ffapi_pixfmts_8bit_pel(desc) || ffapi_pixfmts_32_bit_float_pel(desc);
 }
 
-static bool pixfmts_8bit_or_float_rgb(const AVPixFmtDescriptor* desc) {
-	return (desc->flags & AV_PIX_FMT_FLAG_RGB) && ffapi_pixfmts_8bit_or_float_pel(desc);
+static bool pixfmts_8bit_or_float_rgb_or_gray(const AVPixFmtDescriptor* desc) {
+	return ((desc->flags & AV_PIX_FMT_FLAG_RGB) || desc->nb_components == 1) && ffapi_pixfmts_8bit_or_float_pel(desc);
 }
 
-static bool pixfmts_float_rgb(const AVPixFmtDescriptor* desc) {
-	return (desc->flags & AV_PIX_FMT_FLAG_RGB) && ffapi_pixfmts_32_bit_float_pel(desc);
+static bool pixfmts_float_rgb_or_gray(const AVPixFmtDescriptor* desc) {
+	return ((desc->flags & AV_PIX_FMT_FLAG_RGB) || desc->nb_components == 1) && ffapi_pixfmts_32_bit_float_pel(desc);
 }
 
 static int sortcoeffs(const void* left, const void* right) {
@@ -302,9 +302,9 @@ int main(int argc, char* argv[]) {
 	ffapi_pix_fmt_filter* pix_fmt_filter = ffapi_pixfmts_8bit_or_float_pel;
 	if(spec && color_props.pix_fmt == AV_PIX_FMT_NONE) {
 		if(spec == spectype_flat || spec == spectype_copy)
-			pix_fmt_filter = pixfmts_float_rgb;
+			pix_fmt_filter = pixfmts_float_rgb_or_gray;
 		else
-			pix_fmt_filter = pixfmts_8bit_or_float_rgb;
+			pix_fmt_filter = pixfmts_8bit_or_float_rgb_or_gray;
 	}
 
 	uint8_t components;
