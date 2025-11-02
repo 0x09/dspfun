@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
 		offset.a[i] -= terms.a[i]/2;
 
 	coeff* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
-	for(int i = 0; i < framesize.w*framesize.h*3; i++)
+	for(unsigned long long i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
 	#define INDEX(d) ((size.d*bi.d+i.d)*scale+padding*bi.d+padding)

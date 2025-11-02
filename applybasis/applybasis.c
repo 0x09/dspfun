@@ -367,7 +367,7 @@ int main(int argc, char* argv[]) {
 		framesize.a[i] = size.a[i]*terms.a[i]*scale+padding*terms.a[i]+padding;
 
 	frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
-	for(int i = 0; i < framesize.w*framesize.h*3; i++)
+	for(unsigned long long i = 0; i < framesize.w*framesize.h*3; i++)
 		frame[i] = padcolor[i%3]; //fill
 
 	unsigned long long coeff_scale = inrange;
