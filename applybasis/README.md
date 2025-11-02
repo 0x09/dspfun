@@ -19,6 +19,7 @@ Generate basis function plots in the style of [this one](https://upload.wikimedi
       -t, --terms <WxH>      Number of basis functions to generate in each dimension. [default: equal to --size]
       -O, --offset <XxY>     Offset the terms by this amount [default: 0x0]
       -p, --padding <p>      Amount of padding to add in between terms. [default: 1]
+          --bg <color>       Background color for padding as an ImageMagick color specification, e.g. 'red', '#FF0000', 'rgba(100%%,0%%,0%%,100%%)'
       -S, --scale <int>      Integer point upscaling factor for basis functions. [default: 1]
       -g, --linear           Generate the basis functions in linear light and scale to sRGB for output.
 
@@ -55,6 +56,7 @@ Apply basis functions from various 2D transforms to an image file, progressively
       -t, --terms <WxH>      Number of basis functions to generate in each dimension. [default: equal to the input image dimensions]
       -O, --offset <XxY>     Offset the terms by this amount [default: 0x0]
       -p, --padding <p>      Amount of padding to add in between terms. [default: 1]
+          --bg <color>       Background color for padding as an ImageMagick color specification, e.g. 'red', '#FF0000', 'rgba(100%%,0%%,0%%,100%%)'
       -S, --scale <int>      Integer point upscaling factor for basis functions. [default: 1]
       -g, --linear           Apply the basis functions in linear light and scale to sRGB for output.
       -R, --rescale <type>   How to scale summed values. [default: linear]

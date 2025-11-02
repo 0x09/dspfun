@@ -92,6 +92,10 @@ complex_intermediate dht(long long k, long long n, unsigned long long N) {
 	return P_SQRT2i * mi(cos)(2*P_PIi*n*k/N - P_PIi/4);
 }
 
+static coeff srgbdec(coeff x) {
+	return x <= mi(0.0404482362771082) ? x/mi(12.92) : mi(pow)((x + mi(0.055))/mi(1.055),2.4);
+}
+
 typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } coords;
 typedef union { long long a[2]; struct { long long w, h; }; } offsets;
 
@@ -116,6 +120,7 @@ static void help() {
 	"  -t, --terms <WxH>      Number of basis functions to generate in each dimension. [default: equal to --size]\n"
 	"  -O, --offset <XxY>     Offset the terms by this amount [default: 0x0]\n"
 	"  -p, --padding <p>      Amount of padding to add in between terms. [default: 1]\n"
+	"      --bg <color>       Background color for padding as an ImageMagick color specification, e.g. 'red', '#FF0000', 'rgba(100%%,0%%,0%%,100%%)'\n"
 	"  -S, --scale <int>      Integer point upscaling factor for basis functions. [default: 1]\n"
 	"  -g, --linear           Generate the basis functions in linear light and scale to sRGB for output.\n"
 	);
@@ -129,7 +134,8 @@ int main(int argc, char* argv[]) {
 	offsets offset = {0};
 	int natural = false, inverse = false, linear = false;
 	unsigned int scale = 1, padding = 1;
-	coeff padcolor[3] = {1,0,0};
+	coeff padcolor[4] = {1,0,0,1};
+	const char* padcolorstr = NULL;
 	complex_intermediate (*function)(long long, long long, unsigned long long) = dft;
 	void (*realize)(complex_intermediate, coeff[3]) = real;
 	const struct option gopts[] = {
@@ -143,6 +149,7 @@ int main(int argc, char* argv[]) {
 		{"size",required_argument,NULL,'s'},
 		{"natural",no_argument,NULL,'n'},
 		{"linear",no_argument,NULL,'g'},
+		{"bg",required_argument,NULL,1},
 		{}
 	};
 	while((opt = getopt_long(argc,argv,"hf:InP:t:O:p:S:s:g",gopts,NULL)) != -1)
@@ -175,7 +182,7 @@ int main(int argc, char* argv[]) {
 				else if(!strcmp(optarg,"phase"))     realize = phase;
 				else if(!strcmp(optarg,"complex")) {
 					realize = cplx;
-					memcpy(padcolor,((coeff[3]){0.0625,0.1875,0.0625}),sizeof(*padcolor)*3);
+					memcpy(padcolor,((coeff[4]){0.0625,0.1875,0.0625,1}),sizeof(*padcolor)*4);
 				}
 			} break;
 			case 's': sscanf(optarg,"%llux%llu",&size.w,&size.h); break;
@@ -184,6 +191,7 @@ int main(int argc, char* argv[]) {
 			case 'p': padding = strtoul(optarg,NULL,10); break;
 			case 'S': scale = strtoul(optarg,NULL,10); break;
 			case 'g': linear = true; break;
+			case 1: padcolorstr = optarg; break;
 			default : usage();
 		}
 
@@ -196,6 +204,25 @@ int main(int argc, char* argv[]) {
 		outfile = argv[0];
 	if(!outfile)
 		usage();
+
+	if(padcolorstr) {
+		PixelWand* pw = NewPixelWand();
+		if(PixelSetColor(pw,padcolorstr) == MagickFalse) {
+			char* exception = PixelGetException(pw,&(ExceptionType){0});
+			fprintf(stderr,"Error parsing background color: %s\n",exception);
+			RelinquishMagickMemory(exception);
+			DestroyPixelWand(pw);
+			return 1;
+		}
+		padcolor[0] = PixelGetRed(pw);
+		padcolor[1] = PixelGetGreen(pw);
+		padcolor[2] = PixelGetBlue(pw);
+		padcolor[3] = PixelGetAlpha(pw);
+		DestroyPixelWand(pw);
+	}
+	if(linear)
+		for(int i = 0; i < 3; i++)
+			padcolor[i] = srgbdec(padcolor[i]);
 
 	for(int i = 0; i < 2; i++)
 		if(!terms.a[i])
@@ -218,9 +245,9 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; natural && i < 2; i++)
 		offset.a[i] -= terms.a[i]/2;
 
-	coeff* frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
-	for(unsigned long long i = 0; i < framesize.w*framesize.h*3; i++)
-		frame[i] = padcolor[i%3]; //fill
+	coeff* frame = malloc(framesize.w*framesize.h*4*sizeof(*frame));
+	for(unsigned long long i = 0; i < framesize.w*framesize.h*4; i++)
+		frame[i] = padcolor[i%4]; //fill
 
 	#define INDEX(d) ((size.d*bi.d+i.d)*scale+padding*bi.d+padding)
 	for(k->h = 0; k->h < K->h; k->h++)
@@ -236,16 +263,18 @@ int main(int argc, char* argv[]) {
 					coeff real_component[3];
 					realize(component,real_component);
 					for(size_t ys = 0; ys < scale; ys++)
-						for(size_t xs = 0; xs < scale; xs++)
+						for(size_t xs = 0; xs < scale; xs++) {
 							for(int d = 0; d < 3; d++)
-								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = real_component[d];
+								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*4+d] = real_component[d];
+							frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*4+3] = 1;
+						}
 				}
 
 	int ret = 0;
 	MagickWandGenesis();
 	MagickWand* wand;
 	wand = NewMagickWand();
-	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",TypePixel,frame);
+	MagickConstituteImage(wand,framesize.w,framesize.h,"RGBA",TypePixel,frame);
 	free(frame);
 	if(linear) { // linear here refers to the processing colorspace, so this actually means genbasis should convert to nonlinear for output
 		MagickSetImageColorspace(wand,RGBColorspace);

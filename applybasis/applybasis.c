@@ -139,6 +139,10 @@ complex_intermediate dht(long long k, long long n, unsigned long long N, bool or
 	return P_SQRT2i * mi(cos)(2*P_PIi*n*k/N - P_PIi/4);
 }
 
+static coeff srgbdec(coeff x) {
+	return x <= mi(0.0404482362771082) ? x/mi(12.92) : mi(pow)((x + mi(0.055))/mi(1.055),2.4);
+}
+
 typedef union { unsigned long long a[2]; struct { unsigned long long w, h; }; } coords;
 typedef union { long long a[2]; struct { long long w, h; }; } offsets;
 
@@ -164,6 +168,7 @@ static void help() {
 	"  -t, --terms <WxH>      Number of basis functions to generate in each dimension. [default: equal to the input image dimensions]\n"
 	"  -O, --offset <XxY>     Offset the terms by this amount [default: 0x0]\n"
 	"  -p, --padding <p>      Amount of padding to add in between terms. [default: 1]\n"
+	"      --bg <color>       Background color for padding as an ImageMagick color specification, e.g. 'red', '#FF0000', 'rgba(100%%,0%%,0%%,100%%)'\n"
 	"  -S, --scale <int>      Integer point upscaling factor for basis functions. [default: 1]\n"
 	"  -g, --linear           Apply the basis functions in linear light and scale to sRGB for output.\n"
 	"  -R, --rescale <type>   How to scale summed values. [default: linear]\n"
@@ -194,7 +199,8 @@ int main(int argc, char* argv[]) {
 	void (*rescale[2])(intermediate[3],intermediate) = {linear};
 	void (*range)(intermediate[3]) = shift2;
 	complex_intermediate (*function)(long long, long long, unsigned long long,bool) = dft;
-	coeff padcolor[3] = {0,0,0};
+	coeff padcolor[4] = {0,0,0,1};
+	const char* padcolorstr = NULL;
 	const struct option gopts[] = {
 		{"function",required_argument,NULL,'f'},
 		{"inverse",no_argument,NULL,'I'},
@@ -207,6 +213,7 @@ int main(int argc, char* argv[]) {
 		{"padding",required_argument,NULL,'p'},
 		{"scale",required_argument,NULL,'S'},
 		{"linear",no_argument,NULL,'g'},
+		{"bg",required_argument,NULL,1},
 		{}
 	};
 	while((opt = getopt_long(argc,argv,"hd:f:IP:R:N:t:u:O:p:S:",gopts,NULL)) != -1)
@@ -261,6 +268,7 @@ int main(int argc, char* argv[]) {
 			case 'p': padding = strtoul(optarg,NULL,10); break;
 			case 'S': scale = strtoul(optarg,NULL,10); break;
 			case 'g': linearlight = true; break;
+			case 1: padcolorstr = optarg; break;
 			default : usage();
 		}
 
@@ -275,6 +283,25 @@ int main(int argc, char* argv[]) {
 		outfile = argv[1];
 	if(!outfile)
 		usage();
+
+	if(padcolorstr) {
+		PixelWand* pw = NewPixelWand();
+		if(PixelSetColor(pw,padcolorstr) == MagickFalse) {
+			char* exception = PixelGetException(pw,&(ExceptionType){0});
+			fprintf(stderr,"Error parsing background color: %s\n",exception);
+			RelinquishMagickMemory(exception);
+			DestroyPixelWand(pw);
+			return 1;
+		}
+		padcolor[0] = PixelGetRed(pw);
+		padcolor[1] = PixelGetGreen(pw);
+		padcolor[2] = PixelGetBlue(pw);
+		padcolor[3] = PixelGetAlpha(pw);
+		DestroyPixelWand(pw);
+	}
+	if(linearlight)
+		for(int i = 0; i < 3; i++)
+			padcolor[i] = srgbdec(padcolor[i]);
 
 	int ret = 0;
 
@@ -366,9 +393,9 @@ int main(int argc, char* argv[]) {
 	for(int i = 0; i < 2; i++)
 		framesize.a[i] = size.a[i]*terms.a[i]*scale+padding*terms.a[i]+padding;
 
-	frame = malloc(framesize.w*framesize.h*3*sizeof(*frame));
-	for(unsigned long long i = 0; i < framesize.w*framesize.h*3; i++)
-		frame[i] = padcolor[i%3]; //fill
+	frame = malloc(framesize.w*framesize.h*4*sizeof(*frame));
+	for(unsigned long long i = 0; i < framesize.w*framesize.h*4; i++)
+		frame[i] = padcolor[i%4]; //fill
 
 	unsigned long long coeff_scale = inrange;
 	// special case for dct/dst 1 as their logical size differs from the transform length
@@ -408,10 +435,11 @@ int main(int argc, char* argv[]) {
 					}
 					range(real_coeff);
 					for(size_t ys = 0; ys < scale; ys++)
-						for(size_t xs = 0; xs < scale; xs++)
+						for(size_t xs = 0; xs < scale; xs++) {
 							for(int d = 0; d < 3; d++)
-								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*3+d] = real_coeff[d];
-
+								frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*4+d] = real_coeff[d];
+							frame[(((INDEX(h)+ys)*framesize.w+INDEX(w))+xs)*4+3] = 1;
+						}
 					if(df && fwrite(partsums,sizeof(partsums),1,df) != 1) {
 						fprintf(stderr,"Error writing %s: %s\n",outcoeffs,strerror(errno));
 						ret = 1;
@@ -419,7 +447,7 @@ int main(int argc, char* argv[]) {
 					}
 				}
 	wand = NewMagickWand();
-	MagickConstituteImage(wand,framesize.w,framesize.h,"RGB",TypePixel,frame);
+	MagickConstituteImage(wand,framesize.w,framesize.h,"RGBA",TypePixel,frame);
 	if(linearlight) {
 		MagickSetImageColorspace(wand,RGBColorspace);
 		MagickTransformImageColorspace(wand,sRGBColorspace);
