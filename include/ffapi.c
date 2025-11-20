@@ -621,7 +621,8 @@ int ffapi_read_frame(FFContext* in, AVFrame* frame) {
 	}
 	if(!err) {
 		if(in->sws)
-			err = sws_scale_frame(in->sws,frame,in->swsframe);
+			if((err = sws_scale_frame(in->sws,frame,in->swsframe)) > 0)
+				err = 0;
 		frame->pts = readframe->best_effort_timestamp;
 	}
 	av_packet_free(&packet);
@@ -648,7 +649,7 @@ int ffapi_write_frame(FFContext* out, AVFrame* frame) {
 	int err;
 	if(out->sws) {
 		writeframe = out->swsframe;
-		if((err = sws_scale_frame(out->sws,out->swsframe,frame)))
+		if((err = sws_scale_frame(out->sws,out->swsframe,frame)) < 0)
 			return err;
 	}
 	else writeframe = frame;
