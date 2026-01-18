@@ -30,7 +30,7 @@ As a precaution the output rate can be limited to a very low or even fractional 
       --ispectrogram[=<type>]  Invert an input spectrogram. [default: shift]
                                Type: shift, flat, copy.
     
-      -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.
+      -q, --quant <float>     Quantize the frequency coefficients by dividing by this qfactor and rounding.
       --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero. [default: 0-1]
       --coeff-limit <limit>   Limit output to only the top N frequency coefficients per block.
       -d, --dither            Apply 2D Floyd-Steinberg dithering to the high-precision transform products.

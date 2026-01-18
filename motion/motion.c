@@ -130,7 +130,7 @@ static void help() {
 	"  --ispectrogram[=<type>]  Invert an input spectrogram. [default: shift]\n"
 	"                           Type: %s.\n"
 	"\n"
-	"  -q, --quant <float>     Quantize the frequency coefficients by multiplying by this qfactor and rounding.\n"
+	"  -q, --quant <float>     Quantize the frequency coefficients by dividing by this qfactor and rounding.\n"
 	"  --threshold <min-max>   Set frequency coefficients outside of this absolute value range to zero. [default: 0-1]\n"
 	"  --coeff-limit <limit>   Limit output to only the top N frequency coefficients per block.\n"
 	"  -d, --dither            Apply 2D Floyd-Steinberg dithering to the high-precision transform products.\n"
