@@ -50,6 +50,7 @@ As a precaution the output rate can be limited to a very low or even fractional 
       --frames <limit>        Limit the number of output frames.
       --offset <pos>          Seek to this frame number in the input before processing.
     
+      --linear                Process in linear light.
       -c, --csp <optstring>   Option string specifying the pixel format and color properties to convert to for processing.
                               e.g. pixel_format=rgb24 converts the decoded input to rgb24 before processing.
       --iformat <fmt>         FFmpeg input format name (e.g. for pipe input).

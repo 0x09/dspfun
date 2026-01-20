@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <libavutil/eval.h>
+#include <libavutil/csp.h>
 
 #include "ffapi.h"
 #include "precision.h"
@@ -150,6 +151,7 @@ static void help() {
 	"  --frames <limit>        Limit the number of output frames.\n"
 	"  --offset <pos>          Seek to this frame number in the input before processing.\n"
 	"\n"
+	"  --linear                Process in linear light.\n"
 	"  -c, --csp <optstring>   Option string specifying the pixel format and color properties to convert to for processing.\n"
 	"                          e.g. pixel_format=rgb24 converts the decoded input to rgb24 before processing.\n"
 	"  --iformat <fmt>         FFmpeg input format name (e.g. for pipe input).\n"
@@ -171,7 +173,7 @@ int main(int argc, char* argv[]) {
 	char* infile = NULL,* outfile = NULL,* colorspace = NULL,* iformat = NULL,* format = NULL,* encoder = NULL,* decopts = NULL,* encopts = NULL,* exprstr = NULL,* fftw_wisdom_file = NULL;
 	coords block = {{0,0,1}}, scaled = {0};
 	uint64_t offset = 0, maxframes = 0;
-	int samerate = false, samesize = false, dithering = false;
+	int samerate = false, samesize = false, dithering = false, linear = false;
 	enum spectype spec = spectype_none;
 	enum ispectype ispec = ispectype_none;
 	enum preserve_dctype preserve_dc = preserve_dctype_none;
@@ -216,6 +218,7 @@ int main(int argc, char* argv[]) {
 		{"threshold",required_argument,NULL,16},
 		{"coeff-limit",required_argument,NULL,17},
 		{"ispectrogram",optional_argument,NULL,18},
+		{"linear",no_argument,&linear,19},
 		{0}
 	};
 	while((opt = getopt_long(argc,argv,"b:s:p:B:D:c:q:r:P:Qh",gopts,&longoptind)) != -1)
@@ -292,6 +295,13 @@ int main(int argc, char* argv[]) {
 
 	if(!infile) usage();
 
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(59,48,100)
+	if(linear) {
+		fprintf(stderr,"linear processing is only supported with FFmpeg 8.0+");
+		exit(1);
+	}
+#endif
+
 	// Setup input
 	av_log_set_level(loglevel);
 
@@ -306,6 +316,8 @@ int main(int argc, char* argv[]) {
 		else
 			pix_fmt_filter = pixfmts_8bit_or_float_rgb_or_gray;
 	}
+	else if(linear)
+		pix_fmt_filter = pixfmts_float_rgb_or_gray;
 
 	uint8_t components;
 	int w[4], h[4];
@@ -317,6 +329,23 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 	source->d = nframes;
+
+	if(linear && color_props.color_trc == AVCOL_TRC_UNSPECIFIED) {
+		fprintf(stderr,"Input color_trc is unknown but required for linear processing, specify with --decopts color_trc=<name>\nPossible names:\n");
+		const char* trc_name;
+		for(enum AVColorTransferCharacteristic trc = AVCOL_TRC_RESERVED0+1; (trc_name = av_color_transfer_name(trc)); trc++)
+			fprintf(stderr,"%s\n",trc_name);
+		ffapi_close(in);
+		return 1;
+	}
+
+	av_csp_trc_function input_trc, output_trc;
+	if(linear) {
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(59,48,100)
+		input_trc = av_csp_trc_func_inv_from_id(color_props.color_trc);
+#endif
+		output_trc = av_csp_trc_func_from_id(color_props.color_trc);
+	}
 
 	if(spec)
 		color_props.color_range = AVCOL_RANGE_JPEG;
@@ -426,7 +455,7 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr,"pixel_format %s --> %s --> %s\n",av_get_pix_fmt_name(in->codec->pix_fmt),pixdesc.name,av_get_pix_fmt_name(out->codec->pix_fmt));
 		fprintf(stderr,"color_range %s --> %s --> %s\n",av_color_range_name(in->codec->color_range),av_color_range_name(color_props.color_range),av_color_range_name(out->codec->color_range));
 		fprintf(stderr,"color_primaries %s --> %s --> %s\n",av_color_primaries_name(in->codec->color_primaries),av_color_primaries_name(color_props.color_primaries),av_color_primaries_name(out->codec->color_primaries));
-		fprintf(stderr,"color_trc %s --> %s --> %s\n",av_color_transfer_name(in->codec->color_trc),av_color_transfer_name(color_props.color_trc),av_color_transfer_name(out->codec->color_trc));
+		fprintf(stderr,"color_trc %s --> %s --> %s\n",av_color_transfer_name(in->codec->color_trc),linear ? "linear" : av_color_transfer_name(color_props.color_trc),av_color_transfer_name(out->codec->color_trc));
 		fprintf(stderr,"colorspace %s --> %s --> %s\n",av_color_space_name(in->codec->colorspace),av_color_space_name(color_props.color_space),av_color_space_name(out->codec->colorspace));
 		fprintf(stderr,"chroma_sample_location %s --> %s --> %s\n",av_chroma_location_name(in->codec->chroma_sample_location),av_chroma_location_name(color_props.chroma_location),av_chroma_location_name(out->codec->chroma_sample_location));
 	}
@@ -599,7 +628,10 @@ int main(int argc, char* argv[]) {
 								case ispectype_shift: pel = mi(copysign)((mi(expm1)(mi(fabs)((pel-mi(127.5))/ic[i]))),pel-mi(127.5))/normalization[i]; break;
 								case ispectype_flat:  pel = (pel-mi(127.5))*2/normalization[i]/normalization[i]; break;
 								case ispectype_copy:  pel = pel/normalization[i]/normalization[i]; break;
-								case ispectype_none: break;
+								case ispectype_none:
+									if(linear)
+										pel = input_trc(pel/255)*255;
+									break;
 							}
 
 							coeffs[(z*minbuf[i].h+y)*minbuf[i].w+x] = pel;
@@ -731,7 +763,11 @@ int main(int argc, char* argv[]) {
 								case spectype_shift: pel = c[i]*mi(copysign)(mi(log1p)(mi(fabs)(pel)),pel)+mi(127.5); break;
 								case spectype_flat:  pel = pel*normalization[i]/2+mi(127.5); break;
 								case spectype_copy:
-								case spectype_none:  pel *= normalization[i]; break;
+								case spectype_none:
+									pel *= normalization[i];
+									if(linear)
+										pel = output_trc(pel/255)*255;
+									break;
 							}
 
 							if(float_pixels)
