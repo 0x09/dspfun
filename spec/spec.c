@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
 		case scaletype_none:
 		case scaletype_log:
 			for(z = 0; z < d; z++)
-				max[z] = log1p(max[z]);
+				max[z] = mc(log1p)(max[z]);
 			for(i = 0; i < l; i++)
 				f[i] = mi(copysign)(mi(log1p)(mc(fabs)(f[i])),f[i])/max[i%d];
 			break;
