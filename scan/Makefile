@@ -8,20 +8,18 @@ PREFIX ?= /usr/local
 pcdeps = $(fftw) MagickWand libavcodec libavformat libswscale libavutil
 
 CFLAGS := -DCOEFF_PRECISION=$(COEFF_PRECISION) -DINTERMEDIATE_PRECISION=$(INTERMEDIATE_PRECISION) -D_GNU_SOURCE -Wno-initializer-overrides -std=c11 -O3 -ffast-math -flto -I../include $(shell pkg-config --cflags $(pcdeps)) $(CFLAGS) -DMAGICKWAND_VERSION=$(shell pkg-config --modversion MagickWand | cut -d. -f1)
-LIBS := $(shell pkg-config --libs $(pcdeps)) -lm -l$(fftw)_threads -lpthread
+LDLIBS := $(shell pkg-config --libs $(pcdeps)) -lm -l$(fftw)_threads -lpthread $(LDLIBS)
 
 TOOLS = scan
 
 all: $(TOOLS)
 
-ffapi.o: ../include/ffapi.c
-	$(CC) $(CFLAGS) -c -o $@ $+
+vpath %.c ../include
 
-speclib.o: ../include/speclib.c
-	$(CC) $(CFLAGS) -c -o $@ $+
+../include/ffapi.c: ../include/ffapi.h
+../include/speclib.c: ../include/speclib.h
 
 scan: scan.c ffapi.o speclib.o scan_context.o scan_methods.o scan_precomputed.o
-	$(CC) $(CFLAGS) -o $@ $+ $(LIBS)
 
 clean:
 	$(RM) scan scan_context.o scan_methods.o scan_precomputed.o speclib.o ffapi.o
