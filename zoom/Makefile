@@ -18,10 +18,12 @@ vpath %.c ../include
 
 ../include/ffapi.c: ../include/ffapi.h
 
-zoom: zoom.c ffapi.o
+zoom.o: $(DEPS)
+
+zoom: zoom.o ffapi.o
 
 clean:
-	$(RM) $(TOOLS) ffapi.o
+	$(RM) $(TOOLS) ffapi.o zoom.o
 
 install: all
 	install $(TOOLS) $(PREFIX)/bin/
