@@ -290,8 +290,8 @@ int main(int argc, char* argv[]) {
 	size_t maxvectors = vh > vw ? vh : vw;
 
 	if(pct_coords) {
-		vx *= vw/100;
-		vy *= vy/100;
+		vx *= vw/mi(100.);
+		vy *= vh/mi(100.);
 	}
 	else if(input_coords) {
 		vx *= xscale_num/xscale_den;
