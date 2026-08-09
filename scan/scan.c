@@ -395,7 +395,9 @@ int main(int argc, char* argv[]) {
 				size_t y = coords[ci][0], x = coords[ci][1];
 				memcpy(reconstruction+(y*width+x)*channels,coeffs+(y*width+x)*channels,sizeof(*reconstruction)*channels);
 				if(visualize) {
-					intermediate normalization = spec_normalization_2d(x,y);
+					intermediate normalization;
+					if(spec)
+						normalization = spec_normalization_2d(x,y);
 					for(size_t z = 0; z < channels; z++) {
 						intermediate c = spec ? spec_scale(sp,coeffs[(y*width+x)*channels+z]*normalization) : 1.0;
 						ffapi_setpelf(ffctx,frame,x+width,y,z,c);
@@ -431,7 +433,9 @@ int main(int argc, char* argv[]) {
 			size_t y = coords[ci][0], x = coords[ci][1];
 			memcpy(reconstruction+(y*width+x)*channels,coeffs+(y*width+x)*channels,sizeof(*reconstruction)*channels);
 			if(visualize) {
-				intermediate normalization = spec_normalization_2d(x,y);
+				intermediate normalization;
+				if(spec)
+					normalization = spec_normalization_2d(x,y);
 				for(size_t z = 0; z < channels; z++) {
 					intermediate c = spec ? spec_scale(sp,coeffs[(y*width+x)*channels+z]*normalization) : 1.0;
 					ffapi_setpelf(ffctx,frame,x+width,y,z,c);
