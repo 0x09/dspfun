@@ -15,8 +15,6 @@
 #include "precision.h"
 #include "magickwand.h"
 
-#define absf(f,x) mi(copysign)(mi(f)(mc(fabs)(x)),x)
-
 #include "keyed_enum.h"
 #include "assoc.h"
 
