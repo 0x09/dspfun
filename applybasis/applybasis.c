@@ -191,8 +191,8 @@ int main(int argc, char* argv[]) {
 	char* infile = NULL,* outfile = NULL,* outcoeffs = NULL;
 	if(isatty(STDOUT_FILENO))
 		outfile = "sixel:-";
-	coords terms = {}, partsum = {{1,1}};
-	offsets offset = {};
+	coords terms = {0}, partsum = {{1,1}};
+	offsets offset = {0};
 	int inverse = false, orthogonal = false, linearlight = false;
 	unsigned int scale = 1, padding = 1;
 	intermediate (*realize)(complex_intermediate) = real;
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
 		{"scale",required_argument,NULL,'S'},
 		{"linear",no_argument,NULL,'g'},
 		{"bg",required_argument,NULL,1},
-		{}
+		{0}
 	};
 	while((opt = getopt_long(argc,argv,"hd:f:IP:R:N:t:u:O:p:S:",gopts,NULL)) != -1)
 		switch(opt) {
