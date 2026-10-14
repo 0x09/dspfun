@@ -110,8 +110,15 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	if(nframes)
-		nframes -= offset;
+	if(nframes) {
+		if(nframes > offset)
+			nframes -= offset;
+		else {
+			fprintf(stderr,"offset %" PRIu64 " exceeds the frame count",offset);
+			ffapi_close(in);
+			return 1;
+		}
+	}
 	uint64_t len[] = {*widths, *heights, nframes};
 
 	if(frames && len[2])
