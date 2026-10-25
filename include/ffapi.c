@@ -438,7 +438,24 @@ FFContext* ffapi_open_output(const char* file, const char* options,
 		avc->color_range = codec_color_ranges[0];
 	avc->color_primaries = in_color_props->color_primaries;
 	avc->color_trc = in_color_props->color_trc;
-	avc->colorspace = in_color_props->color_space;
+
+	const enum AVColorSpace* codec_color_spaces = NULL;
+	int num_color_spaces;
+	avcodec_get_supported_config(NULL,enc,AV_CODEC_CONFIG_COLOR_SPACE,0,(const void**)&codec_color_spaces,&num_color_spaces);
+	if(!codec_color_spaces || in_color_props->color_space == AVCOL_SPC_UNSPECIFIED)
+		avc->colorspace = in_color_props->color_space;
+	else {
+		bool found_color_space = false;
+		for(int i = 0; i < num_color_spaces; i++)
+			if(codec_color_spaces[i] == in_color_props->color_space) {
+				avc->colorspace = in_color_props->color_space;
+				found_color_space = true;
+				break;
+			}
+		if(!found_color_space)
+			avc->colorspace = codec_color_spaces[0];
+	}
+
 	avc->chroma_sample_location = in_color_props->chroma_location;
 	fill_color_defaults(out->fmt->oformat, avc);
 
